@@ -1,0 +1,25 @@
+{
+  "leads": [
+    {
+      "name": "kiuma",
+      "phone": "2449234323",
+      "source": "ebook-offer"
+    }
+  ],
+  "checkouts": [
+    {
+      "reference": "ROV2-MMCR2P0G-RJGUV",
+      "name": "kiuma",
+      "phone": "2449234323",
+      "amount": 4500,
+      "entity": "00999",
+      "paymentReference": "178665272",
+      "status": "pending",
+      "providerPayload": {
+        "reason": "KB_AGENCY_API_KEY missing"
+      },
+      "createdAt": "2026-03-05T00:51:30.976Z",
+      "updatedAt": "2026-03-05T00:51:30.976Z"
+    }
+  ]
+}
