@@ -5,12 +5,16 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   DATABASE_URL: z.string().optional(),
   KB_AGENCY_API_KEY: z.string().optional(),
+  KB_API_EXPRESS_KEY: z.string().optional(),
   KB_AGENCY_WEBHOOK_SECRET: z.string().optional(),
   BULKGATE_APP_ID: z.string().optional(),
   BULKGATE_APP_TOKEN: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
-  PUSHCUT_URL: z.string().url().optional()
+  PUSHCUT_URL: z.string().url().optional(),
+  FACEBOOK_PIXEL_ID: z.string().optional(),
+  FACEBOOK_ACCESS_TOKEN: z.string().optional(),
+  GROK_API_KEY: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

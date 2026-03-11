@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCharge } from "@/lib/providers/payment/kbagency";
+import { createCharge, createExpressCharge } from "@/lib/providers/payment/kbagency";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/phone";
-import { insertCheckout } from "@/lib/storage";
+import { getSettings, insertCheckout } from "@/lib/storage";
+import { sendPaymentReferenceSms } from "@/lib/providers/sms/bulkgate";
 import { z } from "zod";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
-  phone: z.string().min(7).max(24)
+  phone: z.string().min(7).max(24),
+  method: z.enum(["express", "reference"]).default("reference"),
+  expressPhone: z.string().min(9).max(15).optional()
 });
 
 function makeReference() {
@@ -31,13 +34,50 @@ export async function POST(req: NextRequest) {
   }
 
   const reference = makeReference();
+  const now = new Date().toISOString();
+  const { pricePromo } = await getSettings();
+
+  if (parsed.data.method === "express") {
+    if (!parsed.data.expressPhone) {
+      return NextResponse.json({ error: "expressPhone is required for Express payments" }, { status: 400 });
+    }
+
+    const charge = await createExpressCharge({
+      phone: parsed.data.expressPhone,
+      amount: pricePromo,
+      reference
+    });
+
+    await insertCheckout({
+      reference,
+      name: parsed.data.name.trim(),
+      phone: normalizePhone(parsed.data.phone),
+      amount: charge.amount,
+      entity: "express",
+      paymentReference: charge.reference,
+      status: "pending",
+      providerPayload: { method: "express", mode: charge.mode },
+      createdAt: now,
+      updatedAt: now
+    });
+
+    return NextResponse.json({
+      reference,
+      method: "express",
+      payment: {
+        reference: charge.reference,
+        amount: charge.amount,
+        mode: charge.mode
+      }
+    });
+  }
+
+  // Reference method
   const charge = await createCharge({
-    amount: 4500,
+    amount: pricePromo,
     reference,
     description: "Ebook Riqueza Oculta V2"
   });
-
-  const now = new Date().toISOString();
 
   await insertCheckout({
     reference,
@@ -52,11 +92,22 @@ export async function POST(req: NextRequest) {
     updatedAt: now
   });
 
+  // Send reference via SMS so user has it on their phone when going to ATM
+  sendPaymentReferenceSms(
+    normalizePhone(parsed.data.phone),
+    parsed.data.name.trim(),
+    charge.entity,
+    charge.paymentReference,
+    charge.amount
+  ).catch(() => {});
+
   return NextResponse.json({
     reference,
+    method: "reference",
     payment: {
       entity: charge.entity,
       reference: charge.paymentReference,
+      paymentUrl: charge.paymentUrl,
       amount: charge.amount,
       mode: charge.mode
     }
