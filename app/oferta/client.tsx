@@ -1,8 +1,7 @@
 "use client";
 
-import { type SVGProps, useEffect, useState } from "react";
+import { type SVGProps, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — filename contains spaces
 import ebookCover from "@/assets/main ebook cover.png";
@@ -16,6 +15,7 @@ import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { trackEvent } from "@/lib/pixel";
+import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
 
@@ -36,6 +36,16 @@ function LockIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+type OfertaContent = {
+  headline: string;
+  subheading: string;
+  cta_text: string;
+  guarantee_text: string;
+  scarcity_text: string;
+  social_proof: string;
+  bullets: string[];
+};
 
 const testimonials = [
   {
@@ -76,21 +86,18 @@ const testimonials = [
   },
 ];
 
-const bullets = [
-  "Os 5 Pilares da Riqueza Mental",
-  "Como Reprogramar Crenças Limitantes",
-  "Hábitos Estratégicos de Foco",
-  "A Fórmula do Crescimento Financeiro",
-  "Checklist de Hábitos Diários",
-  "Garantia de 7 dias ou dinheiro de volta",
-];
-
 export default function OfertaClient({
-  initialPrices
+  initialPrices,
+  content,
+  whatsappLink,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number };
+  content: OfertaContent;
+  whatsappLink: string;
 }) {
   const name = useFunnelStore(state => state.name);
+  const whatsapp = useFunnelStore(state => state.whatsapp);
+  const journey = useFunnelStore(state => state.journey);
   const result = useFunnelStore(state => state.result);
 
   useEffect(() => {
@@ -109,14 +116,47 @@ export default function OfertaClient({
     const t = setInterval(() => setTimeLeft(s => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, []);
-  const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const hh = String(Math.floor(timeLeft / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, "0");
   const ss = String(timeLeft % 60).padStart(2, "0");
 
   const prices = initialPrices;
 
+  const handleCheckoutClick = useCallback(() => {
+    // 1. Pixel event
+    trackEvent("InitiateCheckout", { currency: "AOA", value: prices.pricePromo });
+
+    // 2. Salvar lead (fire-and-forget — não bloqueia o redirect)
+    if (name || whatsapp) {
+      fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name || "Desconhecido",
+          phone: whatsapp || "",
+          source: "oferta-kambafy",
+          journey,
+        }),
+      }).catch(() => {});
+    }
+
+    // 3. Build Kambafy URL com URL params (tentativa de prefill)
+    const base: string =
+      process.env.NEXT_PUBLIC_KAMBAFY_CHECKOUT_URL ||
+      "https://pay.kambafy.com/checkout/bd59f082-a243-4c64-87dd-9dc9d5f1e4eb";
+    const params = new URLSearchParams();
+    if (name) { params.set("name", name); params.set("customer_name", name); }
+    if (whatsapp) { params.set("phone", whatsapp); params.set("customer_phone", whatsapp); }
+    const query = params.toString();
+    const url = query ? `${base}?${query}` : base;
+
+    // 4. Redirect imediato
+    window.location.href = url;
+  }, [name, whatsapp, prices.pricePromo, journey]);
+
   return (
     <FunnelShell>
-      <ChatWidget />
+      <ChatWidget whatsappLink={whatsappLink} />
       <GlassCard>
         <div className="space-y-6">
 
@@ -129,10 +169,10 @@ export default function OfertaClient({
               <span className="mr-2 inline-block animate-glow-pulse">◆</span>
               Passo 3 de 5
             </p>
-            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">Riqueza Oculta: Guia Definitivo</h1>
+            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{content.headline}</h1>
             <p className="text-sm leading-relaxed text-soft">
-              {name ? `${name}, descobre` : "Descobre"} os pilares estratégicos que separam quem gera resultados reais de quem apenas observa.
-              {result ? ` ${result.offerAngle}` : ""} Não é sobre sofrer mais, é sobre dominar o sistema.
+              {name ? `${name}, ` : ""}{content.subheading}
+              {result ? ` ${result.offerAngle}` : ""}
             </p>
           </div>
 
@@ -158,7 +198,7 @@ export default function OfertaClient({
           {/* Bullets + preço — mesma largura que o botão */}
           <div className="space-y-3">
             <ul className="space-y-2">
-              {bullets.map(item => (
+              {content.bullets.map(item => (
                 <li key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-black/20 px-4 py-2.5 text-sm text-soft/90">
                   <CheckIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
                   <span>{item}</span>
@@ -170,8 +210,8 @@ export default function OfertaClient({
             <div className="rounded-xl border border-brand/20 bg-brand/[0.07] p-4 text-center space-y-3">
               <p className="text-xs uppercase tracking-[0.16em] text-muted">Investimento único</p>
               <div className="flex items-end justify-center gap-3">
-                <span className="text-lg text-soft/40 line-through">{prices.priceOriginal.toLocaleString("pt-PT")} Kz</span>
-                <span className="text-3xl font-semibold text-brand leading-none">{prices.pricePromo.toLocaleString("pt-PT")} Kz</span>
+                <span className="text-lg text-soft/40 line-through">{formatPriceKz(prices.priceOriginal)}</span>
+                <span className="text-3xl font-semibold text-brand leading-none">{formatPriceKz(prices.pricePromo)}</span>
               </div>
               {name && result ? (
                 <p className="text-xs text-soft/70">
@@ -180,15 +220,15 @@ export default function OfertaClient({
               ) : null}
               <div className="flex flex-col items-center gap-1 rounded-xl border border-red-400/25 bg-red-400/[0.09] px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400/70">Oferta expira em</p>
-                <p className="text-3xl font-bold tabular-nums text-red-300">{mm}:{ss}</p>
+                <p className="text-3xl font-bold tabular-nums text-red-300">{hh}:{mm}:{ss}</p>
               </div>
               {/* Escassez */}
               <div className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.08] px-3 py-2">
-                <span className="text-sm text-yellow-400">⚠️ Restam <strong>14 vagas</strong> ao preço promocional</span>
+                <span className="text-sm text-yellow-400">⚠️ {content.scarcity_text}</span>
               </div>
               {/* Contador */}
               <p className="text-xs text-muted">
-                <span className="font-bold text-brand">327+ pessoas</span> já garantiram o seu acesso
+                <span className="font-bold text-brand">{content.social_proof}</span>
               </p>
               <p className="text-xs text-muted">Sem mensalidade. Acesso imediato após pagamento.</p>
               {/* Garantia */}
@@ -196,16 +236,17 @@ export default function OfertaClient({
                 <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                 <div>
                   <p className="text-[11px] font-semibold text-soft/90">Garantia de 7 Dias sem Risco</p>
-                  <p className="text-[10px] text-soft/50 leading-relaxed">Se não ficares satisfeito, devolvemos 100% do valor. Sem perguntas.</p>
+                  <p className="text-[10px] text-soft/50 leading-relaxed">{content.guarantee_text}</p>
                 </div>
               </div>
-              <Link
-                href="/checkout/pagamento"
+              <button
+                type="button"
+                onClick={handleCheckoutClick}
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative">DESBLOQUEAR AGORA</span>
-              </Link>
+                <span className="relative">{content.cta_text}</span>
+              </button>
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
                 <LockIcon className="h-3 w-3" />
                 Pagamento seguro via Multicaixa / Internet Banking

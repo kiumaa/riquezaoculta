@@ -1,0 +1,123 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createExpressCharge } from "@/lib/providers/payment/kbagency";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { normalizePhone } from "@/lib/phone";
+import { getSettings, insertCheckout } from "@/lib/storage";
+import { env, isProd } from "@/lib/env";
+import { z } from "zod";
+
+export const preferredRegion = "cpt1";
+export const dynamic = "force-dynamic";
+
+const schema = z.object({
+  name: z.string().min(2).max(80),
+  phone: z.string().min(7).max(24),
+  expressPhone: z.string().min(9).max(15)
+});
+
+function makeReference() {
+  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `ROV2-${Date.now().toString(36).toUpperCase()}-${random}`;
+}
+
+export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  const timings: Record<string, number> = {};
+  
+  try {
+    const ip = req.headers.get("x-forwarded-for") ?? "local";
+    
+    // Rate check
+    const rateStart = Date.now();
+    const rate = consumeRateLimit(`payment-express:${ip}`, 10, 60_000);
+    timings.rateLimit = Date.now() - rateStart;
+    
+    if (!rate.allowed) {
+      return NextResponse.json({ error: "Too many payment attempts" }, { status: 429 });
+    }
+
+    // Parse body
+    const parseStart = Date.now();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+    timings.parse = Date.now() - parseStart;
+
+    const reference = makeReference();
+    const now = new Date().toISOString();
+
+    // Get settings (cached)
+    const settingsStart = Date.now();
+    const { pricePromo } = await getSettings();
+    timings.settings = Date.now() - settingsStart;
+
+    // Create charge - THIS IS THE BOTTLENECK (KB API)
+    const chargeStart = Date.now();
+    const charge = await createExpressCharge({
+      phone: parsed.data.expressPhone,
+      reference,
+      amount: pricePromo
+    });
+    timings.kbApi = Date.now() - chargeStart;
+
+    // Insert checkout
+    const dbStart = Date.now();
+    await insertCheckout({
+      reference,
+      name: parsed.data.name.trim(),
+      phone: normalizePhone(parsed.data.phone),
+      amount: charge.amount,
+      entity: "express",
+      paymentReference: charge.reference,
+      status: "pending",
+      providerPayload: { method: "express", mode: charge.mode },
+      createdAt: now,
+      updatedAt: now
+    });
+    timings.db = Date.now() - dbStart;
+
+    const total = Date.now() - startTime;
+    
+    // Verificar modo simulado em produção
+    if (isProd && charge.mode === "simulated") {
+      console.error("[Express Payment] ALERTA: Modo simulado em produção!", {
+        reference,
+        hasKbExpressKey: !!env.KB_API_EXPRESS_KEY
+      });
+      
+      return NextResponse.json(
+        { error: "Serviço Multicaixa Express temporariamente indisponível. Tenta novamente mais tarde ou usa pagamento por Referência." },
+        { status: 503 }
+      );
+    }
+    
+    console.log(`[Express Payment] Timing:`, { total, ...timings, reference, mode: charge.mode });
+
+    return NextResponse.json({
+      reference,
+      method: "express",
+      payment: {
+        reference: charge.reference,
+        amount: charge.amount,
+        mode: charge.mode
+      }
+    });
+
+  } catch (error) {
+    const total = Date.now() - startTime;
+    console.error(`[Express Payment] Error after ${total}ms:`, error);
+    
+    return NextResponse.json(
+      { error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)." },
+      { status: 502 }
+    );
+  }
+}

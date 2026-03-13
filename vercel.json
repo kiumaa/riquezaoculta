@@ -2,7 +2,16 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/cron/recover-pending",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "functions": {
+    "app/api/payment/express/*": {
+      "maxDuration": 30
+    },
     "app/api/**": {
       "maxDuration": 30
     }

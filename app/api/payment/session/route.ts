@@ -4,6 +4,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/phone";
 import { getSettings, insertCheckout } from "@/lib/storage";
 import { sendPaymentReferenceSms } from "@/lib/providers/sms/bulkgate";
+import { env, isProd } from "@/lib/env";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,9 +21,15 @@ function makeReference() {
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "local";
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  
+  console.log(`[Payment Session] ========== ${requestId} ==========`);
+  console.log("[Payment Session] Request received", { ip, isProd, url: req.url });
+  
   const rate = consumeRateLimit(`payment-session:${ip}`, 10, 60_000);
 
   if (!rate.allowed) {
+    console.log("[Payment Session] Rate limited", { ip });
     return NextResponse.json({ error: "Too many payment attempts" }, { status: 429 });
   }
 
@@ -42,11 +49,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "expressPhone is required for Express payments" }, { status: 400 });
     }
 
-    const charge = await createExpressCharge({
-      phone: parsed.data.expressPhone,
-      amount: pricePromo,
-      reference
-    });
+    let charge: Awaited<ReturnType<typeof createExpressCharge>>;
+    try {
+      charge = await createExpressCharge({
+        phone: parsed.data.expressPhone,
+        amount: pricePromo,
+        reference
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)." },
+        { status: 502 }
+      );
+    }
 
     await insertCheckout({
       reference,
@@ -73,11 +88,55 @@ export async function POST(req: NextRequest) {
   }
 
   // Reference method
+  console.log("[Payment Session] Creating reference charge", {
+    reference,
+    amount: pricePromo,
+    hasApiKey: !!env.KB_AGENCY_API_KEY,
+    isProd
+  });
+
   const charge = await createCharge({
     amount: pricePromo,
     reference,
     description: "Ebook Riqueza Oculta V2"
   });
+
+  console.log("[Payment Session] Charge created", {
+    reference,
+    mode: charge.mode,
+    entity: charge.entity,
+    hasPaymentUrl: !!charge.paymentUrl
+  });
+
+  // Em produção, se não tiver API key e estiver em modo simulado, alertar e retornar erro
+  if (isProd && charge.mode === "simulated") {
+    console.error("[Payment Session] ALERTA: Modo simulado em produção!", {
+      reference,
+      hasKbAgencyKey: !!env.KB_AGENCY_API_KEY,
+      hasKbExpressKey: !!env.KB_API_EXPRESS_KEY,
+      simulatedEntity: charge.entity,
+      simulatedRef: charge.paymentReference
+    });
+    
+    // Log detalhado para debugging
+    if (!env.KB_AGENCY_API_KEY) {
+      console.error("[Payment Session] KB_AGENCY_API_KEY não configurada");
+    }
+    
+    return NextResponse.json(
+      { error: "Serviço de pagamento temporariamente indisponível. Tenta novamente mais tarde ou contacta o suporte." },
+      { status: 503 }
+    );
+  }
+  
+  // Log de confirmação em modo live
+  if (charge.mode === "live") {
+    console.log("[Payment Session] Pagamento em modo LIVE criado com sucesso", {
+      reference,
+      entity: charge.entity,
+      amount: charge.amount
+    });
+  }
 
   await insertCheckout({
     reference,
@@ -99,8 +158,17 @@ export async function POST(req: NextRequest) {
     charge.entity,
     charge.paymentReference,
     charge.amount
-  ).catch(() => {});
+  ).catch((err) => {
+    console.error("[Payment Session] SMS failed", err);
+  });
 
+  console.log(`[Payment Session] ${requestId} - SUCESSO`, {
+    reference,
+    entity: charge.entity,
+    mode: charge.mode,
+    hasPaymentUrl: !!charge.paymentUrl
+  });
+  
   return NextResponse.json({
     reference,
     method: "reference",

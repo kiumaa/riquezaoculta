@@ -1,7 +1,7 @@
 "use client";
 
 import { buildQuizOrder, evaluateQuiz } from "@/lib/quiz/engine";
-import type { QuizResult } from "@/lib/types";
+import type { QuizResult, JourneyStep } from "@/lib/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -12,15 +12,19 @@ type FunnelState = {
   quizOrder: string[];
   answers: Record<string, string>;
   result: QuizResult | null;
+  journey: JourneyStep[];
   paymentReference: string | null;
   paymentStatus: "idle" | "pending" | "paid" | "failed";
+  paymentMethod: "express" | "reference" | null;
   setName: (name: string) => void;
   setWhatsapp: (whatsapp: string) => void;
   initQuiz: () => void;
+  trackStep: (page: string, url: string) => void;
   answerQuestion: (questionId: string, optionId: string) => void;
   finalizeResult: () => QuizResult;
   setPaymentReference: (reference: string | null) => void;
   setPaymentStatus: (status: FunnelState["paymentStatus"]) => void;
+  setPaymentMethod: (method: FunnelState["paymentMethod"]) => void;
   resetFunnel: () => void;
 };
 
@@ -35,8 +39,10 @@ export const useFunnelStore = create<FunnelState>()(
       quizOrder: [],
       answers: {},
       result: null,
+      journey: [],
       paymentReference: null,
       paymentStatus: "idle",
+      paymentMethod: null,
       setName: name => set({ name }),
       setWhatsapp: whatsapp => set({ whatsapp }),
       initQuiz: () => {
@@ -47,7 +53,27 @@ export const useFunnelStore = create<FunnelState>()(
           answers: {},
           result: null,
           paymentReference: null,
-          paymentStatus: "idle"
+          paymentStatus: "idle",
+          paymentMethod: null
+        });
+      },
+      trackStep: (page, url) => {
+        set(state => {
+          const now = new Date();
+          const lastStep = state.journey[state.journey.length - 1];
+          const newJourney = [...state.journey];
+
+          if (lastStep) {
+            lastStep.duration = Math.floor((now.getTime() - new Date(lastStep.timestamp).getTime()) / 1000);
+          }
+
+          newJourney.push({
+            page,
+            url,
+            timestamp: now.toISOString()
+          });
+
+          return { journey: newJourney };
         });
       },
       answerQuestion: (questionId, optionId) => {
@@ -65,6 +91,7 @@ export const useFunnelStore = create<FunnelState>()(
       },
       setPaymentReference: reference => set({ paymentReference: reference }),
       setPaymentStatus: status => set({ paymentStatus: status }),
+      setPaymentMethod: method => set({ paymentMethod: method }),
       resetFunnel: () => {
         set({
           name: "",
@@ -73,8 +100,10 @@ export const useFunnelStore = create<FunnelState>()(
           quizOrder: [],
           answers: {},
           result: null,
+          journey: [],
           paymentReference: null,
-          paymentStatus: "idle"
+          paymentStatus: "idle",
+          paymentMethod: null
         });
       }
     }),

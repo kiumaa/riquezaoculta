@@ -23,14 +23,71 @@ export type QuizResult = {
 };
 
 export type CheckoutStatus = "pending" | "paid" | "failed";
+export type LeadStatus = "novo" | "contactado" | "comprou" | "abandonou" | "upsell";
+
+export type JourneyStep = {
+  page: string;
+  url: string;
+  timestamp: string;
+  duration?: number;
+};
 
 export type LeadPayload = {
   name: string;
   phone: string;
   source: string;
+  journey?: JourneyStep[];
+};
+
+export type LeadRecord = {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string | null;
+  province?: string | null;
+  source: string;
+  quizProfile?: string | null;
+  status: LeadStatus;
+  notes?: string | null;
+  journey: JourneyStep[] | null;
+  createdAt: string;
+};
+
+export type QuizSubmissionRecord = {
+  id: number;
+  leadId?: number | null;
+  phone: string;
+  answers: Record<string, string>;
+  scores: Record<string, number>;
+  profile: string;
+  profileTitle?: string | null;
+  createdAt: string;
+};
+
+export type FunnelContentRecord = {
+  id: number;
+  pageType: string;
+  sectionKey: string;
+  content?: string | null;
+  metadata?: unknown;
+  updatedAt: string;
+};
+
+export type MemberContentRecord = {
+  id: number;
+  module: string;
+  title: string;
+  description?: string | null;
+  type: string;
+  fileUrl?: string | null;
+  videoUrl?: string | null;
+  ordem: number;
+  isActive: boolean;
+  createdAt: string;
 };
 
 export type CheckoutRecord = {
+  id?: number;
   reference: string;
   name: string;
   phone: string;

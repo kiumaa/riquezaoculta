@@ -3,6 +3,11 @@ import type { Pillar, QuizQuestion, QuizResult } from "@/lib/types";
 
 const PILLARS: Pillar[] = ["clareza", "disciplina", "acao", "emocional"];
 
+// Max weight per question per pillar × number of questions
+const MAX_WEIGHT_PER_Q = 3;
+const TOTAL_QUESTIONS = 5;
+const RAW_MAX = MAX_WEIGHT_PER_Q * TOTAL_QUESTIONS; // 15
+
 function seededRandom(seed: number) {
   let value = seed % 2147483647;
   if (value <= 0) value += 2147483646;
@@ -22,7 +27,7 @@ function shuffle<T>(arr: T[], seed: number) {
   return copy;
 }
 
-export function buildQuizOrder(seed: number, count = 8): string[] {
+export function buildQuizOrder(seed: number, count = 5): string[] {
   const guaranteed: QuizQuestion[] = [];
 
   for (const pillar of PILLARS) {
@@ -43,49 +48,87 @@ export function buildQuizOrder(seed: number, count = 8): string[] {
 function pillarLabel(pillar: Pillar) {
   switch (pillar) {
     case "clareza":
-      return "Clareza Estrategica";
+      return "Clareza Financeira";
     case "disciplina":
-      return "Disciplina de Crescimento";
+      return "Disciplina de Execução";
     case "acao":
-      return "Acao de Alto Impacto";
+      return "Capacidade de Agir";
     case "emocional":
-      return "Estabilidade Emocional";
+      return "Inteligência Emocional";
     default:
-      return "Equilibrio";
+      return "Equilíbrio";
   }
 }
 
-function resolveSummary(dominant: Pillar, weakest: Pillar) {
-  const dominantText: Record<Pillar, string> = {
-    clareza: "Tens capacidade de visao e sabes onde queres chegar.",
-    disciplina: "A tua forca esta na consistencia e no controlo das rotinas.",
-    acao: "Tu tens energia de execucao e tendencia a testar rapido.",
-    emocional: "Tu mantens a mente estavel mesmo sob pressao."
-  };
-
-  const weakestText: Record<Pillar, string> = {
-    clareza: "O ponto cego atual e transformar vontade em plano mensuravel.",
-    disciplina: "O ponto cego atual e manter constancia semanal nas acoes-chave.",
-    acao: "O ponto cego atual e acelerar execucao sem esperar motivacao perfeita.",
-    emocional: "O ponto cego atual e reduzir ansiedade financeira nas decisoes."
-  };
-
-  return `${dominantText[dominant]} ${weakestText[weakest]}`;
-}
+// 12 perfis únicos indexados por dominant-weakest
+const profileMap: Record<string, { title: string; summary: string }> = {
+  "emocional-clareza": {
+    title: "Coração de Leão, Rota a Afinar",
+    summary: "Tens uma força interior fora do comum e sentes profundamente o que queres da vida. O que ainda te separa dos resultados é um plano claro e estruturado que transforme essa energia em acção concreta."
+  },
+  "emocional-acao": {
+    title: "Visão Poderosa, Momento de Agir",
+    summary: "A tua inteligência emocional é o teu maior trunfo — percebes as situações com uma clareza que poucos têm. O próximo passo é converter essa consciência em decisões rápidas e acção consistente."
+  },
+  "emocional-disciplina": {
+    title: "Alma Forte, Sistema a Construir",
+    summary: "Tens determinação e visão para criar uma vida diferente — isso já é mais do que a maioria. O que te falta é um sistema diário que mantenha o teu foco mesmo nos dias difíceis."
+  },
+  "clareza-emocional": {
+    title: "Mente Estratégica, Combustível a Despertar",
+    summary: "Sabes exactamente onde queres chegar e tens o mapa na cabeça. O que ainda te trava é aprender a usar as tuas emoções como combustível em vez de obstáculo."
+  },
+  "clareza-acao": {
+    title: "Estratégia Definida, Execução a Libertar",
+    summary: "Tens visão e clareza para identificar as oportunidades certas — isso é raro e valioso. Agora é hora de passar do plano para a acção com um método concreto que elimine a hesitação."
+  },
+  "clareza-disciplina": {
+    title: "Visão Nítida, Ritmo a Solidificar",
+    summary: "A tua clareza sobre o que queres é uma vantagem enorme num mundo cheio de distracções. O que falta é construir rotinas práticas que tornem o progresso inevitável dia após dia."
+  },
+  "acao-emocional": {
+    title: "Energia em Movimento, Equilíbrio a Encontrar",
+    summary: "Tens coragem para agir quando os outros hesitam — esse instinto de acção é um dom poderoso. Aprender a alinhar essa energia com a tua inteligência emocional vai multiplicar os teus resultados."
+  },
+  "acao-clareza": {
+    title: "Força de Fazer, Direcção a Afinar",
+    summary: "A tua capacidade de agir rapidamente coloca-te à frente da maioria das pessoas. Com um plano mais claro e estruturado, essa energia deixa de se dispersar e passa a gerar resultados reais."
+  },
+  "acao-disciplina": {
+    title: "Impulso Real, Consistência a Cultivar",
+    summary: "Tens a coragem de dar o primeiro passo — e isso já é metade do caminho. O que vai transformar os teus resultados é aprender a manter esse impulso com consistência ao longo do tempo."
+  },
+  "disciplina-emocional": {
+    title: "Método Sólido, Chama Interior a Acender",
+    summary: "A tua consistência e força interior são a base de qualquer conquista duradoura. Despertar a tua inteligência emocional vai dar-te o combustível que transforma o esforço em resultados exponenciais."
+  },
+  "disciplina-clareza": {
+    title: "Ritmo Forte, Mapa a Definir",
+    summary: "Tens a disciplina que a maioria das pessoas nunca consegue desenvolver — isso é o teu maior activo. Com um plano financeiro mais claro, essa consistência vai levar-te exactamente onde queres chegar."
+  },
+  "disciplina-acao": {
+    title: "Consistência Presente, Coragem de Agir a Soltar",
+    summary: "A tua capacidade de manter o ritmo e não desistir é uma qualidade rara e poderosa. Agora é hora de adicionar a coragem de agir com decisão nas oportunidades que já estão à tua frente."
+  }
+};
 
 function resolveOfferAngle(weakest: Pillar) {
   const map: Record<Pillar, string> = {
-    clareza: "Oferta ideal para ti: roadmap pronto para executar sem confusao.",
-    disciplina: "Oferta ideal para ti: metodo com checklists para manter ritmo diario.",
-    acao: "Oferta ideal para ti: plano de implementacao em passos simples e imediatos.",
-    emocional: "Oferta ideal para ti: estrutura para decidir com calma e confianca."
+    clareza: "O teu perfil precisa de um roteiro claro. O Riqueza Oculta dá-te exactamente isso.",
+    disciplina: "O teu perfil precisa de um sistema prático. O Riqueza Oculta é o teu método.",
+    acao: "O teu perfil precisa de acções imediatas. O Riqueza Oculta mostra-te cada passo.",
+    emocional: "O teu perfil precisa de estrutura e confiança. O Riqueza Oculta é o teu guia."
   };
 
   return map[weakest];
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
 export function evaluateQuiz(answers: Record<string, string>): QuizResult {
-  const scores: Record<Pillar, number> = {
+  const rawScores: Record<Pillar, number> = {
     clareza: 0,
     disciplina: 0,
     acao: 0,
@@ -100,20 +143,47 @@ export function evaluateQuiz(answers: Record<string, string>): QuizResult {
     if (!option) continue;
 
     for (const pillar of PILLARS) {
-      scores[pillar] += option.weights[pillar] ?? 0;
+      rawScores[pillar] += option.weights[pillar] ?? 0;
     }
   }
 
+  // Normalize to 0–100, then apply aspirational multipliers:
+  // Emocional and Clareza go UP (person has the desire), Acao and Disciplina go DOWN (ebook fixes this)
+  const multipliers: Record<Pillar, number> = {
+    emocional: 1.40,
+    clareza: 1.25,
+    acao: 0.90,
+    disciplina: 0.80
+  };
+
+  const scores: Record<Pillar, number> = {
+    clareza: 0,
+    disciplina: 0,
+    acao: 0,
+    emocional: 0
+  };
+
+  for (const pillar of PILLARS) {
+    const normalized = (rawScores[pillar] / RAW_MAX) * 100;
+    scores[pillar] = Math.round(clamp(normalized * multipliers[pillar], 0, 100));
+  }
+
   const ranking = [...PILLARS].sort((a, b) => scores[b] - scores[a]);
-  const dominant = ranking[0] ?? "clareza";
-  const weakest = ranking[ranking.length - 1] ?? "emocional";
+  const dominant = ranking[0] ?? "emocional";
+  const weakest = ranking[ranking.length - 1] ?? "disciplina";
+
+  const key = `${dominant}-${weakest}`;
+  const profile = profileMap[key] ?? {
+    title: `${pillarLabel(dominant)} Elevada, ${pillarLabel(weakest)} a Desenvolver`,
+    summary: `Tens potencial acima da média no pilar ${pillarLabel(dominant)}. Trabalhar o ${pillarLabel(weakest)} vai desbloqueiar o teu próximo nível financeiro.`
+  };
 
   return {
     dominant,
     weakest,
     scores,
-    profileTitle: `${pillarLabel(dominant)} com ajuste em ${pillarLabel(weakest)}`,
-    profileSummary: resolveSummary(dominant, weakest),
+    profileTitle: profile.title,
+    profileSummary: profile.summary,
     offerAngle: resolveOfferAngle(weakest)
   };
 }

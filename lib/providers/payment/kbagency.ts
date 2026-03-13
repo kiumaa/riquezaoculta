@@ -11,12 +11,13 @@ export type ChargeOutput = {
   mode: "live" | "simulated";
   entity: string;
   paymentReference: string;
+  paymentUrl?: string;
   amount: number;
   raw: unknown;
 };
 
 export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
-  const key = env.KB_AGENCY_API_KEY;
+  const key = env.KB_AGENCY_API_KEY; // APIExpress key (Referência/ATM)
 
   if (!key) {
     const simulatedRef = `${Math.floor(100000000 + Math.random() * 899999999)}`;
@@ -29,24 +30,13 @@ export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
     };
   }
 
-  const isExpress = key.startsWith("sk_express_");
-  const endpoint = isExpress
-    ? "https://pay.kbagency.me/api/apiexpress/charge"
-    : "https://pay.kbagency.me/api/payments";
+  const endpoint = "https://pay.kbagency.me/api/apiexpress/charge";
 
-  const payload = isExpress
-    ? {
-        amount: input.amount,
-        reference: input.reference,
-        description: input.description
-      }
-    : {
-        amount: input.amount,
-        reference: input.reference,
-        description: input.description,
-        redirect_url: `${env.NEXT_PUBLIC_APP_URL}/checkout/pagamento?success=true&ref=${input.reference}`,
-        cancel_url: `${env.NEXT_PUBLIC_APP_URL}/oferta?cancel=true&ref=${input.reference}`
-      };
+  const payload = {
+    amount: input.amount,
+    reference: input.reference,
+    description: input.description
+  };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
@@ -68,10 +58,9 @@ export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
       throw new Error(`KB Agency charge failed: ${res.status} ${JSON.stringify(data)}`);
     }
 
-    const paymentData = isExpress ? data.payment_data : data;
-
+    const paymentData = data.payment_data || data;
     if (!paymentData?.entity || !paymentData?.reference) {
-      throw new Error("KB Agency returned incomplete payment data");
+      throw new Error(`KB Agency returned unexpected response: ${JSON.stringify(data)}`);
     }
 
     return {
@@ -97,21 +86,86 @@ export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
   }
 }
 
-export async function getChargeStatus(reference: string) {
-  const key = env.KB_AGENCY_API_KEY;
+export type ExpressChargeInput = {
+  phone: string;
+  amount: number;
+  reference: string;
+};
+
+export type ExpressChargeOutput = {
+  mode: "live" | "simulated";
+  reference: string;
+  amount: number;
+};
+
+export async function createExpressCharge(input: ExpressChargeInput): Promise<ExpressChargeOutput> {
+  const key = env.KB_API_EXPRESS_KEY;
+
+  if (!key) {
+    return { mode: "simulated", reference: input.reference, amount: input.amount };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+  const body = JSON.stringify({
+    phone: input.phone,
+    amount: input.amount,
+    reference: input.reference,
+    redirect_url: `${env.NEXT_PUBLIC_APP_URL}/checkout/pagamento?success=true&ref=${input.reference}`,
+    description: "Ebook Riqueza Oculta V2"
+  });
+
+  try {
+    const res = await fetch("https://pay.kbagency.me/api/apix/charge", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json"
+      },
+      body,
+      redirect: "error",
+      signal: controller.signal
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      throw new Error(`KB Express charge failed: ${res.status} ${text.slice(0, 200)}`);
+    }
+
+    let responseJson: Record<string, unknown>;
+    try { responseJson = JSON.parse(text); } catch {
+      throw new Error(`KB Express non-JSON response: ${text.slice(0, 100)}`);
+    }
+    if (responseJson.error) {
+      throw new Error(`KB Express error: ${String(responseJson.error)} ${String(responseJson.message ?? "")}`);
+    }
+
+    return { mode: "live", reference: input.reference, amount: input.amount };
+  } catch (error) {
+    logError("Payment", "Failed to create Express charge", error);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function getChargeStatus(reference: string, method: "express" | "reference" = "reference") {
+  const key = method === "express" ? env.KB_API_EXPRESS_KEY : env.KB_AGENCY_API_KEY;
 
   if (!key) {
     return {
       mode: "simulated" as const,
       status: "pending" as const,
-      raw: { reason: "KB_AGENCY_API_KEY missing" }
+      raw: { reason: `${method === "express" ? "KB_AGENCY_API_KEY" : "KB_API_EXPRESS_KEY"} missing` }
     };
   }
 
-  const isExpress = key.startsWith("sk_express_");
-  const endpoint = isExpress
-    ? `https://pay.kbagency.me/api/apiexpress/status/${reference}`
-    : `https://pay.kbagency.me/api/payments/${reference}`;
+  // MCX Express: /api/apix/status | Reference: /api/apiexpress/status
+  const endpoint = method === "express"
+    ? `https://pay.kbagency.me/api/apix/status/${reference}`
+    : `https://pay.kbagency.me/api/apiexpress/status/${reference}`;
 
   try {
     const res = await fetch(endpoint, {

@@ -13,6 +13,7 @@ import mcxLogo from "@/assets/mcx.png";
 // @ts-ignore — filename contains spaces
 import ebookCover from "@/assets/main ebook cover.png";
 import { trackEvent } from "@/lib/pixel";
+import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
 
@@ -28,7 +29,7 @@ type PaymentData = {
   };
 };
 
-type UIState = "select" | "express_waiting" | "reference_active";
+type UIState = "capture" | "select" | "reference_active";
 
 function LockIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -56,7 +57,18 @@ function CheckSmallIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/EY84u93L1uy3CSOFF6mBl7?mode=gi_t";
+type PaymentContent = {
+  support_label: string;
+  support_cta: string;
+  support_context: string;
+  benefit_1: string;
+  benefit_2: string;
+  benefit_3: string;
+  quick_replies: string[];
+  vip_cta: string;
+  vip_context_payment: string;
+  vip_context_confirmed: string;
+};
 
 const checkoutTestimonials = [
   { name: "Maria Santos", text: "Fiz o simulador por curiosidade e em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças." },
@@ -64,10 +76,42 @@ const checkoutTestimonials = [
   { name: "João Ferreira", text: "Conteúdo directo ao ponto. Sem teorias, só estratégias que funcionam mesmo." },
 ];
 
+// Referência válida por 24 horas
+const REFERENCE_EXPIRY_HOURS = 24;
+
+function ReferenceDeadline() {
+  const [deadline, setDeadline] = useState<string>("");
+  
+  useEffect(() => {
+    const date = new Date(Date.now() + REFERENCE_EXPIRY_HOURS * 60 * 60 * 1000);
+    const formatted = date.toLocaleString("pt-PT", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    setDeadline(formatted);
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-green-500/30 bg-green-500/[0.08] px-4 py-3 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400/80">✅ Referência válida até</p>
+      <p className="text-xl font-bold tabular-nums mt-1 text-green-400">
+        {deadline || "Amanhã"}
+      </p>
+      <p className="text-[10px] text-muted mt-1">Tens 24 horas para pagar no ATM ou Internet Banking</p>
+    </div>
+  );
+}
+
 function CheckoutPagamentoInner({
-  initialPrices
+  initialPrices,
+  whatsappLink,
+  content,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number };
+  whatsappLink: string;
+  content: PaymentContent;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,6 +126,7 @@ function CheckoutPagamentoInner({
   const [paymentMethod, setPaymentMethod] = useState<"express" | "reference" | null>(null);
   const [expressPhone, setExpressPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<"entity" | "reference" | null>(null);
@@ -90,6 +135,36 @@ function CheckoutPagamentoInner({
   const [testimonialSlide, setTestimonialSlide] = useState(0);
   const [urgencyData, setUrgencyData] = useState<{ spots: number; people: number } | null>(null);
   const prices = initialPrices;
+
+  // Estados para captura de dados quando não existem no store
+  const [captureName, setCaptureName] = useState("");
+  const [capturePhone, setCapturePhone] = useState("");
+  const [hasStoredData, setHasStoredData] = useState(false);
+  const setStoreName = useFunnelStore(state => state.setName);
+  const setStoreWhatsapp = useFunnelStore(state => state.setWhatsapp);
+
+  // Preencher campos de captura se dados existirem no localStorage
+  useEffect(() => {
+    if (name || whatsapp) return; // Já temos dados no store
+    
+    try {
+      const stored = localStorage.getItem("ro-v2-funnel");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.state?.name) {
+          setCaptureName(parsed.state.name);
+          setHasStoredData(true);
+        }
+        if (parsed.state?.whatsapp) {
+          // Remover prefixo +244 se existir
+          const phone = parsed.state.whatsapp.replace(/^\+?244/, "");
+          setCapturePhone(phone);
+        }
+      }
+    } catch (e) {
+      console.error("[Checkout] Erro ao ler dados:", e);
+    }
+  }, [name, whatsapp]);
 
   // Initialize and tick dynamic urgency numbers
   useEffect(() => {
@@ -136,6 +211,28 @@ function CheckoutPagamentoInner({
     return () => clearInterval(t);
   }, []);
 
+  // Tentar recuperar dados do localStorage/Zustand na montagem
+  useEffect(() => {
+    // Se já temos dados, não precisamos fazer nada
+    if (name && whatsapp) return;
+    
+    // Tentar recuperar do localStorage directamente (backup)
+    try {
+      const stored = localStorage.getItem("ro-v2-funnel");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.state?.name && parsed.state?.whatsapp) {
+          console.log("[Checkout] Recuperando dados do localStorage");
+          setStoreName(parsed.state.name);
+          setStoreWhatsapp(parsed.state.whatsapp);
+          // Não mudamos o uiState aqui, o useEffect abaixo vai detectar os dados
+        }
+      }
+    } catch (e) {
+      console.error("[Checkout] Erro ao recuperar dados:", e);
+    }
+  }, [name, whatsapp, setStoreName, setStoreWhatsapp]);
+
   useEffect(() => {
     // Returned from KB Agency hosted payment page — do NOT trust the redirect alone.
     // Set reference and let the polling useEffect verify status in DB.
@@ -145,35 +242,58 @@ function CheckoutPagamentoInner({
       setPaymentStatus("pending"); // will be updated by polling
       return;
     }
+    // Se não temos dados do utilizador, mostrar formulário de captura em vez de redirecionar
     if (!name || !whatsapp) {
-      router.replace("/simulador/inicio");
+      setUiState("capture");
     }
   }, [name, router, searchParams, setPaymentReference, setPaymentStatus, whatsapp]);
 
-  // Poll for payment status
+  // Poll for payment status - verificação imediata + polling a cada 2s
   useEffect(() => {
     if (!paymentReference || paymentStatus === "paid") return;
 
-    const interval = setInterval(async () => {
-      const res = await fetch(`/api/payment/status/${paymentReference}`);
-      if (!res.ok) return;
+    let pollCount = 0;
+    const maxPolls = 300; // 10 minutos máximo (300 * 2s)
 
-      const data = await res.json();
-      if (data.status === "paid") {
-        setPaymentStatus("paid");
-        trackEvent("Purchase", {
-          value: data.amount || prices.pricePromo,
-          currency: "AOA",
-          content_name: "Riqueza Oculta - Infoproduto",
-          content_category: "Educação Financeira"
-        });
-        clearInterval(interval);
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/payment/status/${paymentReference}`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data.status === "paid") {
+          setPaymentStatus("paid");
+          trackEvent("Purchase", {
+            value: data.amount || prices.pricePromo,
+            currency: "AOA",
+            content_name: "Riqueza Oculta - Infoproduto",
+            content_category: "Educação Financeira"
+          });
+          return true; // Stop polling
+        }
+        if (data.status === "failed") {
+          setPaymentStatus("failed");
+          return true; // Stop polling
+        }
+      } catch (err) {
+        console.error("[Payment Polling] Error:", err);
       }
-      if (data.status === "failed") {
-        setPaymentStatus("failed");
+      return false;
+    };
+
+    // Verificação imediata ao montar
+    checkStatus();
+
+    const interval = setInterval(async () => {
+      pollCount++;
+      if (pollCount > maxPolls) {
         clearInterval(interval);
+        console.log("[Payment Polling] Max polls reached");
+        return;
       }
-    }, 3000);
+      const shouldStop = await checkStatus();
+      if (shouldStop) clearInterval(interval);
+    }, 2000); // 2 segundos para resposta mais rápida
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -184,11 +304,34 @@ function CheckoutPagamentoInner({
     setLoading(true);
     setPaymentStatus("pending");
 
-    try {
-      const body: Record<string, unknown> = { name, phone: whatsapp, method };
-      if (method === "express") body.expressPhone = expressPhone;
+    // Mensagens progressivas para Express (demora ~10-12s)
+    let messageInterval: NodeJS.Timeout | null = null;
+    if (method === "express") {
+      const messages = [
+        "A contactar Multicaixa Express...",
+        "A enviar notificação para o teu telemóvel...",
+        "A aguardar resposta do banco...",
+        "Quase pronto..."
+      ];
+      let msgIndex = 0;
+      setLoadingMessage(messages[0]);
+      messageInterval = setInterval(() => {
+        msgIndex = (msgIndex + 1) % messages.length;
+        setLoadingMessage(messages[msgIndex]);
+      }, 3000); // Muda a cada 3 segundos
+    } else {
+      setLoadingMessage("A gerar referência...");
+    }
 
-      const res = await fetch("/api/payment/session", {
+    try {
+      // MCX Express uses dedicated route pinned to Vercel Cape Town (cpt1) region
+      // to ensure South African IP for KB Agency APIx compatibility
+      const endpoint = method === "express" ? "/api/payment/express" : "/api/payment/session";
+      const body: Record<string, unknown> = { name, phone: whatsapp };
+      if (method === "express") body.expressPhone = expressPhone;
+      if (method === "reference") body.method = "reference";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -202,7 +345,7 @@ function CheckoutPagamentoInner({
 
       setPaymentReference(payload.reference);
       setPaymentData(payload as PaymentData);
-      setUiState(method === "express" ? "express_waiting" : "reference_active");
+      setUiState("reference_active");
 
       // Fire AddPaymentInfo event to pixel
       trackEvent("AddPaymentInfo", { payment_method: method, content_name: "Riqueza Oculta Ebook" });
@@ -210,7 +353,9 @@ function CheckoutPagamentoInner({
       setError(err instanceof Error ? err.message : "Erro inesperado");
       setPaymentStatus("failed");
     } finally {
+      if (messageInterval) clearInterval(messageInterval);
       setLoading(false);
+      setLoadingMessage("");
     }
   }
 
@@ -229,6 +374,41 @@ function CheckoutPagamentoInner({
     setPaymentReference(null);
     setPaymentStatus("idle");
     setPaymentMethod(null);
+  }
+
+  // Função para validar e salvar dados capturados
+  function handleCaptureSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    const cleanName = captureName.trim();
+    if (cleanName.length < 2) {
+      setError("Insere o teu nome completo");
+      return;
+    }
+
+    const phoneRegex = /^\d{9,15}$/;
+    const cleanPhone = capturePhone.replace(/\D/g, "");
+    if (!phoneRegex.test(cleanPhone)) {
+      setError("Número de telefone inválido. Usa formato: 9XX XXX XXX");
+      return;
+    }
+
+    // Salvar no store e continuar
+    setStoreName(cleanName);
+    setStoreWhatsapp(`244${cleanPhone}`);
+    setUiState("select");
+    
+    // Enviar lead para API (non-blocking)
+    fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: cleanName,
+        phone: `244${cleanPhone}`,
+        source: "checkout-direct",
+      }),
+    }).catch(() => {});
   }
 
   /* ── Estado: pagamento confirmado ── */
@@ -260,17 +440,27 @@ function CheckoutPagamentoInner({
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative">⬇ DOWNLOAD</span>
+                <span className="relative flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  DOWNLOAD
+                </span>
               </a>
 
-              <a
-                href={WHATSAPP_GROUP_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-brand/25 bg-brand/[0.08] px-6 py-3.5 text-sm font-semibold text-brandBright transition-all duration-300 hover:bg-brand/[0.14]"
-              >
-                Aceder ao Grupo VIP →
-              </a>
+              <div className="space-y-1">
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center rounded-xl border border-brand/25 bg-brand/[0.08] px-6 py-3.5 text-sm font-semibold text-brandBright transition-all duration-300 hover:bg-brand/[0.14]"
+                >
+                  {content.vip_cta}
+                </a>
+                <p className="text-center text-[10px] text-muted">{content.vip_context_confirmed}</p>
+              </div>
             </div>
           </div>
         </GlassCard>
@@ -280,7 +470,7 @@ function CheckoutPagamentoInner({
 
   return (
     <FunnelShell>
-      <ChatWidget />
+      <ChatWidget whatsappLink={whatsappLink} quickReplies={content.quick_replies} />
       <GlassCard>
         <div className="space-y-6 text-center">
 
@@ -291,7 +481,7 @@ function CheckoutPagamentoInner({
           <div className="space-y-3">
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">Passo 5 de 5</p>
             <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-              {uiState === "select" ? "Escolhe o método de pagamento" : "Finalizar pagamento"}
+              {uiState === "select" ? "Garantir acesso agora" : "Finalizar pagamento"}
             </h1>
           </div>
 
@@ -303,8 +493,8 @@ function CheckoutPagamentoInner({
             <div className="flex-1">
               <p className="text-xs font-medium text-soft">Riqueza Oculta: Guia Definitivo</p>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="text-xs text-muted line-through">{prices.priceOriginal.toLocaleString("pt-PT")} Kz</span>
-                <span className="text-base font-semibold text-brand">{prices.pricePromo.toLocaleString("pt-PT")} Kz</span>
+                <span className="text-xs text-muted line-through">{formatPriceKz(prices.priceOriginal)}</span>
+                <span className="text-base font-semibold text-brand">{formatPriceKz(prices.pricePromo)}</span>
               </div>
             </div>
           </div>
@@ -321,130 +511,157 @@ function CheckoutPagamentoInner({
             </svg>
           </button>
 
+          {/* ── Estado: Capturar dados ── */}
+          {uiState === "capture" && (
+            <div className="mx-auto w-full max-w-sm space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-2">
+                <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted text-left">
+                  Preenche os teus dados para continuar
+                </p>
+                {hasStoredData && (
+                  <div className="rounded-lg border border-brand/20 bg-brand/[0.06] px-3 py-2">
+                    <p className="text-[11px] text-brand">
+                      ✓ Recuperámos os teus dados do quiz. Verifica se estão correctos e continua.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <form onSubmit={handleCaptureSubmit} className="space-y-3 text-left">
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted mb-1.5">
+                    Nome completo
+                  </label>
+                  <input
+                    type="text"
+                    value={captureName}
+                    onChange={(e) => setCaptureName(e.target.value)}
+                    placeholder="Como te chamas?"
+                    className="w-full rounded-xl border border-white/[0.1] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none transition"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted mb-1.5">
+                    WhatsApp / Telefone
+                  </label>
+                  <input
+                    type="tel"
+                    value={capturePhone}
+                    onChange={(e) => setCapturePhone(e.target.value)}
+                    placeholder="9XX XXX XXX"
+                    className="w-full rounded-xl border border-white/[0.1] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none transition"
+                  />
+                  <p className="text-[10px] text-muted mt-1.5">
+                    Usamos para enviar a confirmação e acesso ao material.
+                  </p>
+                </div>
+                {error ? <p className="text-sm text-red-400">{error}</p> : null}
+                <PrimaryButton type="submit">
+                  CONTINUAR →
+                </PrimaryButton>
+              </form>
+            </div>
+          )}
+
           {/* ── Estado: Selecionar método ── */}
           {uiState === "select" && (
-            <div className="mx-auto w-full max-w-sm">
-              <div className="text-left space-y-1 mb-4 mt-2">
-                <p className="text-[11px] font-bold tracking-wider text-brand uppercase">Método de pagamento</p>
-                <p className="text-sm text-soft">
-                  Pagar com: <strong className="text-ink font-semibold">{paymentMethod === "reference" ? "Pagamento por Referência" : paymentMethod === "express" ? "Multicaixa Express" : "Selecione..."}</strong>
-                </p>
-              </div>
+            <div className="mx-auto w-full max-w-sm space-y-3">
+              {/* Título de seleção */}
+              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted text-left">
+                Escolhe o método de pagamento
+              </p>
 
-              <div className="flex flex-col gap-3 mb-6">
-                {/* Referência */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("reference")}
-                  className={`relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-300 ${paymentMethod === "reference"
+              {/* Opção: Multicaixa Express */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("express")}
+                className={`w-full flex items-center gap-4 rounded-xl border p-4 transition-all text-left ${
+                  paymentMethod === "express"
                     ? "border-brand bg-brand/[0.08]"
-                    : "border-white/[0.08] bg-black/20 hover:border-white/[0.15]"
-                    }`}
-                >
-                  {paymentMethod === "reference" && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-black shadow-[0_0_10px_rgba(32,230,126,0.3)]">
-                      <CheckSmallIcon className="h-4 w-4" />
-                    </div>
-                  )}
-                  <div className="h-10 w-10 flex shrink-0 items-center justify-center">
-                    <Image
-                      src={mcLogo}
-                      alt="Pagamento por Referência"
-                      className={`w-full transition-all duration-300 ${paymentMethod === "reference" ? "" : "grayscale opacity-60"
-                        }`}
-                    />
-                  </div>
-                  <div className="text-left pr-6">
-                    <p
-                      className={`text-sm font-semibold ${paymentMethod === "reference" ? "text-ink" : "text-muted"
-                        }`}
-                    >
-                      Pagamento por Referência
-                    </p>
-                    <p className={`text-[11px] mt-0.5 ${paymentMethod === "reference" ? "text-soft" : "text-muted/70"}`}>
-                      ATM ou Internet Banking
-                    </p>
-                  </div>
-                </button>
+                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
+                }`}
+              >
+                <div className="h-10 w-10 flex shrink-0 items-center justify-center">
+                  <Image src={mcxLogo} alt="Multicaixa Express" className="w-full" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-ink">Multicaixa Express</p>
+                  <p className="text-[11px] mt-0.5 text-soft">Pagamento direto no teu telemóvel</p>
+                </div>
+                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  paymentMethod === "express" ? "bg-brand text-black" : "border border-white/[0.2]"
+                }`}>
+                  {paymentMethod === "express" && <CheckSmallIcon className="h-4 w-4" />}
+                </div>
+              </button>
 
-                {/* MCX Express */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("express")}
-                  className={`relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-300 ${paymentMethod === "express"
+              {/* Opção: Referência */}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("reference")}
+                className={`w-full flex items-center gap-4 rounded-xl border p-4 transition-all text-left ${
+                  paymentMethod === "reference"
                     ? "border-brand bg-brand/[0.08]"
-                    : "border-white/[0.08] bg-black/20 hover:border-white/[0.15]"
-                    }`}
-                >
-                  {paymentMethod === "express" && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-black shadow-[0_0_10px_rgba(32,230,126,0.3)]">
-                      <CheckSmallIcon className="h-4 w-4" />
-                    </div>
-                  )}
-                  <div className="h-10 w-10 flex shrink-0 items-center justify-center">
-                    <Image
-                      src={mcxLogo}
-                      alt="Multicaixa Express"
-                      className={`w-full transition-all duration-300 ${paymentMethod === "express" ? "" : "grayscale opacity-60"
-                        }`}
-                    />
-                  </div>
-                  <div className="text-left pr-6">
-                    <p
-                      className={`text-sm font-semibold ${paymentMethod === "express" ? "text-ink" : "text-muted"
-                        }`}
-                    >
-                      Multicaixa Express
-                    </p>
-                    <p className={`text-[11px] mt-0.5 ${paymentMethod === "express" ? "text-soft" : "text-muted/70"}`}>
-                      Aprovação no app MCX
-                    </p>
-                  </div>
-                </button>
-              </div>
+                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
+                }`}
+              >
+                <div className="h-10 w-10 flex shrink-0 items-center justify-center">
+                  <Image src={mcLogo} alt="Pagamento por Referência" className="w-full" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-ink">Referência Multicaixa</p>
+                  <p className="text-[11px] mt-0.5 text-soft">ATM ou Internet Banking</p>
+                </div>
+                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  paymentMethod === "reference" ? "bg-brand text-black" : "border border-white/[0.2]"
+                }`}>
+                  {paymentMethod === "reference" && <CheckSmallIcon className="h-4 w-4" />}
+                </div>
+              </button>
 
-              {/* Form Content */}
+              {/* Formulário Express */}
               {paymentMethod === "express" && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="space-y-2 text-left">
-                    <label
-                      htmlFor="express-phone"
-                      className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted"
-                    >
-                      Número de telemóvel MCX
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted mb-2 text-left">
+                      Número do telemóvel (Multicaixa Express)
                     </label>
                     <input
-                      id="express-phone"
                       type="tel"
-                      inputMode="numeric"
-                      placeholder="9XX XXX XXX"
                       value={expressPhone}
-                      onChange={e => setExpressPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                      className="w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-3 text-center text-lg font-semibold tracking-widest text-ink placeholder:text-muted/40 focus:border-brand/50 focus:outline-none transition-all"
+                      onChange={(e) => setExpressPhone(e.target.value)}
+                      placeholder="9XX XXX XXX"
+                      className="w-full rounded-xl border border-white/[0.1] bg-black/30 px-4 py-3 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none transition"
                     />
-                    <p className="text-[11px] text-muted text-center pt-1">
-                      Receberás uma notificação no app para aprovar
+                    <p className="text-[10px] text-muted mt-1.5 text-left">
+                      Vais receber uma notificação no Multicaixa Express para aprovar o pagamento.
                     </p>
                   </div>
 
-                  <PrimaryButton
-                    onClick={() => createSession("express")}
+                  <PrimaryButton 
+                    onClick={() => createSession("express")} 
                     loading={loading}
-                    disabled={expressPhone.length < 9}
+                    loadingText={
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        {loadingMessage || "A processar..."}
+                      </span>
+                    }
+                    disabled={!expressPhone || expressPhone.length < 9}
                   >
-                    ACTIVAR PAGAMENTO
+                    PAGAR COM EXPRESS
                   </PrimaryButton>
 
-                  {/* Selo de segurança e garantia */}
+                  {/* Selo de segurança */}
                   <div className="pt-2 space-y-3">
                     <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
                       <LockIcon className="h-3 w-3" />
-                      Pagamento 100% seguro
+                      Pagamento 100% seguro via Multicaixa Express
                     </p>
 
-                    <div className="flex items-center justify-center gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3">
-                      <svg className="h-5 w-5 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                      <div className="text-left">
+                    <div className="flex items-start gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3">
+                      <svg className="h-5 w-5 shrink-0 text-brand mt-0.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                      <div className="text-left flex-1">
                         <p className="text-xs font-semibold text-brand">Garantia de 7 dias</p>
                         <p className="text-[10px] text-muted">Dinheiro de volta se não ficares satisfeito</p>
                       </div>
@@ -453,9 +670,14 @@ function CheckoutPagamentoInner({
                 </div>
               )}
 
+              {/* Formulário Referência */}
               {paymentMethod === "reference" && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <PrimaryButton onClick={() => createSession("reference")} loading={loading}>
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-2">
+                  <PrimaryButton 
+                    onClick={() => createSession("reference")} 
+                    loading={loading}
+                    loadingText={loadingMessage || "A gerar referência..."}
+                  >
                     GERAR REFERÊNCIA
                   </PrimaryButton>
 
@@ -466,9 +688,9 @@ function CheckoutPagamentoInner({
                       Pagamento 100% seguro via Multicaixa / Internet Banking
                     </p>
 
-                    <div className="flex items-center justify-center gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3">
-                      <svg className="h-5 w-5 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                      <div className="text-left">
+                    <div className="flex items-start gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3">
+                      <svg className="h-5 w-5 shrink-0 text-brand mt-0.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                      <div className="text-left flex-1">
                         <p className="text-xs font-semibold text-brand">Garantia de 7 dias</p>
                         <p className="text-[10px] text-muted">Dinheiro de volta se não ficares satisfeito</p>
                       </div>
@@ -500,9 +722,9 @@ function CheckoutPagamentoInner({
                   </p>
 
                   {/* Selo de garantia animado */}
-                  <div className="flex items-center justify-center gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3 animate-[pulse_3s_ease-in-out_infinite]">
-                    <svg className="h-5 w-5 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                    <div className="text-left">
+                  <div className="flex items-start gap-2.5 rounded-xl border border-brand/20 bg-brand/[0.06] px-4 py-3 animate-[pulse_3s_ease-in-out_infinite]">
+                    <svg className="h-5 w-5 shrink-0 text-brand mt-0.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    <div className="text-left flex-1">
                       <p className="text-xs font-semibold text-brand">Garantia de 7 dias</p>
                       <p className="text-[10px] text-muted">Dinheiro de volta se não ficares satisfeito</p>
                     </div>
@@ -512,104 +734,148 @@ function CheckoutPagamentoInner({
             </div>
           )}
 
-          {/* ── Estado: Express — aguardar aprovação ── */}
-          {uiState === "express_waiting" && (
-            <div className="mx-auto w-full max-w-sm space-y-4">
-              <div className="rounded-xl border border-brand/20 bg-brand/[0.06] p-6 text-center space-y-3">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-brand/30 bg-brand/[0.10]">
-                  <svg className="h-5 w-5 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                </div>
-                <p className="text-sm font-semibold text-ink">A aguardar aprovação no Multicaixa Express…</p>
-                <p className="text-[11px] text-muted">Abre o teu app MCX e aprova o pagamento de</p>
-                <p className="text-2xl font-bold tabular-nums text-brand">
-                  {paymentData?.payment.amount.toLocaleString("pt-PT") ?? prices.pricePromo.toLocaleString("pt-PT")} Kz
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={resetMethod}
-                className="w-full text-center text-[11px] text-muted transition hover:text-soft"
-              >
-                ← Mudar método
-              </button>
-            </div>
-          )}
-
-          {/* ── Estado: Referência activa ── */}
+          {/* ── Estado: Pagamento activo ── */}
           {uiState === "reference_active" && paymentData && (
             <div className="mx-auto w-full max-w-sm space-y-3 text-left">
               {/* Valor */}
               <div className="rounded-xl border border-brand/25 bg-brand/[0.07] px-4 py-4 text-center">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Valor a pagar</p>
                 <p className="mt-1 text-4xl font-bold leading-none tabular-nums text-brand drop-shadow-[0_0_12px_rgba(32,230,126,0.35)]">
-                  {paymentData.payment.amount.toLocaleString("pt-PT")} Kz
+                  {formatPriceKz(paymentData.payment.amount)}
                 </p>
               </div>
 
-              {/* Se tiver paymentUrl (Standard API), redirecionar para KB Agency */}
-              {paymentData.payment.paymentUrl ? (
-                <>
-                  <p className="text-center text-sm text-soft/70">
-                    Clica no botão abaixo para pagar por ATM, Internet Banking ou Multicaixa Express.
-                  </p>
-                  <a
-                    href={paymentData.payment.paymentUrl}
-                    className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-                  >
-                    <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                    <span className="relative">PROSSEGUIR PARA PAGAMENTO →</span>
-                  </a>
-                </>
-              ) : (
-                /* Fallback: mostrar entidade + referência directamente */
-                <>
-                  {paymentData.payment.entity && (
-                    <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Entidade</p>
-                        <p className="mt-0.5 text-2xl font-semibold tabular-nums text-ink">{paymentData.payment.entity}</p>
-                      </div>
-                      <button type="button" onClick={() => copyToClipboard(paymentData.payment.entity ?? "", "entity")} aria-label="Copiar entidade" className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-muted transition hover:border-brand/30 hover:text-brand">
-                        {copied === "entity" ? <CheckSmallIcon className="h-4 w-4 text-brand" /> : <CopyIcon className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Referência</p>
-                      <p className="mt-0.5 text-2xl font-semibold tracking-widest tabular-nums text-ink">{paymentData.payment.reference}</p>
-                    </div>
-                    <button type="button" onClick={() => copyToClipboard(paymentData.payment.reference, "reference")} aria-label="Copiar referência" className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-muted transition hover:border-brand/30 hover:text-brand">
-                      {copied === "reference" ? <CheckSmallIcon className="h-4 w-4 text-brand" /> : <CopyIcon className="h-4 w-4" />}
-                    </button>
+              {/* Multicaixa Express: Animacao de espera */}
+              {paymentData.method === "express" ? (
+                <div className="rounded-xl border border-brand/20 bg-brand/[0.06] px-6 py-6 text-center space-y-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <Image src={mcxLogo} alt="Multicaixa Express" className="h-6 w-auto" />
+                    <span className="text-sm font-semibold text-brand">Multicaixa Express</span>
                   </div>
+                  
+                  {/* Spinner animado */}
+                  <div className="flex justify-center">
+                    <div className="relative h-12 w-12">
+                      <div className="absolute inset-0 rounded-full border-2 border-brand/20" />
+                      <div className="absolute inset-0 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-ink">A aguardar confirmação...</p>
+                    <p className="text-[12px] text-soft leading-relaxed">
+                      Abre a app do Multicaixa Express no teu telemóvel e confirma o pagamento.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="rounded-lg bg-black/20 px-3 py-2">
+                      <p className="text-[10px] text-muted">
+                        Ref: <span className="font-mono text-soft">{paymentData.payment.reference}</span>
+                      </p>
+                    </div>
+                    <p className="text-[10px] text-brand/70">
+                      ⏱️ Tens até 5 minutos para confirmar
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* Referência: mostrar entidade + referência */
+                <>
+                  {paymentData.payment.paymentUrl ? (
+                    <>
+                      <p className="text-center text-sm text-soft/70">
+                        Clica no botão abaixo para pagar por ATM, Internet Banking ou Multicaixa Express.
+                      </p>
+                      <a
+                        href={paymentData.payment.paymentUrl}
+                        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                      >
+                        <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                        <span className="relative">PROSSEGUIR PARA PAGAMENTO →</span>
+                      </a>
+                    </>
+                  ) : (
+                    /* Fallback: mostrar entidade + referência directamente */
+                    <>
+                      {paymentData.payment.entity && (
+                        <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Entidade</p>
+                            <p className="mt-0.5 text-2xl font-semibold tabular-nums text-ink">{paymentData.payment.entity}</p>
+                          </div>
+                          <button type="button" onClick={() => copyToClipboard(paymentData.payment.entity ?? "", "entity")} aria-label="Copiar entidade" className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-muted transition hover:border-brand/30 hover:text-brand">
+                            {copied === "entity" ? <CheckSmallIcon className="h-4 w-4 text-brand" /> : <CopyIcon className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Referência</p>
+                          <p className="mt-0.5 text-2xl font-semibold tracking-widest tabular-nums text-ink">{paymentData.payment.reference}</p>
+                        </div>
+                        <button type="button" onClick={() => copyToClipboard(paymentData.payment.reference, "reference")} aria-label="Copiar referência" className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-muted transition hover:border-brand/30 hover:text-brand">
+                          {copied === "reference" ? <CheckSmallIcon className="h-4 w-4 text-brand" /> : <CopyIcon className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
-              {/* Como pagar? */}
-              <button
-                type="button"
-                onClick={() => setIsHowToPayOpen(true)}
-                className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-soft hover:text-brand transition w-full"
-              >
-                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Como pagar? Ver guia passo a passo
-              </button>
+              {/* Botão Grupo VIP WhatsApp - Suporte humano */}
+              <div className="rounded-xl border border-[#25D366]/20 bg-[#25D366]/[0.06] px-4 py-3 text-center space-y-2">
+                <p className="text-[11px] text-soft">💬 {content.support_label}</p>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 px-3 py-2 text-sm text-[#25D366] hover:bg-[#25D366]/20 transition"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  <span className="font-medium">{content.support_cta}</span>
+                </a>
+                <p className="text-[10px] text-muted">{content.support_context}</p>
+              </div>
+
+              {/* Deadline de 24h - só para Referência */}
+              {paymentData.method !== "express" && <ReferenceDeadline />}
+
+              {/* Botão Guardar no WhatsApp - só para Referência */}
+              {paymentData.method !== "express" && paymentData.payment.entity && (
+                <a
+                  href={`https://wa.me/?text=*Referência Riqueza Oculta*%0A%0AEntidade: ${paymentData.payment.entity}%0AReferência: ${paymentData.payment.reference}%0AValor: ${paymentData.payment.amount} Kz%0A%0APaga no ATM ou Internet Banking.%0A%0ASite: ${typeof window !== 'undefined' ? window.location.origin : 'https://www.riquezaoculta.click'}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-4 py-3 text-sm text-[#25D366] hover:bg-[#25D366]/20 transition"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  <span className="font-medium">📱 Guardar referência no WhatsApp</span>
+                </a>
+              )}
+
+              {/* Como pagar? - só para Referência */}
+              {paymentData.method !== "express" && (
+                <button
+                  type="button"
+                  onClick={() => setIsHowToPayOpen(true)}
+                  className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-soft hover:text-brand transition w-full"
+                >
+                  <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Como pagar? Ver guia passo a passo
+                </button>
+              )}
 
               {/* O que recebes */}
               <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3 space-y-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Após o pagamento recebes</p>
-                {[
-                  "Download imediato do Guia Definitivo",
-                  "Acesso ao Grupo VIP no WhatsApp",
-                  "Garantia de 7 dias sem risco",
-                ].map(item => (
+                {[content.benefit_1, content.benefit_2, content.benefit_3].map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckSmallIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
                     <span className="text-[12px] text-soft">{item}</span>
@@ -752,13 +1018,17 @@ function CheckoutPagamentoInner({
 }
 
 export default function CheckoutPagamentoClient({
-  initialPrices
+  initialPrices,
+  whatsappLink,
+  content,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number };
+  whatsappLink: string;
+  content: PaymentContent;
 }) {
   return (
     <Suspense>
-      <CheckoutPagamentoInner initialPrices={initialPrices} />
+      <CheckoutPagamentoInner initialPrices={initialPrices} whatsappLink={whatsappLink} content={content} />
     </Suspense>
   );
 }

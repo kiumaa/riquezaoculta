@@ -1,41 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useFunnelStore } from "@/lib/store/funnel-store";
+import sofiaAvatar from "@/public/ChatGPT Image 11_03_2026, 17_06_24.png";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const QUICK_REPLIES = [
+const DEFAULT_WHATSAPP_LINK = "https://chat.whatsapp.com/EY84u93L1uy3CSOFF6mBl7";
+const DEFAULT_QUICK_REPLIES = [
   "É seguro pagar aqui?",
   "O que recebo exactamente?",
   "Como pago no ATM?",
   "4500 Kz é muito caro?",
 ];
 
-export function ChatWidget() {
+export function ChatWidget({
+  whatsappLink = DEFAULT_WHATSAPP_LINK,
+  quickReplies = DEFAULT_QUICK_REPLIES,
+}: {
+  whatsappLink?: string;
+  quickReplies?: string[];
+} = {}) {
   const name = useFunnelStore(state => state.name);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const firstName = name ? name.split(" ")[0] : null;
   const greeting = firstName
-    ? `Olá ${firstName}! Posso ajudar-te com alguma dúvida? 😊`
-    : "Olá! Posso ajudar-te com alguma dúvida? 😊";
+    ? `Olá ${firstName}! Sou a Sofia, assistente da Riqueza Oculta. Posso ajudar-te com alguma dúvida? 😊`
+    : "Olá! Sou a Sofia, assistente da Riqueza Oculta. Posso ajudar-te com alguma dúvida? 😊";
 
-  // Auto-open after 25s of inactivity (once only)
-  useEffect(() => {
-    if (hasAutoOpened) return;
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-      setHasAutoOpened(true);
-    }, 25000);
-    return () => clearTimeout(timer);
-  }, [hasAutoOpened]);
+  // Auto-open desactivado — o utilizador abre manualmente
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -47,8 +47,29 @@ export function ChatWidget() {
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => inputRef.current?.focus(), 300);
     }
+  }, [isOpen]);
+
+  // Lock body scroll & prevent zoom when chat is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.height = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
   }, [isOpen]);
 
   async function sendMessage(text: string) {
@@ -78,54 +99,98 @@ export function ChatWidget() {
 
   return (
     <>
-      {/* Chat bubble */}
-      {isOpen ? (
-        <div className="fixed bottom-4 right-4 z-50 flex flex-col w-[320px] sm:w-[360px] rounded-2xl border border-white/[0.10] bg-[#0c0c0c]/95 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 bg-brand/[0.10] border-b border-white/[0.07] px-4 py-3">
-            <div className="flex items-center gap-2.5">
-              <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/20">
-                <span className="text-sm font-bold text-brand">S</span>
-                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-400 border-2 border-[#0c0c0c]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-white leading-none">Sofia</p>
-                <p className="text-[10px] text-brand/80 mt-0.5">Assistente Riqueza Oculta</p>
-              </div>
+      {/* Floating bubble */}
+      {!isOpen && (
+        <button
+          type="button"
+          aria-label="Falar com a Sofia"
+          onClick={() => setIsOpen(true)}
+          className="fixed z-50 flex items-center gap-2 group"
+          style={{ bottom: "max(20px, env(safe-area-inset-bottom, 20px))", right: "16px" }}
+        >
+          {/* Label */}
+          <span className="whitespace-nowrap rounded-full bg-[#0c130e]/90 border border-white/[0.10] px-2.5 py-1 text-[11px] font-medium text-soft shadow-md backdrop-blur-sm">
+            Precisa de ajuda?
+          </span>
+          {/* Avatar + dot */}
+          <div className="relative shrink-0">
+            <div className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-brand shadow-[0_3px_14px_rgba(32,230,126,0.30)] transition-transform duration-200 group-hover:scale-110">
+              <Image src={sofiaAvatar} alt="Sofia" fill className="object-cover" />
+            </div>
+            {/* Online dot */}
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-400 border-2 border-[#080d0a]" />
+          </div>
+        </button>
+      )}
+
+      {/* Full-screen chat — app-like layout */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-[#080d0a] animate-in fade-in duration-200"
+          style={{
+            /* Respeita safe areas de dispositivos com notch/barra nav */
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            /* Garante que ocupa exactamente o viewport visível */
+            height: "100dvh",
+            maxHeight: "100dvh",
+            touchAction: "none",
+          }}
+        >
+
+          {/* ── Header ── */}
+          <div
+            className="flex items-center gap-3 border-b border-white/[0.08] bg-[#0c130e] px-4 shrink-0"
+            style={{ minHeight: "56px", paddingTop: "4px", paddingBottom: "4px" }}
+          >
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-brand/30">
+              <Image src={sofiaAvatar} alt="Sofia" fill className="object-cover" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white leading-tight">Sofia</p>
+              <p className="text-[11px] text-brand/80">Assistente Riqueza Oculta • Online</p>
             </div>
             <button
               type="button"
               aria-label="Fechar chat"
               onClick={() => setIsOpen(false)}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-white transition"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-muted hover:bg-white/10 hover:text-white transition shrink-0"
             >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex flex-col gap-3 overflow-y-auto p-4 min-h-[200px] max-h-[340px]">
-            {/* Welcome */}
-            <div className="flex gap-2 items-end">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/20">
-                <span className="text-[10px] font-bold text-brand">S</span>
+          {/* ── Messages area — único elemento scrollável ── */}
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 space-y-4"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+              minHeight: 0, /* Flexbox fix para scroll correcto */
+            }}
+          >
+
+            {/* Welcome message */}
+            <div className="flex gap-3 items-end">
+              <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-brand/20">
+                <Image src={sofiaAvatar} alt="Sofia" fill className="object-cover" />
               </div>
-              <div className="rounded-2xl rounded-bl-sm bg-white/[0.07] px-3 py-2 max-w-[80%]">
-                <p className="text-[12px] text-soft leading-relaxed">{greeting}</p>
+              <div className="max-w-[80%] rounded-2xl rounded-bl-sm bg-white/[0.07] px-4 py-3">
+                <p className="text-[13px] text-soft leading-relaxed">{greeting}</p>
               </div>
             </div>
 
-            {/* Quick replies (only before first user message) */}
+            {/* Quick replies — only before first message */}
             {messages.length === 0 && (
-              <div className="flex flex-wrap gap-1.5 pl-8">
-                {QUICK_REPLIES.map(q => (
+              <div className="flex flex-wrap gap-2 pl-11">
+                {quickReplies.map((q: string) => (
                   <button
                     key={q}
                     type="button"
                     onClick={() => sendMessage(q)}
-                    className="rounded-full border border-white/[0.10] bg-white/[0.04] px-2.5 py-1 text-[11px] text-soft hover:border-brand/40 hover:text-brand transition"
+                    className="rounded-full border border-white/[0.12] bg-white/[0.05] px-3 py-1.5 text-[12px] text-soft hover:border-brand/50 hover:text-brand transition"
                   >
                     {q}
                   </button>
@@ -135,29 +200,34 @@ export function ChatWidget() {
 
             {/* Conversation */}
             {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-2 items-end ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+              <div key={i} className={`flex gap-3 items-end ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                 {msg.role === "assistant" && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/20">
-                    <span className="text-[10px] font-bold text-brand">S</span>
+                  <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-brand/20">
+                    <Image src={sofiaAvatar} alt="Sofia" fill className="object-cover" />
                   </div>
                 )}
-                <div className={`rounded-2xl px-3 py-2 max-w-[80%] ${msg.role === "user" ? "rounded-br-sm bg-brand/[0.15] text-right" : "rounded-bl-sm bg-white/[0.07]"}`}>
-                  <p className="text-[12px] text-soft leading-relaxed">{msg.content}</p>
+                {msg.role === "user" && (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/20 border border-brand/30">
+                    <span className="text-[11px] font-bold text-brand">{firstName?.[0]?.toUpperCase() ?? "U"}</span>
+                  </div>
+                )}
+                <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${msg.role === "user" ? "rounded-br-sm bg-brand/[0.15]" : "rounded-bl-sm bg-white/[0.07]"}`}>
+                  <p className="text-[13px] text-soft leading-relaxed">{msg.content}</p>
                 </div>
               </div>
             ))}
 
-            {/* Loading indicator */}
+            {/* Loading */}
             {loading && (
-              <div className="flex gap-2 items-end">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/20">
-                  <span className="text-[10px] font-bold text-brand">S</span>
+              <div className="flex gap-3 items-end">
+                <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-brand/20">
+                  <Image src={sofiaAvatar} alt="Sofia" fill className="object-cover" />
                 </div>
-                <div className="rounded-2xl rounded-bl-sm bg-white/[0.07] px-3 py-2">
-                  <div className="flex gap-1 items-center">
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
+                <div className="rounded-2xl rounded-bl-sm bg-white/[0.07] px-4 py-3">
+                  <div className="flex gap-1 items-center h-4">
+                    <span className="h-2 w-2 rounded-full bg-brand/60 animate-bounce [animation-delay:0ms]" />
+                    <span className="h-2 w-2 rounded-full bg-brand/60 animate-bounce [animation-delay:150ms]" />
+                    <span className="h-2 w-2 rounded-full bg-brand/60 animate-bounce [animation-delay:300ms]" />
                   </div>
                 </div>
               </div>
@@ -166,22 +236,52 @@ export function ChatWidget() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div className="border-t border-white/[0.07] px-3 py-3 flex gap-2">
+          {/* ── Botão Grupo VIP WhatsApp ── */}
+          <div className="shrink-0 bg-[#0c130e] px-4 py-2 border-t border-white/[0.06]">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-4 py-2.5 text-sm text-[#25D366] hover:bg-[#25D366]/20 transition"
+            >
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              <span className="font-medium">Entrar no Grupo VIP WhatsApp</span>
+              <span className="text-[10px] opacity-70">(atendimento humano)</span>
+            </a>
+            <p className="text-[10px] text-muted text-center mt-1.5">
+              Fala directamente com a nossa equipa e outros membros
+            </p>
+          </div>
+
+          {/* ── Input bar — fixo no fundo com safe area ── */}
+          <div
+            className="shrink-0 border-t border-white/[0.08] bg-[#0c130e] px-4 flex gap-2 items-center"
+            style={{
+              paddingTop: "10px",
+              paddingBottom: "max(10px, env(safe-area-inset-bottom, 10px))",
+            }}
+          >
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
-              placeholder="Escreve aqui..."
-              className="flex-1 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-[12px] text-ink placeholder:text-muted/40 focus:border-brand/40 focus:outline-none transition"
+              placeholder="Escreve a tua dúvida..."
+              enterKeyHint="send"
+              autoComplete="off"
+              autoCorrect="off"
+              className="flex-1 rounded-2xl border border-white/[0.08] bg-white/[0.05] px-4 py-3 text-[16px] text-ink placeholder:text-muted/40 focus:border-brand/40 focus:outline-none transition"
+              style={{ fontSize: "16px" /* 16px previne zoom no iOS */ }}
             />
             <button
               type="button"
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || loading}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-black disabled:opacity-40 transition hover:bg-brandBright"
+              aria-label="Enviar mensagem"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-black disabled:opacity-40 transition hover:bg-brandBright active:scale-95"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -189,17 +289,6 @@ export function ChatWidget() {
             </button>
           </div>
         </div>
-      ) : (
-        <button
-          type="button"
-          aria-label="Abrir chat de apoio"
-          onClick={() => { setIsOpen(true); setHasAutoOpened(true); }}
-          className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand shadow-[0_4px_24px_rgba(32,230,126,0.35)] transition hover:scale-110 hover:shadow-[0_4px_32px_rgba(32,230,126,0.5)] animate-[pulse_3s_ease-in-out_infinite]"
-        >
-          <svg className="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </button>
       )}
     </>
   );

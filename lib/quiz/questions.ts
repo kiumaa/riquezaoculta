@@ -2,103 +2,113 @@ import type { QuizQuestion } from "@/lib/types";
 
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
-    id: "q_clareza_1",
-    pillar: "clareza",
-    prompt: "Quando pensas no teu futuro financeiro, o que acontece primeiro?",
+    id: "q_emocional_1",
+    pillar: "emocional",
+    prompt: "Quando olhas para a tua conta bancária no fim do mês, o que sentes?",
     options: [
-      { id: "a", label: "Tenho metas claras e datas definidas.", weights: { clareza: 3, disciplina: 2, acao: 1, emocional: 1 } },
-      { id: "b", label: "Tenho ideias, mas ainda sem um plano concreto.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 2 } },
-      { id: "c", label: "Sinto confusao e adio decisoes importantes.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 1 } }
+      {
+        id: "a",
+        label: "Frustração. Trabalhei muito e continua sempre a faltar.",
+        weights: { emocional: 2, clareza: 2, acao: 1, disciplina: 0 }
+      },
+      {
+        id: "b",
+        label: "Conformismo. Já me habituei a este ciclo de nunca sobrar.",
+        weights: { emocional: 1, clareza: 1, acao: 0, disciplina: 0 }
+      },
+      {
+        id: "c",
+        label: "Determinação. Sei que posso mudar isso, só falta o caminho certo.",
+        weights: { emocional: 3, clareza: 3, acao: 2, disciplina: 1 }
+      }
     ]
   },
   {
-    id: "q_disciplina_1",
-    pillar: "disciplina",
-    prompt: "Qual e o teu comportamento com dinheiro no fim do mes?",
+    id: "q_clareza_1",
+    pillar: "clareza",
+    prompt: "O que mais te impede de ter o dinheiro que mereces?",
     options: [
-      { id: "a", label: "Reviso despesas e mantenho controle.", weights: { clareza: 2, disciplina: 3, acao: 1, emocional: 1 } },
-      { id: "b", label: "As vezes controlo, as vezes nao.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 2 } },
-      { id: "c", label: "Normalmente fico sem saber para onde foi.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 1 } }
+      {
+        id: "a",
+        label: "Não sei exactamente por onde começar nem o que fazer.",
+        weights: { clareza: 2, emocional: 2, acao: 1, disciplina: 0 }
+      },
+      {
+        id: "b",
+        label: "Começo coisas mas não consigo manter o ritmo.",
+        weights: { clareza: 1, emocional: 1, acao: 1, disciplina: 0 }
+      },
+      {
+        id: "c",
+        label: "O ambiente à minha volta não acredita que é possível.",
+        weights: { clareza: 2, emocional: 3, acao: 0, disciplina: 0 }
+      }
     ]
   },
   {
     id: "q_acao_1",
     pillar: "acao",
-    prompt: "Quando aprendes algo novo sobre renda extra, o que fazes?",
+    prompt: "Quantas vezes já disseste 'vou mudar a minha vida financeira' mas continuaste igual?",
     options: [
-      { id: "a", label: "Aplico ainda na mesma semana.", weights: { clareza: 1, disciplina: 2, acao: 3, emocional: 1 } },
-      { id: "b", label: "Guardo para depois e raramente comeco.", weights: { clareza: 1, disciplina: 0, acao: 1, emocional: 2 } },
-      { id: "c", label: "Quase nunca saio do planeamento.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 1 } }
+      {
+        id: "a",
+        label: "Muitas vezes. É um ciclo que parece não ter fim.",
+        weights: { emocional: 2, clareza: 1, acao: 0, disciplina: 0 }
+      },
+      {
+        id: "b",
+        label: "Algumas vezes. Tentei mas sem resultados reais.",
+        weights: { emocional: 2, clareza: 2, acao: 1, disciplina: 0 }
+      },
+      {
+        id: "c",
+        label: "Estou farto de só falar. Quero agir agora com um plano concreto.",
+        weights: { emocional: 3, clareza: 3, acao: 2, disciplina: 1 }
+      }
     ]
   },
   {
-    id: "q_emocional_1",
-    pillar: "emocional",
-    prompt: "Como reages quando aparece uma despesa inesperada?",
-    options: [
-      { id: "a", label: "Mantenho calma e ajusto o plano.", weights: { clareza: 2, disciplina: 2, acao: 1, emocional: 3 } },
-      { id: "b", label: "Fico tenso, mas tento resolver.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Entro em panico e travo totalmente.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
-    ]
-  },
-  {
-    id: "q_clareza_2",
-    pillar: "clareza",
-    prompt: "A tua estrategia de crescimento financeiro para 2026 esta...",
-    options: [
-      { id: "a", label: "Definida em etapas objetivas.", weights: { clareza: 3, disciplina: 2, acao: 2, emocional: 1 } },
-      { id: "b", label: "Parcial, ainda com lacunas.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Inexistente no momento.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
-    ]
-  },
-  {
-    id: "q_disciplina_2",
+    id: "q_disciplina_1",
     pillar: "disciplina",
-    prompt: "Quanto da tua rotina semanal e dedicada ao teu progresso financeiro?",
+    prompt: "Se tivesses agora um guia passo a passo para gerar mais dinheiro, o que farias?",
     options: [
-      { id: "a", label: "Tenho blocos fixos no calendario.", weights: { clareza: 2, disciplina: 3, acao: 2, emocional: 1 } },
-      { id: "b", label: "Depende da semana e da motivacao.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 2 } },
-      { id: "c", label: "Praticamente nenhuma.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
-    ]
-  },
-  {
-    id: "q_acao_2",
-    pillar: "acao",
-    prompt: "Quando tens uma oportunidade de negocio pequena, tu...",
-    options: [
-      { id: "a", label: "Analiso rapido e testo com criterio.", weights: { clareza: 2, disciplina: 2, acao: 3, emocional: 1 } },
-      { id: "b", label: "Fico indeciso e perco timing.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Nao ajo por medo de errar.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
+      {
+        id: "a",
+        label: "Estudava com atenção e seguia cada passo ao detalhe.",
+        weights: { disciplina: 2, acao: 2, clareza: 3, emocional: 2 }
+      },
+      {
+        id: "b",
+        label: "Começava motivado mas provavelmente parava a meio.",
+        weights: { disciplina: 0, acao: 1, clareza: 1, emocional: 1 }
+      },
+      {
+        id: "c",
+        label: "Guardava para ler depois e nunca chegava a abrir.",
+        weights: { disciplina: 0, acao: 0, clareza: 0, emocional: 1 }
+      }
     ]
   },
   {
     id: "q_emocional_2",
     pillar: "emocional",
-    prompt: "Qual frase mais descreve tua relacao com dinheiro hoje?",
+    prompt: "O que significa para ti ter verdadeira riqueza?",
     options: [
-      { id: "a", label: "Tenho controle interno e visao de longo prazo.", weights: { clareza: 2, disciplina: 2, acao: 2, emocional: 3 } },
-      { id: "b", label: "Oscilo entre confianca e inseguranca.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Dinheiro e sempre fonte de ansiedade.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
-    ]
-  },
-  {
-    id: "q_clareza_3",
-    pillar: "clareza",
-    prompt: "Se tivesses de explicar teu plano em 1 minuto...",
-    options: [
-      { id: "a", label: "Conseguiria com clareza total.", weights: { clareza: 3, disciplina: 2, acao: 1, emocional: 1 } },
-      { id: "b", label: "Explicaria parcialmente.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Nao saberia por onde comecar.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
-    ]
-  },
-  {
-    id: "q_acao_3",
-    pillar: "acao",
-    prompt: "Nos ultimos 30 dias, quantas iniciativas novas tu testaste?",
-    options: [
-      { id: "a", label: "2 ou mais iniciativas com execucao real.", weights: { clareza: 1, disciplina: 2, acao: 3, emocional: 1 } },
-      { id: "b", label: "1 tentativa pontual.", weights: { clareza: 1, disciplina: 1, acao: 1, emocional: 1 } },
-      { id: "c", label: "Nenhuma iniciativa nova.", weights: { clareza: 0, disciplina: 0, acao: 0, emocional: 0 } }
+      {
+        id: "a",
+        label: "Liberdade. Poder pagar as contas, ajudar a família e ainda sobrar.",
+        weights: { emocional: 3, clareza: 3, acao: 1, disciplina: 1 }
+      },
+      {
+        id: "b",
+        label: "Estabilidade. Nunca mais acordar preocupado com dinheiro.",
+        weights: { emocional: 3, clareza: 2, acao: 1, disciplina: 1 }
+      },
+      {
+        id: "c",
+        label: "Crescimento. Investir, construir e deixar algo para os meus.",
+        weights: { emocional: 3, clareza: 3, acao: 2, disciplina: 2 }
+      }
     ]
   }
 ];

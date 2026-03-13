@@ -53,3 +53,22 @@ export async function sendPaymentReferenceSms(
   const text = `${firstName} a tua referencia Riqueza Oculta: ${entityPart}Ref ${reference} | Valor ${amount} Kz. Paga no ATM ou Internet Banking.`;
   return sendSms(phone, text).catch(() => ({ success: false, reason: "SMS failed silently" }));
 }
+
+export async function sendReferenceReminderSms(
+  phone: string,
+  name: string,
+  entity: string,
+  reference: string,
+  amount: number,
+  reminderType: "1h" | "6h"
+) {
+  const firstName = name.split(" ")[0];
+  
+  if (reminderType === "1h") {
+    const text = `${firstName} ainda nao pagaste. A tua ref Riqueza Oculta: Entidade ${entity} | Ref ${reference} | ${amount} Kz. Paga no ATM ou Internet Banking. Tens ate amanha.`;
+    return sendSms(phone, text).catch(() => ({ success: false, reason: "SMS failed silently" }));
+  } else {
+    const text = `${firstName} ultima chamada - a tua ref expira em breve: Entidade ${entity} | Ref ${reference} | ${amount} Kz. Paga agora.`;
+    return sendSms(phone, text).catch(() => ({ success: false, reason: "SMS failed silently" }));
+  }
+}

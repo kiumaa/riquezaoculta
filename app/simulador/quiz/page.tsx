@@ -7,6 +7,8 @@ import { GlassCard } from "@/components/funnel/glass-card";
 import { ProgressBar } from "@/components/funnel/progress-bar";
 import { QUIZ_QUESTIONS } from "@/lib/quiz/questions";
 import { useFunnelStore } from "@/lib/store/funnel-store";
+import { useSound } from "@/lib/useSound";
+import { trackCustomEvent } from "@/lib/pixel";
 
 export default function SimuladorQuizPage() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function SimuladorQuizPage() {
   const answers = useFunnelStore(state => state.answers);
   const answerQuestion = useFunnelStore(state => state.answerQuestion);
   const finalizeResult = useFunnelStore(state => state.finalizeResult);
+  const { playClick } = useSound();
 
   const questions = useMemo(() => {
     const byId = new Map(QUIZ_QUESTIONS.map(q => [q.id, q]));
@@ -30,18 +33,24 @@ export default function SimuladorQuizPage() {
   useEffect(() => {
     if (!name || questions.length === 0 || !current) {
       router.replace("/simulador/inicio");
+    } else if (currentIndex === 0) {
+      trackCustomEvent("QuizStarted", { questions: questions.length });
     }
-  }, [current, name, questions.length, router]);
+  }, [current, name, questions.length, router, currentIndex]);
 
   if (!name || questions.length === 0 || !current) {
     return null;
   }
 
-  function handleAnswer(optionId: string) {
+  function handleAnswer(optionId: string, e: React.MouseEvent<HTMLButtonElement>) {
+    // Blur immediately to prevent focus/hover state bleeding into the next question
+    e.currentTarget.blur();
+    playClick();
     answerQuestion(current.id, optionId);
 
     const isLast = currentIndex >= questions.length - 1;
     if (isLast) {
+      trackCustomEvent("QuizCompleted", { questions: questions.length });
       finalizeResult();
       router.push("/simulador/resultado");
     }
@@ -59,18 +68,20 @@ export default function SimuladorQuizPage() {
           </div>
 
           <div className="space-y-2 text-center">
-            <p className="text-sm leading-relaxed text-soft">
-              {name}, responde com honestidade. Em menos de 2 minutos vamos revelar o teu padrao mental financeiro.
+            <p className="text-[11px] leading-relaxed text-soft/50">
+              {name}, responde com honestidade. Em menos de 2 minutos vamos revelar o teu padrão mental financeiro.
             </p>
             <h2 className="text-xl font-semibold leading-tight sm:text-2xl">{current.prompt}</h2>
           </div>
 
-          <div className="mx-auto w-full max-w-xl space-y-3">
+          {/* key={current.id} força desmontagem dos botões entre perguntas → elimina estados hover/focus residuais */}
+          <div key={current.id} className="mx-auto w-full max-w-xl space-y-3">
             {current.options.map(option => (
               <button
                 key={option.id}
-                onClick={() => handleAnswer(option.id)}
-                className="w-full rounded-xl border border-white/12 bg-black/28 px-4 py-4 text-center text-sm font-light leading-relaxed text-ink transition hover:border-brand/45 hover:bg-brand/10"
+                tabIndex={-1}
+                onClick={e => handleAnswer(option.id, e)}
+                className="w-full rounded-xl border border-white/12 bg-black/28 px-4 py-4 text-center text-sm font-light leading-relaxed text-ink transition hover:border-brand/45 hover:bg-brand/10 active:border-brand/45 active:bg-brand/10 focus:outline-none"
               >
                 {option.label}
               </button>
