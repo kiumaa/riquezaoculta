@@ -3,13 +3,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FunnelContentRecord } from "@/lib/types";
 
-type PageType = "landing" | "oferta" | "resultado" | "payment";
+type PageType = "landing" | "simulador" | "oferta" | "resultado" | "payment";
 
 const PAGES: { id: PageType; label: string }[] = [
   { id: "landing",   label: "Landing Page" },
+  { id: "simulador", label: "Simulador (Início)" },
   { id: "oferta",    label: "Página de Oferta" },
   { id: "resultado", label: "Resultado do Quiz" },
   { id: "payment",   label: "Pagamento" },
+];
+
+const SIMULADOR_FIELDS = [
+  { key: "step_label",    label: "Label do Passo (ex: Passo 1 de 5)", rows: 1 },
+  { key: "headline",      label: "Título Principal",                   rows: 1 },
+  { key: "subtitle",      label: "Subtítulo / Corpo",                  rows: 2 },
+  { key: "cta_text",      label: "Texto do Botão CTA",                 rows: 1 },
+  { key: "privacy_text",  label: "Texto de Privacidade (rodapé form)", rows: 1 },
 ];
 
 const LANDING_FIELDS = [
@@ -181,7 +190,7 @@ export default function FunilPage() {
 
   // Auto-seed defaults when content is empty for this page
   useEffect(() => {
-    if (!loading && content.length === 0 && activePage !== "resultado") {
+    if (!loading && content.length === 0 && activePage !== "resultado" && activePage !== "simulador") {
       fetch("/api/admin/funnel-content/seed", { method: "POST" }).catch(() => {});
       fetchContent(activePage);
     }
@@ -193,9 +202,10 @@ export default function FunilPage() {
   }
 
   const activeFields =
-    activePage === "landing"  ? LANDING_FIELDS  :
-    activePage === "oferta"   ? OFERTA_FIELDS   :
-    activePage === "payment"  ? PAYMENT_FIELDS  : null;
+    activePage === "landing"   ? LANDING_FIELDS   :
+    activePage === "simulador" ? SIMULADOR_FIELDS  :
+    activePage === "oferta"    ? OFERTA_FIELDS     :
+    activePage === "payment"   ? PAYMENT_FIELDS    : null;
 
   return (
     <div className="space-y-5 max-w-3xl">
@@ -226,6 +236,36 @@ export default function FunilPage() {
           {activeFields && activeFields.map(f => (
             <ContentField key={f.key} pageType={activePage} sectionKey={f.key} label={f.label} rows={f.rows} initialValue={getContent(f.key)} />
           ))}
+
+          {/* Testemunhos — Oferta (6) */}
+          {activePage === "oferta" && (
+            <div className="border-t border-white/[0.06] pt-4 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Testemunhos (aparecem na página de oferta)</p>
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <div key={n} className="rounded-xl border border-white/[0.06] bg-black/10 p-4 space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted/70">Testemunho {n}</p>
+                  <ContentField pageType="oferta" sectionKey={`testimonial_${n}_name`}  label="Nome"    rows={1} initialValue={getContent(`testimonial_${n}_name`)} />
+                  <ContentField pageType="oferta" sectionKey={`testimonial_${n}_text`}  label="Texto"   rows={2} initialValue={getContent(`testimonial_${n}_text`)} />
+                  <ContentField pageType="oferta" sectionKey={`testimonial_${n}_stars`} label="Estrelas (1-5)" rows={1} initialValue={getContent(`testimonial_${n}_stars`)} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Testemunhos — Pagamento (3) */}
+          {activePage === "payment" && (
+            <div className="border-t border-white/[0.06] pt-4 space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Testemunhos (aparecem no checkout)</p>
+              {[1, 2, 3].map(n => (
+                <div key={n} className="rounded-xl border border-white/[0.06] bg-black/10 p-4 space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted/70">Testemunho {n}</p>
+                  <ContentField pageType="payment" sectionKey={`testimonial_${n}_name`}  label="Nome"    rows={1} initialValue={getContent(`testimonial_${n}_name`)} />
+                  <ContentField pageType="payment" sectionKey={`testimonial_${n}_text`}  label="Texto"   rows={2} initialValue={getContent(`testimonial_${n}_text`)} />
+                  <ContentField pageType="payment" sectionKey={`testimonial_${n}_stars`} label="Estrelas (1-5)" rows={1} initialValue={getContent(`testimonial_${n}_stars`)} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Resultado — por perfil */}
           {activePage === "resultado" && (

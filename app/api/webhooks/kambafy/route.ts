@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
-import { findCheckout, insertCheckout, updateCheckoutStatus } from "@/lib/storage";
+import { findCheckout, insertCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 
 async function notifyPushcut(title: string, text: string) {
   const url = env.PUSHCUT_URL;
@@ -161,6 +161,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       // Checkout existe — atualizar status
       await updateCheckoutStatus(reference, "paid", payload);
+      void recordAffiliateSale(reference).catch(() => {});
       console.log("[Kambafy] Checkout atualizado para pago", { reference, duration: Date.now() - startTime });
     } else {
       // Checkout não existe (fluxo normal com Kambafy external) — criar diretamente como pago

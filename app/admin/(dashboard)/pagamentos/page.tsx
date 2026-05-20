@@ -36,7 +36,49 @@ function Pagination({ page, totalPages, onChange }: { page: number; totalPages: 
   );
 }
 
-type PagedCheckouts = { data: CheckoutRecord[]; total: number; page: number; totalPages: number };
+type PagedCheckouts = {
+  data: CheckoutRecord[];
+  total: number;
+  page: number;
+  totalPages: number;
+  stats?: {
+    totalRevenue: number;
+    totalPaid: number;
+    totalPending: number;
+    revenueQuiz: number;
+    revenueEbook: number;
+    salesQuiz: number;
+    salesEbook: number;
+  };
+};
+
+function ProductBadge({ amount, providerPayload }: { amount: number; providerPayload: unknown }) {
+  const payload = providerPayload as Record<string, unknown> | null;
+  const isQuiz = payload?.product === "quiz" || amount === 1000;
+  const isUpsell = payload?.product === "ebook_upsell";
+
+  if (isQuiz) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]">
+        🧠 Análise Quiz
+      </span>
+    );
+  }
+
+  if (isUpsell) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.1)]">
+        ⚡ Upsell Ebook
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_8px_rgba(168,85,247,0.1)]">
+      📘 Guia Completo
+    </span>
+  );
+}
 
 export default function PagamentosPage() {
   const [result, setResult] = useState<PagedCheckouts>({ data: [], total: 0, page: 1, totalPages: 1 });
@@ -76,8 +118,15 @@ export default function PagamentosPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
 
-  const paidTotal = result.data.filter(c => c.status === "paid").reduce((s, c) => s + c.amount, 0);
-  const pendingCount = result.data.filter(c => c.status === "pending").length;
+  const stats = result.stats ?? {
+    totalRevenue: result.data.filter(c => c.status === "paid").reduce((s, c) => s + c.amount, 0),
+    totalPaid: result.data.filter(c => c.status === "paid").length,
+    totalPending: result.data.filter(c => c.status === "pending").length,
+    revenueQuiz: result.data.filter(c => c.status === "paid" && c.amount === 1000).reduce((s, c) => s + c.amount, 0),
+    revenueEbook: result.data.filter(c => c.status === "paid" && c.amount !== 1000).reduce((s, c) => s + c.amount, 0),
+    salesQuiz: result.data.filter(c => c.status === "paid" && c.amount === 1000).length,
+    salesEbook: result.data.filter(c => c.status === "paid" && c.amount !== 1000).length,
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -95,20 +144,28 @@ export default function PagamentosPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-black/20 border border-white/5 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Total</p>
-          <p className="text-3xl font-black mt-1">{result.total}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Receita Ebooks</p>
+          <p className="text-2xl font-black mt-1 text-purple-400 tabular-nums">{formatPriceKz(stats.revenueEbook)}</p>
+          <p className="text-[9px] text-muted mt-1">{stats.salesEbook} vendas efetuadas</p>
         </div>
         <div className="bg-black/20 border border-white/5 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Pagos</p>
-          <p className="text-3xl font-black mt-1 text-brand">{result.data.filter(c => c.status === "paid").length}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Receita Quizzes</p>
+          <p className="text-2xl font-black mt-1 text-emerald-400 tabular-nums">{formatPriceKz(stats.revenueQuiz)}</p>
+          <p className="text-[9px] text-muted mt-1">{stats.salesQuiz} análises pagas</p>
         </div>
         <div className="bg-black/20 border border-white/5 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Pendentes</p>
-          <p className="text-3xl font-black mt-1 text-yellow-400">{pendingCount}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Volume de Vendas</p>
+          <p className="text-2xl font-black mt-1 text-yellow-400 tabular-nums">
+            {stats.salesEbook + stats.salesQuiz}
+          </p>
+          <p className="text-[9px] text-muted mt-1">
+            {stats.salesEbook} Ebooks / {stats.salesQuiz} Quizzes
+          </p>
         </div>
         <div className="bg-black/20 border border-white/5 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Receita</p>
-          <p className="text-xl font-black mt-1">{formatPriceKz(paidTotal)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Total Agregado</p>
+          <p className="text-2xl font-black mt-1 text-brand tabular-nums">{formatPriceKz(stats.totalRevenue)}</p>
+          <p className="text-[9px] text-muted mt-1">{stats.totalPending} checkouts pendentes</p>
         </div>
       </div>
 
@@ -120,6 +177,7 @@ export default function PagamentosPage() {
               <tr>
                 <th className="px-4 py-3">Nome</th>
                 <th className="px-4 py-3">Contacto</th>
+                <th className="px-4 py-3">Produto</th>
                 <th className="px-4 py-3">Método</th>
                 <th className="px-4 py-3">Valor</th>
                 <th className="px-4 py-3">Estado</th>
@@ -132,6 +190,7 @@ export default function PagamentosPage() {
                 <tr key={c.reference} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-4 font-medium">{c.name}</td>
                   <td className="px-4 py-4 text-muted font-mono text-xs">{c.phone}</td>
+                  <td className="px-4 py-4"><ProductBadge amount={c.amount} providerPayload={c.providerPayload} /></td>
                   <td className="px-4 py-4 text-xs text-muted">{c.entity === "express" ? "Express" : "Referência"}</td>
                   <td className="px-4 py-4 font-bold tabular-nums">{formatPriceKz(c.amount)}</td>
                   <td className="px-4 py-4"><StatusBadge status={c.status} /></td>
@@ -164,7 +223,7 @@ export default function PagamentosPage() {
                 </tr>
               ))}
               {result.data.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted italic">Nenhum checkout encontrado.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted italic">Nenhum checkout encontrado.</td></tr>
               )}
             </tbody>
           </table>

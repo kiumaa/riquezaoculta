@@ -3,7 +3,9 @@ import { isAdmin } from "@/lib/admin-auth";
 import {
   getDailyStats,
   getLeadCount,
+  getProfileConversion,
   getProfileDistribution,
+  getProvinceDistribution,
   getRevenue,
   getSourceDistribution,
   getStatusDistribution,
@@ -18,13 +20,15 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const days = Math.min(90, Math.max(7, Number(searchParams.get("days") ?? 30)));
 
-  const [dailyStats, profileDist, sourceDist, statusDist, totalLeads, revenue] = await Promise.all([
+  const [dailyStats, profileDist, sourceDist, statusDist, totalLeads, revenue, provinceDistribution, profileConversion] = await Promise.all([
     getDailyStats(days),
     getProfileDistribution(),
     getSourceDistribution(),
     getStatusDistribution(),
     getLeadCount(),
     getRevenue(),
+    getProvinceDistribution(),
+    getProfileConversion(),
   ]);
 
   // Total paid and checkout counts
@@ -44,6 +48,8 @@ export async function GET(req: Request) {
     profileDistribution: profileDist,
     sourceDistribution: sourceDist,
     statusDistribution: statusDist,
+    provinceDistribution,
+    profileConversion,
     summary: {
       totalLeads,
       totalCheckouts,

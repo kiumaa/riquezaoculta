@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   name: z.string().min(2).max(80),
   phone: z.string().min(7).max(24),
-  expressPhone: z.string().min(9).max(15)
+  expressPhone: z.string().min(9).max(15),
+  product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook")
 });
 
 function makeReference() {
@@ -56,15 +57,22 @@ export async function POST(req: NextRequest) {
 
     // Get settings (cached)
     const settingsStart = Date.now();
-    const { pricePromo } = await getSettings();
+    const { pricePromo, priceQuiz } = await getSettings();
     timings.settings = Date.now() - settingsStart;
+
+    let amount = pricePromo;
+    if (parsed.data.product === "quiz") {
+      amount = priceQuiz;
+    } else if (parsed.data.product === "ebook_upsell") {
+      amount = 3000;
+    }
 
     // Create charge - THIS IS THE BOTTLENECK (KB API)
     const chargeStart = Date.now();
     const charge = await createExpressCharge({
-      phone: parsed.data.expressPhone,
+      phone: parsed.data.expressPhone.replace(/\D/g, ""),
       reference,
-      amount: pricePromo
+      amount
     });
     timings.kbApi = Date.now() - chargeStart;
 
@@ -78,7 +86,7 @@ export async function POST(req: NextRequest) {
       entity: "express",
       paymentReference: charge.reference,
       status: "pending",
-      providerPayload: { method: "express", mode: charge.mode },
+      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product },
       createdAt: now,
       updatedAt: now
     });

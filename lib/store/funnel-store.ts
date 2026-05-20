@@ -8,6 +8,7 @@ import { persist } from "zustand/middleware";
 type FunnelState = {
   name: string;
   whatsapp: string;
+  affiliateToken: string | null;
   quizSeed: number;
   quizOrder: string[];
   answers: Record<string, string>;
@@ -16,8 +17,11 @@ type FunnelState = {
   paymentReference: string | null;
   paymentStatus: "idle" | "pending" | "paid" | "failed";
   paymentMethod: "express" | "reference" | null;
+  quizPaid: boolean;
+  ebookPaid: boolean;
   setName: (name: string) => void;
   setWhatsapp: (whatsapp: string) => void;
+  setAffiliateToken: (token: string | null) => void;
   initQuiz: () => void;
   trackStep: (page: string, url: string) => void;
   answerQuestion: (questionId: string, optionId: string) => void;
@@ -25,6 +29,8 @@ type FunnelState = {
   setPaymentReference: (reference: string | null) => void;
   setPaymentStatus: (status: FunnelState["paymentStatus"]) => void;
   setPaymentMethod: (method: FunnelState["paymentMethod"]) => void;
+  setQuizPaid: (paid: boolean) => void;
+  setEbookPaid: (paid: boolean) => void;
   resetFunnel: () => void;
 };
 
@@ -35,6 +41,7 @@ export const useFunnelStore = create<FunnelState>()(
     (set, get) => ({
       name: "",
       whatsapp: "",
+      affiliateToken: null,
       quizSeed: initialSeed,
       quizOrder: [],
       answers: {},
@@ -43,8 +50,11 @@ export const useFunnelStore = create<FunnelState>()(
       paymentReference: null,
       paymentStatus: "idle",
       paymentMethod: null,
+      quizPaid: false,
+      ebookPaid: false,
       setName: name => set({ name }),
       setWhatsapp: whatsapp => set({ whatsapp }),
+      setAffiliateToken: token => set({ affiliateToken: token }),
       initQuiz: () => {
         const seed = Math.floor(Math.random() * 10_000_000);
         set({
@@ -54,7 +64,8 @@ export const useFunnelStore = create<FunnelState>()(
           result: null,
           paymentReference: null,
           paymentStatus: "idle",
-          paymentMethod: null
+          paymentMethod: null,
+          quizPaid: false
         });
       },
       trackStep: (page, url) => {
@@ -92,10 +103,13 @@ export const useFunnelStore = create<FunnelState>()(
       setPaymentReference: reference => set({ paymentReference: reference }),
       setPaymentStatus: status => set({ paymentStatus: status }),
       setPaymentMethod: method => set({ paymentMethod: method }),
+      setQuizPaid: quizPaid => set({ quizPaid }),
+      setEbookPaid: ebookPaid => set({ ebookPaid }),
       resetFunnel: () => {
         set({
           name: "",
           whatsapp: "",
+          affiliateToken: null,
           quizSeed: Math.floor(Math.random() * 10_000_000),
           quizOrder: [],
           answers: {},
@@ -103,7 +117,9 @@ export const useFunnelStore = create<FunnelState>()(
           journey: [],
           paymentReference: null,
           paymentStatus: "idle",
-          paymentMethod: null
+          paymentMethod: null,
+          quizPaid: false,
+          ebookPaid: false
         });
       }
     }),

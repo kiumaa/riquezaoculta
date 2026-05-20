@@ -96,6 +96,36 @@ export type CheckoutRecord = {
   paymentReference: string;
   status: CheckoutStatus;
   providerPayload?: unknown;
+  affiliateToken?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AffiliateStatus = "pending" | "active" | "suspended";
+export type PayoutStatus = "pending" | "approved" | "paid" | "rejected";
+
+export type AffiliateRecord = {
+  id: number;
+  token: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  iban?: string | null;
+  status: AffiliateStatus;
+  commissionRate: number;
+  totalClicks: number;
+  totalSales: number;
+  totalEarnings: number;
+  currentBalance: number;
+  createdAt: string;
+};
+
+export type PayoutRequestRecord = {
+  id: number;
+  affiliateId: number;
+  amount: number;
+  status: PayoutStatus;
+  notes?: string | null;
   createdAt: string;
   updatedAt: string;
 };

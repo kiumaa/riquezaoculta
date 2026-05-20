@@ -16,6 +16,11 @@ import { trackEvent } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
+import dynamic from "next/dynamic";
+import animationData from "@/assets/Future tech Ui.json";
+import Link from "next/link";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 type PaymentData = {
   reference: string;
@@ -68,13 +73,10 @@ type PaymentContent = {
   vip_cta: string;
   vip_context_payment: string;
   vip_context_confirmed: string;
+  testimonial_1_name: string; testimonial_1_text: string; testimonial_1_stars: string;
+  testimonial_2_name: string; testimonial_2_text: string; testimonial_2_stars: string;
+  testimonial_3_name: string; testimonial_3_text: string; testimonial_3_stars: string;
 };
-
-const checkoutTestimonials = [
-  { name: "Maria Santos", text: "Fiz o simulador por curiosidade e em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças." },
-  { name: "Carlos Mendes", text: "O guia mostrou-me que o problema era a minha forma de pensar. Recomendo a toda a gente." },
-  { name: "João Ferreira", text: "Conteúdo directo ao ponto. Sem teorias, só estratégias que funcionam mesmo." },
-];
 
 // Referência válida por 24 horas
 const REFERENCE_EXPIRY_HOURS = 24;
@@ -109,7 +111,7 @@ function CheckoutPagamentoInner({
   whatsappLink,
   content,
 }: {
-  initialPrices: { priceOriginal: number; pricePromo: number };
+  initialPrices: { priceOriginal: number; pricePromo: number; priceQuiz: number };
   whatsappLink: string;
   content: PaymentContent;
 }) {
@@ -117,6 +119,7 @@ function CheckoutPagamentoInner({
   const searchParams = useSearchParams();
   const name = useFunnelStore(state => state.name);
   const whatsapp = useFunnelStore(state => state.whatsapp);
+  const affiliateToken = useFunnelStore(state => state.affiliateToken);
   const paymentReference = useFunnelStore(state => state.paymentReference);
   const setPaymentReference = useFunnelStore(state => state.setPaymentReference);
   const paymentStatus = useFunnelStore(state => state.paymentStatus);
@@ -134,7 +137,30 @@ function CheckoutPagamentoInner({
   const [isHowToPayOpen, setIsHowToPayOpen] = useState(false);
   const [testimonialSlide, setTestimonialSlide] = useState(0);
   const [urgencyData, setUrgencyData] = useState<{ spots: number; people: number } | null>(null);
-  const prices = initialPrices;
+
+  const productParam = searchParams.get("product") as "ebook" | "quiz" | "ebook_upsell" | null;
+  const product = productParam || "ebook";
+
+  const prices = {
+    priceOriginal: product === "quiz" ? Math.round(initialPrices.priceQuiz * 2.5) : (product === "ebook_upsell" ? 4500 : initialPrices.priceOriginal),
+    pricePromo: product === "quiz" ? initialPrices.priceQuiz : (product === "ebook_upsell" ? 3000 : initialPrices.pricePromo)
+  };
+
+  const benefits = product === "quiz"
+    ? [
+        "Relatório Aprofundado Detalhado (Desbloqueado)",
+        "Diagnóstico Personalizado do Teu Pilar Dominante",
+        "Plano de Ação para Superar o Teu Pilar Fraco",
+        "Acesso Vitalício ao Teu Painel de Resultados",
+        "Garantia de Satisfação de 7 dias"
+      ]
+    : [
+        content.benefit_1,
+        content.benefit_2,
+        content.benefit_3,
+        "Audiobook para ouvir em qualquer lugar",
+        "Garantia de 7 dias ou dinheiro de volta"
+      ];
 
   // Estados para captura de dados quando não existem no store
   const [captureName, setCaptureName] = useState("");
@@ -202,13 +228,24 @@ function CheckoutPagamentoInner({
   }, []);
 
   useEffect(() => {
-    trackEvent("InitiateCheckout", { content_name: "Riqueza Oculta Ebook", value: prices.pricePromo, currency: "AOA" });
+    trackEvent("InitiateCheckout", { 
+      content_name: product === "quiz" ? "Riqueza Oculta Relatório Quiz" : "Riqueza Oculta Ebook", 
+      value: prices.pricePromo, 
+      currency: "AOA" 
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [product, prices.pricePromo]);
+
+  const checkoutTestimonials = [
+    { name: content.testimonial_1_name, text: content.testimonial_1_text, stars: Number(content.testimonial_1_stars) || 5 },
+    { name: content.testimonial_2_name, text: content.testimonial_2_text, stars: Number(content.testimonial_2_stars) || 5 },
+    { name: content.testimonial_3_name, text: content.testimonial_3_text, stars: Number(content.testimonial_3_stars) || 5 },
+  ];
 
   useEffect(() => {
     const t = setInterval(() => setTestimonialSlide(s => (s + 1) % checkoutTestimonials.length), 4000);
     return () => clearInterval(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Tentar recuperar dados do localStorage/Zustand na montagem
@@ -263,10 +300,15 @@ function CheckoutPagamentoInner({
         const data = await res.json();
         if (data.status === "paid") {
           setPaymentStatus("paid");
+          if (product === "quiz") {
+            useFunnelStore.getState().setQuizPaid(true);
+          } else {
+            useFunnelStore.getState().setEbookPaid(true);
+          }
           trackEvent("Purchase", {
             value: data.amount || prices.pricePromo,
             currency: "AOA",
-            content_name: "Riqueza Oculta - Infoproduto",
+            content_name: product === "quiz" ? "Riqueza Oculta - Relatório Quiz" : "Riqueza Oculta - Ebook",
             content_category: "Educação Financeira"
           });
           return true; // Stop polling
@@ -327,9 +369,10 @@ function CheckoutPagamentoInner({
       // MCX Express uses dedicated route pinned to Vercel Cape Town (cpt1) region
       // to ensure South African IP for KB Agency APIx compatibility
       const endpoint = method === "express" ? "/api/payment/express" : "/api/payment/session";
-      const body: Record<string, unknown> = { name, phone: whatsapp };
+      const body: Record<string, unknown> = { name, phone: whatsapp, product };
       if (method === "express") body.expressPhone = expressPhone;
       if (method === "reference") body.method = "reference";
+      if (affiliateToken) body.affiliateToken = affiliateToken;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -348,7 +391,10 @@ function CheckoutPagamentoInner({
       setUiState("reference_active");
 
       // Fire AddPaymentInfo event to pixel
-      trackEvent("AddPaymentInfo", { payment_method: method, content_name: "Riqueza Oculta Ebook" });
+      trackEvent("AddPaymentInfo", { 
+        payment_method: method, 
+        content_name: product === "quiz" ? "Riqueza Oculta Relatório Quiz" : "Riqueza Oculta Ebook" 
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado");
       setPaymentStatus("failed");
@@ -413,6 +459,7 @@ function CheckoutPagamentoInner({
 
   /* ── Estado: pagamento confirmado ── */
   if (paymentStatus === "paid") {
+    const isQuiz = product === "quiz";
     return (
       <FunnelShell>
         <GlassCard>
@@ -420,35 +467,55 @@ function CheckoutPagamentoInner({
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
                 <span className="mr-2 inline-block animate-glow-pulse">◆</span>
-                Acesso libertado
+                {isQuiz ? "Análise Desbloqueada" : "Acesso libertado"}
               </p>
               <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-                Bem-vindo à Riqueza Oculta!
+                {isQuiz ? "Relatório Desbloqueado!" : "Bem-vindo à Riqueza Oculta!"}
               </h1>
               <p className="text-sm leading-relaxed text-soft">
-                O teu pagamento foi confirmado. Faz o download do guia e junta-te ao grupo VIP.
+                {isQuiz 
+                  ? "Parabéns! O teu pagamento foi confirmado e a tua análise financeira está 100% libertada."
+                  : "O teu pagamento foi confirmado. Faz o download do guia e junta-te ao grupo VIP."}
               </p>
             </div>
 
             <div className="mx-auto w-44 drop-shadow-[0_24px_48px_rgba(32,230,126,0.18)] sm:w-52">
-              <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
+              {isQuiz ? (
+                <div className="w-40 h-40 mx-auto">
+                  <Lottie animationData={animationData} loop={true} />
+                </div>
+              ) : (
+                <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
+              )}
             </div>
 
             <div className="mx-auto w-full max-w-sm space-y-3">
-              <a
-                href={`/api/download/${paymentReference}`}
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative flex items-center gap-2">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  DOWNLOAD
-                </span>
-              </a>
+              {isQuiz ? (
+                <Link
+                  href="/simulador/resultado"
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                  <span className="relative flex items-center gap-2">
+                    🔓 VER RELATÓRIO COMPLETO
+                  </span>
+                </Link>
+              ) : (
+                <a
+                  href={`/api/download/${paymentReference}`}
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                  <span className="relative flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    DOWNLOAD
+                  </span>
+                </a>
+              )}
 
               <div className="space-y-1">
                 <a
@@ -488,10 +555,18 @@ function CheckoutPagamentoInner({
           {/* Resumo da compra */}
           <div className="mx-auto flex w-full max-w-sm items-center gap-4 rounded-xl border border-white/[0.07] bg-black/20 p-3 text-left">
             <div className="w-14 shrink-0 flex items-center justify-center">
-              <Image src={ebookCover} alt="Riqueza Oculta" className="w-full rounded-md object-contain" />
+              {product === "quiz" ? (
+                <div className="w-10 h-10">
+                  <Lottie animationData={animationData} loop={true} />
+                </div>
+              ) : (
+                <Image src={ebookCover} alt="Riqueza Oculta" className="w-full rounded-md object-contain" />
+              )}
             </div>
             <div className="flex-1">
-              <p className="text-xs font-medium text-soft">Riqueza Oculta: Guia Definitivo</p>
+              <p className="text-xs font-medium text-soft">
+                {product === "quiz" ? "Desbloqueio: Relatório Financeiro Completo" : "Riqueza Oculta: Guia Definitivo"}
+              </p>
               <div className="mt-0.5 flex items-center gap-2">
                 <span className="text-xs text-muted line-through">{formatPriceKz(prices.priceOriginal)}</span>
                 <span className="text-base font-semibold text-brand">{formatPriceKz(prices.pricePromo)}</span>
@@ -875,7 +950,7 @@ function CheckoutPagamentoInner({
               {/* O que recebes */}
               <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3 space-y-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Após o pagamento recebes</p>
-                {[content.benefit_1, content.benefit_2, content.benefit_3].map(item => (
+                {benefits.slice(0, 3).map(item => (
                   <div key={item} className="flex items-center gap-2.5">
                     <CheckSmallIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
                     <span className="text-[12px] text-soft">{item}</span>
@@ -1022,7 +1097,7 @@ export default function CheckoutPagamentoClient({
   whatsappLink,
   content,
 }: {
-  initialPrices: { priceOriginal: number; pricePromo: number };
+  initialPrices: { priceOriginal: number; pricePromo: number; priceQuiz: number };
   whatsappLink: string;
   content: PaymentContent;
 }) {

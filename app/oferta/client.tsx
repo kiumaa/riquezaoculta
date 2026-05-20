@@ -18,6 +18,8 @@ import { trackEvent } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
+import { ExitIntentModal } from "@/components/funnel/exit-intent-modal";
+import { useExitIntent } from "@/lib/hooks/use-exit-intent";
 
 function CheckIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -45,46 +47,15 @@ type OfertaContent = {
   scarcity_text: string;
   social_proof: string;
   bullets: string[];
+  testimonial_1_name: string; testimonial_1_text: string; testimonial_1_stars: string;
+  testimonial_2_name: string; testimonial_2_text: string; testimonial_2_stars: string;
+  testimonial_3_name: string; testimonial_3_text: string; testimonial_3_stars: string;
+  testimonial_4_name: string; testimonial_4_text: string; testimonial_4_stars: string;
+  testimonial_5_name: string; testimonial_5_text: string; testimonial_5_stars: string;
+  testimonial_6_name: string; testimonial_6_text: string; testimonial_6_stars: string;
 };
 
-const testimonials = [
-  {
-    name: "Maria Santos",
-    avatar: avatarMaria,
-    stars: 5,
-    text: "Fiz o simulador por curiosidade e fiquei chocada com o resultado. Em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças.",
-  },
-  {
-    name: "Carlos Mendes",
-    avatar: avatarCarlos,
-    stars: 5,
-    text: "Sempre achei que o problema era o salário. O guia mostrou-me que o problema era a minha forma de pensar. Recomendo a toda a gente.",
-  },
-  {
-    name: "João Ferreira",
-    avatar: avatarJoao,
-    stars: 5,
-    text: "Comprei sem muita expectativa, mas o conteúdo é directo ao ponto. Sem teorias, só estratégias que funcionam mesmo.",
-  },
-  {
-    name: "Ana Pereira",
-    avatar: avatarAna,
-    stars: 5,
-    text: "O perfil que recebi descreveu-me exactamente. Senti que foi feito para mim. Já indiquei a 4 amigas.",
-  },
-  {
-    name: "José Nunes",
-    avatar: avatarJose,
-    stars: 4,
-    text: "Vale muito mais do que o preço. Tenho lido e relido o guia — cada vez encontro algo novo para aplicar.",
-  },
-  {
-    name: "Etiene Kimbangu",
-    avatar: avatarEtiene,
-    stars: 5,
-    text: "Nunca pensei que um quiz pudesse revelar tanto sobre mim. Os exercícios práticos mudam mesmo a mentalidade.",
-  },
-];
+const TESTIMONIAL_AVATARS = [avatarMaria, avatarCarlos, avatarJoao, avatarAna, avatarJose, avatarEtiene];
 
 export default function OfertaClient({
   initialPrices,
@@ -99,16 +70,39 @@ export default function OfertaClient({
   const whatsapp = useFunnelStore(state => state.whatsapp);
   const journey = useFunnelStore(state => state.journey);
   const result = useFunnelStore(state => state.result);
+  
+  // Exit intent state
+  const [showExitIntent, setShowExitIntent] = useState(false);
+
+  // Exit intent hook
+  useExitIntent({
+    threshold: 24 * 60 * 60 * 1000, // 24 hours
+    maxDisplays: 3,
+    onExitIntent: () => {
+      trackEvent("ExitIntentTriggered", { page: "oferta" });
+      setShowExitIntent(true);
+    }
+  });
 
   useEffect(() => {
     trackEvent("ViewContent", { content_name: "Oferta Riqueza Oculta", value: initialPrices.pricePromo, currency: "AOA" });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const testimonials = [
+    { name: content.testimonial_1_name, avatar: TESTIMONIAL_AVATARS[0], stars: Number(content.testimonial_1_stars) || 5, text: content.testimonial_1_text },
+    { name: content.testimonial_2_name, avatar: TESTIMONIAL_AVATARS[1], stars: Number(content.testimonial_2_stars) || 5, text: content.testimonial_2_text },
+    { name: content.testimonial_3_name, avatar: TESTIMONIAL_AVATARS[2], stars: Number(content.testimonial_3_stars) || 5, text: content.testimonial_3_text },
+    { name: content.testimonial_4_name, avatar: TESTIMONIAL_AVATARS[3], stars: Number(content.testimonial_4_stars) || 5, text: content.testimonial_4_text },
+    { name: content.testimonial_5_name, avatar: TESTIMONIAL_AVATARS[4], stars: Number(content.testimonial_5_stars) || 4, text: content.testimonial_5_text },
+    { name: content.testimonial_6_name, avatar: TESTIMONIAL_AVATARS[5], stars: Number(content.testimonial_6_stars) || 5, text: content.testimonial_6_text },
+  ];
+
   const [slide, setSlide] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setSlide(s => (s + 1) % testimonials.length), 3500);
     return () => clearInterval(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [timeLeft, setTimeLeft] = useState(15 * 60);
@@ -140,156 +134,173 @@ export default function OfertaClient({
       }).catch(() => {});
     }
 
-    // 3. Build Kambafy URL com URL params (tentativa de prefill)
-    const base: string =
-      process.env.NEXT_PUBLIC_KAMBAFY_CHECKOUT_URL ||
-      "https://pay.kambafy.com/checkout/bd59f082-a243-4c64-87dd-9dc9d5f1e4eb";
-    const params = new URLSearchParams();
-    if (name) { params.set("name", name); params.set("customer_name", name); }
-    if (whatsapp) { params.set("phone", whatsapp); params.set("customer_phone", whatsapp); }
-    const query = params.toString();
-    const url = query ? `${base}?${query}` : base;
-
-    // 4. Redirect imediato
-    window.location.href = url;
+    // 3. Redirect para checkout interno
+    window.location.href = "/checkout/pagamento";
   }, [name, whatsapp, prices.pricePromo, journey]);
 
+  // Handle exit intent acceptance
+  const handleExitIntentAccept = () => {
+    setShowExitIntent(false);
+    handleCheckoutClick();
+  };
+
+  // Handle exit intent decline
+  const handleExitIntentDecline = () => {
+    setShowExitIntent(false);
+    // User can continue browsing
+  };
+
   return (
-    <FunnelShell>
-      <ChatWidget whatsappLink={whatsappLink} />
-      <GlassCard>
-        <div className="space-y-6">
+    <>
+      <FunnelShell>
+        <ChatWidget whatsappLink={whatsappLink} />
+        <GlassCard>
+          <div className="space-y-6">
 
-          {/* Social proof topbar */}
-          <SocialProofBar />
+            {/* Social proof topbar */}
+            <SocialProofBar />
 
-          {/* Header */}
-          <div className="space-y-2 text-center">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
-              <span className="mr-2 inline-block animate-glow-pulse">◆</span>
-              Passo 3 de 5
-            </p>
-            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{content.headline}</h1>
-            <p className="text-sm leading-relaxed text-soft">
-              {name ? `${name}, ` : ""}{content.subheading}
-              {result ? ` ${result.offerAngle}` : ""}
-            </p>
-          </div>
+            {/* Header */}
+            <div className="space-y-2 text-center">
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
+                <span className="mr-2 inline-block animate-glow-pulse">◆</span>
+                Passo 3 de 5
+              </p>
+              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{content.headline}</h1>
+              <p className="text-sm leading-relaxed text-soft">
+                {name ? `${name}, ` : ""}{content.subheading}
+                {result ? ` ${result.offerAngle}` : ""}
+              </p>
+            </div>
 
-          {/* Como funciona */}
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {[
-              { n: "①", label: "Completas o simulador" },
-              { n: "②", label: "Recebes o guia" },
-              { n: "③", label: "Aplicas e transformas" },
-            ].map(s => (
-              <div key={s.n} className="rounded-xl border border-white/[0.05] bg-black/20 px-2 py-3 space-y-1">
-                <p className="text-lg font-bold text-brand">{s.n}</p>
-                <p className="text-[11px] font-semibold text-ink leading-tight">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Imagem centrada */}
-          <div className="mx-auto w-48 drop-shadow-[0_24px_48px_rgba(32,230,126,0.18)] sm:w-56">
-            <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
-          </div>
-
-          {/* Bullets + preço — mesma largura que o botão */}
-          <div className="space-y-3">
-            <ul className="space-y-2">
-              {content.bullets.map(item => (
-                <li key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-black/20 px-4 py-2.5 text-sm text-soft/90">
-                  <CheckIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
-                  <span>{item}</span>
-                </li>
+            {/* Como funciona */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                { n: "①", label: "Completas o simulador" },
+                { n: "②", label: "Recebes o guia" },
+                { n: "③", label: "Aplicas e transformas" },
+              ].map(s => (
+                <div key={s.n} className="rounded-xl border border-white/[0.05] bg-black/20 px-2 py-3 space-y-1">
+                  <p className="text-lg font-bold text-brand">{s.n}</p>
+                  <p className="text-[11px] font-semibold text-ink leading-tight">{s.label}</p>
+                </div>
               ))}
-            </ul>
+            </div>
 
-            {/* Price block + CTA */}
-            <div className="rounded-xl border border-brand/20 bg-brand/[0.07] p-4 text-center space-y-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted">Investimento único</p>
-              <div className="flex items-end justify-center gap-3">
-                <span className="text-lg text-soft/40 line-through">{formatPriceKz(prices.priceOriginal)}</span>
-                <span className="text-3xl font-semibold text-brand leading-none">{formatPriceKz(prices.pricePromo)}</span>
-              </div>
-              {name && result ? (
-                <p className="text-xs text-soft/70">
-                  Preço reservado para <strong className="text-soft">{name}</strong> com base no teu perfil &ldquo;{result.profileTitle}&rdquo;
+            {/* Imagem centrada */}
+            <div className="mx-auto w-48 drop-shadow-[0_24px_48px_rgba(32,230,126,0.18)] sm:w-56">
+              <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
+            </div>
+
+            {/* Bullets + preço — mesma largura que o botão */}
+            <div className="space-y-3">
+              <ul className="space-y-2">
+                {content.bullets.map(item => (
+                  <li key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-black/20 px-4 py-2.5 text-sm text-soft/90">
+                    <CheckIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Price block + CTA */}
+              <div className="rounded-xl border border-brand/20 bg-brand/[0.07] p-4 text-center space-y-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted">Investimento único</p>
+                <div className="flex items-end justify-center gap-3">
+                  <span className="text-lg text-soft/40 line-through">{formatPriceKz(prices.priceOriginal)}</span>
+                  <span className="text-3xl font-semibold text-brand leading-none">{formatPriceKz(prices.pricePromo)}</span>
+                </div>
+                {name && result ? (
+                  <p className="text-xs text-soft/70">
+                    Preço reservado para <strong className="text-soft">{name}</strong> com base no teu perfil &ldquo;{result.profileTitle}&rdquo;
+                  </p>
+                ) : null}
+                <div className="flex flex-col items-center gap-1 rounded-xl border border-red-400/25 bg-red-400/[0.09] px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400/70">Oferta expira em</p>
+                  <p className="text-3xl font-bold tabular-nums text-red-300">{hh}:{mm}:{ss}</p>
+                </div>
+                {/* Escassez */}
+                <div className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.08] px-3 py-2">
+                  <span className="text-sm text-yellow-400">⚠️ {content.scarcity_text}</span>
+                </div>
+                {/* Contador */}
+                <p className="text-xs text-muted">
+                  <span className="font-bold text-brand">{content.social_proof}</span>
                 </p>
-              ) : null}
-              <div className="flex flex-col items-center gap-1 rounded-xl border border-red-400/25 bg-red-400/[0.09] px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400/70">Oferta expira em</p>
-                <p className="text-3xl font-bold tabular-nums text-red-300">{hh}:{mm}:{ss}</p>
-              </div>
-              {/* Escassez */}
-              <div className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.08] px-3 py-2">
-                <span className="text-sm text-yellow-400">⚠️ {content.scarcity_text}</span>
-              </div>
-              {/* Contador */}
-              <p className="text-xs text-muted">
-                <span className="font-bold text-brand">{content.social_proof}</span>
-              </p>
-              <p className="text-xs text-muted">Sem mensalidade. Acesso imediato após pagamento.</p>
-              {/* Garantia */}
-              <div className="flex items-start gap-2 rounded-xl border border-soft/10 bg-white/[0.03] px-3 py-2.5 text-left">
-                <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                <div>
-                  <p className="text-[11px] font-semibold text-soft/90">Garantia de 7 Dias sem Risco</p>
-                  <p className="text-[10px] text-soft/50 leading-relaxed">{content.guarantee_text}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleCheckoutClick}
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative">{content.cta_text}</span>
-              </button>
-              <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
-                <LockIcon className="h-3 w-3" />
-                Pagamento seguro via Multicaixa / Internet Banking
-              </p>
-            </div>
-          </div>
-
-          {/* Testemunhos — carrossel automático */}
-          <div className="space-y-3">
-            <p className="text-center text-[10px] font-bold uppercase tracking-widest text-muted">O que dizem os nossos leitores</p>
-            <div className="relative">
-              {testimonials.map((t, i) => (
-                <div
-                  key={t.name}
-                  className={`rounded-xl border border-white/[0.05] bg-black/20 p-4 space-y-3 transition-opacity duration-500 ${i === slide ? "opacity-100" : "pointer-events-none absolute inset-0 opacity-0"}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Image src={t.avatar} alt={t.name} width={40} height={40} className="rounded-full object-cover w-10 h-10 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">{t.name}</p>
-                      <p className="text-xs text-brand tracking-tight">{"★".repeat(t.stars)}{"☆".repeat(5 - t.stars)}</p>
-                    </div>
+                <p className="text-xs text-muted">Sem mensalidade. Acesso imediato após pagamento.</p>
+                {/* Garantia */}
+                <div className="flex items-start gap-2 rounded-xl border border-soft/10 bg-white/[0.03] px-3 py-2.5 text-left">
+                  <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  <div>
+                    <p className="text-[11px] font-semibold text-soft/90">Garantia de 7 Dias sem Risco</p>
+                    <p className="text-[10px] text-soft/50 leading-relaxed">{content.guarantee_text}</p>
                   </div>
-                  <p className="text-sm text-soft/80 leading-relaxed">{t.text}</p>
                 </div>
-              ))}
-            </div>
-            {/* Dots */}
-            <div className="flex justify-center gap-1.5">
-              {testimonials.map((t, i) => (
                 <button
-                  key={t.name}
                   type="button"
-                  aria-label={`Ver testemunho de ${t.name}`}
-                  onClick={() => setSlide(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none ${i === slide ? "w-5 bg-brand" : "w-1.5 bg-white/20"}`}
-                />
-              ))}
+                  onClick={handleCheckoutClick}
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                  <span className="relative">{content.cta_text}</span>
+                </button>
+                <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
+                  <LockIcon className="h-3 w-3" />
+                  Pagamento seguro via Multicaixa / Internet Banking
+                </p>
+              </div>
             </div>
-          </div>
 
-        </div>
-      </GlassCard>
-    </FunnelShell>
+            {/* Testemunhos — carrossel automático */}
+            <div className="space-y-3">
+              <p className="text-center text-[10px] font-bold uppercase tracking-widest text-muted">O que dizem os nossos leitores</p>
+              <div className="relative">
+                {testimonials.map((t, i) => (
+                  <div
+                    key={t.name}
+                    className={`rounded-xl border border-white/[0.05] bg-black/20 p-4 space-y-3 transition-opacity duration-500 ${i === slide ? "opacity-100" : "pointer-events-none absolute inset-0 opacity-0"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Image src={t.avatar} alt={t.name} width={40} height={40} className="rounded-full object-cover w-10 h-10 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ink truncate">{t.name}</p>
+                        <p className="text-xs text-brand tracking-tight">{"★".repeat(t.stars)}{"☆".repeat(5 - t.stars)}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-soft/80 leading-relaxed">{t.text}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Dots */}
+              <div className="flex justify-center gap-1.5">
+                {testimonials.map((t, i) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    aria-label={`Ver testemunho de ${t.name}`}
+                    onClick={() => setSlide(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none ${i === slide ? "w-5 bg-brand" : "w-1.5 bg-white/20"}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </GlassCard>
+      </FunnelShell>
+
+      {/* Exit Intent Modal */}
+      <ExitIntentModal
+        isOpen={showExitIntent}
+        onClose={handleExitIntentDecline}
+        prices={{
+          original: prices.priceOriginal,
+          promo: prices.pricePromo,
+          exitDiscount: 500 // 500 Kz discount for exit intent
+        }}
+        onAccept={handleExitIntentAccept}
+        onDecline={handleExitIntentDecline}
+      />
+    </>
   );
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
-import { findCheckout, updateCheckoutStatus } from "@/lib/storage";
+import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
     if (isWebhookPaid(payload)) {
       try {
         await updateCheckoutStatus(reference, "paid", payload);
-        console.log("[Webhook] Payment marked as paid", { 
-          reference, 
+        void recordAffiliateSale(reference).catch(() => {});
+        console.log("[Webhook] Payment marked as paid", {
+          reference,
           duration: Date.now() - startTime,
           previousStatus: checkout.status
         });

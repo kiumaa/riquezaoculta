@@ -41,6 +41,8 @@ const STATUS_COLORS: Record<string, string> = {
 type Analytics = {
   dailyStats: { date: string; leads: number; checkouts: number; paid: number }[];
   profileDistribution: { profile: string; count: number }[];
+  provinceDistribution: { province: string; count: number }[];
+  profileConversion: { profile: string; leads: number; conversions: number; rate: number }[];
   summary: {
     totalLeads: number;
     totalCheckouts: number;
@@ -165,24 +167,31 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Profile distribution */}
+        {/* Profile distribution with conversion rates */}
         <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-            <h2 className="text-sm font-bold text-ink">Distribuição de Perfis</h2>
-            <Link href={"/admin/quiz" as Route} className="text-xs text-brand hover:underline">Análise completa →</Link>
+            <h2 className="text-sm font-bold text-ink">Perfis & Conversão</h2>
+            <Link href={"/admin/analytics" as Route} className="text-xs text-brand hover:underline">Analytics →</Link>
           </div>
           <div className="p-5 space-y-3">
-            {(analytics?.profileDistribution ?? []).length === 0 && (
+            {(analytics?.profileConversion ?? []).length === 0 && (
               <p className="text-sm text-muted italic">Nenhuma submissão de quiz ainda.</p>
             )}
-            {(analytics?.profileDistribution ?? []).slice(0, 6).map(({ profile, count }) => {
-              const total = (analytics?.profileDistribution ?? []).reduce((s, x) => s + x.count, 0);
-              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            {(analytics?.profileConversion ?? []).map(({ profile, leads: l, conversions, rate }) => {
+              const maxLeads = Math.max(...(analytics?.profileConversion ?? []).map(p => p.leads), 1);
+              const pct = Math.round((l / maxLeads) * 100);
               return (
                 <div key={profile}>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className={`font-semibold px-1.5 py-0.5 rounded ${profileColor(profile)}`}>{profile}</span>
-                    <span className="text-muted">{count} ({pct}%)</span>
+                    <span className={`font-semibold px-1.5 py-0.5 rounded capitalize ${profileColor(profile)}`}>{profile}</span>
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="text-muted">{l} leads</span>
+                      {conversions > 0 ? (
+                        <span className="text-green-400 font-bold">{conversions} compras ({rate}%)</span>
+                      ) : (
+                        <span className="text-muted">0 compras</span>
+                      )}
+                    </div>
                   </div>
                   <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                     <div className="h-full bg-brand/60 rounded-full" style={{ width: `${pct}%` }} />
@@ -193,6 +202,38 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Province Distribution */}
+      {(analytics?.provinceDistribution ?? []).length > 0 && (
+        <div className="bg-black/20 border border-white/5 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-ink">Top Províncias</h2>
+              <p className="text-[11px] text-muted mt-0.5">Origem geográfica dos leads (Angola)</p>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted">Top 5</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            {(analytics?.provinceDistribution ?? []).map(({ province, count }, i) => {
+              const maxCount = (analytics?.provinceDistribution ?? [])[0]?.count ?? 1;
+              const pct = Math.round((count / maxCount) * 100);
+              const rankColors = ["text-amber-400", "text-zinc-300", "text-amber-600/80", "text-muted", "text-muted"];
+              return (
+                <div key={province} className="bg-white/[0.03] border border-white/[0.05] rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-bold ${rankColors[i] ?? "text-muted"}`}>#{i + 1}</span>
+                    <span className="text-[10px] text-muted">{count} leads</span>
+                  </div>
+                  <p className="text-sm font-bold text-ink capitalize truncate">{province}</p>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-brandDark to-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -121,29 +121,36 @@ export async function createExpressCharge(input: ExpressChargeInput): Promise<Ex
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       },
       body,
-      redirect: "error",
       signal: controller.signal
     });
 
     const text = await res.text();
+    console.log(`[KB Express] Response: status=${res.status} redirected=${res.redirected} url=${res.url} body=${text.slice(0, 200)}`);
 
     if (!res.ok) {
-      throw new Error(`KB Express charge failed: ${res.status} ${text.slice(0, 200)}`);
+      console.error(`[KB Express] API error ${res.status}:`, text.slice(0, 500));
+      throw new Error(`KB Express charge failed: ${res.status} ${text.slice(0, 300)}`);
     }
 
     let responseJson: Record<string, unknown>;
     try { responseJson = JSON.parse(text); } catch {
+      console.error(`[KB Express] Non-JSON response (${res.status}) redirected=${res.redirected} finalUrl=${res.url}:`, text.slice(0, 300));
       throw new Error(`KB Express non-JSON response: ${text.slice(0, 100)}`);
     }
     if (responseJson.error) {
+      console.error(`[KB Express] Error in response:`, responseJson);
       throw new Error(`KB Express error: ${String(responseJson.error)} ${String(responseJson.message ?? "")}`);
     }
 
+    console.log(`[KB Express] Charge created OK for ref ${input.reference}`);
     return { mode: "live", reference: input.reference, amount: input.amount };
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[KB Express] createExpressCharge failed: ${msg}`);
     logError("Payment", "Failed to create Express charge", error);
     throw error;
   } finally {
@@ -179,6 +186,7 @@ export async function getChargeStatus(reference: string, method: "express" | "re
     const data = await res.json();
 
     if (!res.ok) {
+      console.error(`[KB Status] ${method} ${res.status} for ${reference}:`, JSON.stringify(data).slice(0, 300));
       throw new Error(`Status lookup failed: ${res.status}`);
     }
 
@@ -196,11 +204,13 @@ export async function getChargeStatus(reference: string, method: "express" | "re
       raw: data
     };
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[KB Status] ${method} check failed for ${reference}: ${msg}`);
     logError("Payment", `Failed to check status for ${reference}`, error);
     return {
       mode: "live" as const,
       status: "pending" as const,
-      raw: { error: String(error) }
+      raw: { error: msg }
     };
   }
 }

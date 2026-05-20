@@ -8,8 +8,8 @@ const WarningIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" v
 const CheckIcon = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
 
 export default function DefinicoesPage() {
-  const [prices, setPrices] = useState({ priceOriginal: 7500, pricePromo: 4500 });
-  const [form, setForm] = useState({ priceOriginal: 7500, pricePromo: 4500 });
+  const [prices, setPrices] = useState({ priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 });
+  const [form, setForm] = useState({ priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 });
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
   const [confirm, setConfirm] = useState<{ leads: boolean; checkouts: boolean }>({ leads: false, checkouts: false });
@@ -71,16 +71,30 @@ export default function DefinicoesPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label htmlFor="price-original" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço Original (Kz)</label>
+            <label htmlFor="price-original" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço Original Ebook (Kz)</label>
             <input id="price-original" type="number" min={1} value={form.priceOriginal}
               onChange={e => setForm(f => ({ ...f, priceOriginal: Number(e.target.value) }))}
               className="w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-2.5 text-base font-semibold text-ink focus:border-brand/50 focus:outline-none" />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="price-promo" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço Promocional (Kz)</label>
+            <label htmlFor="price-promo" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço Promocional Ebook (Kz)</label>
             <input id="price-promo" type="number" min={1} value={form.pricePromo}
               onChange={e => setForm(f => ({ ...f, pricePromo: Number(e.target.value) }))}
               className="w-full rounded-xl border border-white/[0.08] bg-black/30 px-4 py-2.5 text-base font-semibold text-ink focus:border-brand/50 focus:outline-none" />
+          </div>
+        </div>
+        {/* Preço do Quiz — linha separada com destaque visual */}
+        <div className="border-t border-white/[0.05] pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-accent">🧠 Quiz</span>
+            <span className="text-[11px] text-muted">Preço independente do funil de análise do quiz</span>
+          </div>
+          <div className="max-w-xs space-y-1.5">
+            <label htmlFor="price-quiz" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço da Análise do Quiz (Kz)</label>
+            <input id="price-quiz" type="number" min={1} value={form.priceQuiz}
+              onChange={e => setForm(f => ({ ...f, priceQuiz: Number(e.target.value) }))}
+              className="w-full rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-base font-semibold text-ink focus:border-accent/60 focus:outline-none" />
+            <p className="text-[10px] text-muted">Atual: <strong className="text-accent">{prices.priceQuiz.toLocaleString("pt-AO")} Kz</strong></p>
           </div>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
@@ -96,7 +110,7 @@ export default function DefinicoesPage() {
           )}
           {feedback === "error"  && <p className="text-xs font-semibold text-red-400">Erro ao guardar</p>}
           <p className="text-xs text-muted ml-auto">
-            Desconto: <strong className="text-ink">{prices.priceOriginal > 0 ? Math.round((1 - prices.pricePromo / prices.priceOriginal) * 100) : 0}%</strong>
+            Desconto Ebook: <strong className="text-ink">{prices.priceOriginal > 0 ? Math.round((1 - prices.pricePromo / prices.priceOriginal) * 100) : 0}%</strong>
           </p>
         </div>
       </div>

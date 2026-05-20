@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { getSettings } from "@/lib/storage";
+import { getSettings, getWhatsAppGroupLink } from "@/lib/storage";
 
 export async function GET() {
-  const settings = await getSettings();
-  return NextResponse.json(settings);
+  const [settings, whatsappLink] = await Promise.all([
+    getSettings(),
+    getWhatsAppGroupLink()
+  ]);
+  
+  return NextResponse.json({
+    ...settings,
+    whatsappLink
+  });
 }

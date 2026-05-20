@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
-import { findCheckout, updateCheckoutStatus } from "@/lib/storage";
+import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 
 // Express payments get grace period (10 minutes backend) for user to confirm on app
 // UX shows 5 minutes to create urgency, but backend allows 10 minutes
@@ -31,11 +31,14 @@ export async function GET(
       console.log(`[Status] Reference ${reference} expired after ${Math.round(elapsed/1000)}s`);
       await updateCheckoutStatus(reference, "failed", { reason: "Reference expired", expiredAfter: elapsed });
     } else {
-      const provider = await getChargeStatus(reference, method);
+      // Use KB's own payment reference for status lookup (not our internal ROV2 reference)
+      const kbReference = record.paymentReference ?? reference;
+      const provider = await getChargeStatus(kbReference, method);
 
       // For Express: only mark as failed after grace period
       if (provider.status === "paid") {
         await updateCheckoutStatus(reference, "paid", provider.raw);
+        void recordAffiliateSale(reference).catch(() => {});
       } else if (provider.status === "failed") {
         // For Express: wait grace period before marking as failed
         if (method === "express" && elapsed < EXPRESS_GRACE_PERIOD_MS) {
@@ -47,6 +50,7 @@ export async function GET(
       } else if (!isProd && !env.KB_AGENCY_API_KEY) {
         if (elapsed >= 20_000) {
           await updateCheckoutStatus(reference, "paid", { simulatedAutoPaid: true });
+          void recordAffiliateSale(reference).catch(() => {});
         }
       }
     }

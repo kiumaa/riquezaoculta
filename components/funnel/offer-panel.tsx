@@ -23,13 +23,21 @@ function CheckIcon(props: SVGProps<SVGSVGElement>) {
 
 export function OfferPanel({
   angle,
-  initialPrices
+  initialPrices,
+  isUpsell = false,
 }: {
-  angle: string,
-  initialPrices: { priceOriginal: number, pricePromo: number }
+  angle: string;
+  initialPrices: { priceOriginal: number; pricePromo: number };
+  isUpsell?: boolean;
 }) {
+  const priceOriginal = isUpsell ? 4500 : initialPrices.priceOriginal;
+  const pricePromo = isUpsell ? 3000 : initialPrices.pricePromo;
+  const ctaLink = isUpsell ? "/checkout/pagamento?product=ebook_upsell" : "/oferta";
+  const ctaText = isUpsell ? "ADICIONAR GUIA AO MEU PEDIDO (3.000 Kz) 🛒" : "ACESSAR AGORA";
+  const badgeText = isUpsell ? "Desconto de Aluno Ativado" : "Oferta recomendada";
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-brand/[0.08] p-5 sm:p-6">
+    <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-brand/[0.08] p-5 sm:p-6" id="upsell">
       {/* Linha de luz no topo */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent" />
 
@@ -37,7 +45,7 @@ export function OfferPanel({
         {/* Badge */}
         <p className="text-center text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
           <span className="mr-2 inline-block animate-glow-pulse">◆</span>
-          Oferta recomendada
+          {badgeText}
         </p>
 
         {/* Imagem largura total */}
@@ -57,8 +65,8 @@ export function OfferPanel({
 
         {/* Preço */}
         <div className="flex items-end justify-center gap-3 font-semibold">
-          <span className="text-lg text-soft/45 line-through">{formatPriceKz(initialPrices.priceOriginal)}</span>
-          <span className="text-4xl text-brand leading-none tracking-tight">{formatPriceKz(initialPrices.pricePromo)}</span>
+          <span className="text-lg text-soft/45 line-through">{formatPriceKz(priceOriginal)}</span>
+          <span className="text-4xl text-brand leading-none tracking-tight">{formatPriceKz(pricePromo)}</span>
         </div>
 
         {/* Features */}
@@ -73,11 +81,11 @@ export function OfferPanel({
 
         {/* CTA — largura total */}
         <Link
-          href="/oferta"
+          href={ctaLink}
           className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
         >
           <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-          <span className="relative">ACESSAR AGORA</span>
+          <span className="relative">{ctaText}</span>
         </Link>
       </div>
     </div>

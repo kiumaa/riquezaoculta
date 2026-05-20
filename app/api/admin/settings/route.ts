@@ -14,6 +14,7 @@ export async function GET() {
 const schema = z.object({
   priceOriginal:     z.number().int().positive().optional(),
   pricePromo:        z.number().int().positive().optional(),
+  priceQuiz:         z.number().int().positive().optional(),
   whatsappGroupLink: z.string().url().optional(),
 });
 

@@ -11,6 +11,8 @@ type AnalyticsData = {
   dailyStats: { date: string; leads: number; checkouts: number; paid: number }[];
   profileDistribution: { profile: string; count: number }[];
   sourceDistribution: { source: string; count: number }[];
+  provinceDistribution: { province: string; count: number }[];
+  profileConversion: { profile: string; leads: number; conversions: number; rate: number }[];
   summary: {
     totalLeads: number;
     totalCheckouts: number;
@@ -26,6 +28,18 @@ const TOOLTIP_STYLE = {
   labelStyle: { color: "#c5d4c8", fontSize: 11 },
   itemStyle: { fontSize: 11 },
 };
+
+const PROFILE_COLORS_HEX: Record<string, string> = {
+  emocional:  "#f59e0b",
+  clareza:    "#3b82f6",
+  acao:       "#22c55e",
+  disciplina: "#a855f7",
+};
+
+function profileHex(profile: string) {
+  const dominant = profile.split("-")[0];
+  return PROFILE_COLORS_HEX[dominant] ?? "#6b7f71";
+}
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -43,6 +57,13 @@ export default function AnalyticsPage() {
 
   const s = data?.summary;
   const dailyFormatted = (data?.dailyStats ?? []).map(d => ({ ...d, date: d.date.slice(5) }));
+  const conversionData = (data?.profileConversion ?? []).map(p => ({
+    name: p.profile,
+    leads: p.leads,
+    compras: p.conversions,
+    taxa: p.rate,
+  }));
+  const maxLeadsConversion = Math.max(...conversionData.map(r => r.leads), 1);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -99,6 +120,72 @@ export default function AnalyticsPage() {
               <Line type="monotone" dataKey="checkouts" stroke="#3b82f6" strokeWidth={2} dot={false} name="Checkouts" />
               <Line type="monotone" dataKey="paid" stroke="#f59e0b" strokeWidth={2} dot={false} name="Pagos" />
             </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Conversion by Profile */}
+      {conversionData.length > 0 && (
+        <div className="bg-black/20 border border-white/5 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-ink">Conversão por Perfil de Quiz</h2>
+              <p className="text-[11px] text-muted mt-0.5">Comparação entre leads captados e compras reais por pilar dominante</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {conversionData.map(row => (
+              <div key={row.name}>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-bold capitalize" style={{ color: profileHex(row.name) }}>{row.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted">{row.leads} leads</span>
+                    <span className="font-bold text-green-400">{row.compras} compras</span>
+                    <span className={`font-black text-sm ${row.taxa >= 10 ? "text-green-400" : row.taxa > 0 ? "text-amber-400" : "text-muted"}`}>
+                      {row.taxa}%
+                    </span>
+                  </div>
+                </div>
+                {/* Stacked bar: leads base, compras overlay */}
+                <div className="relative h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div className="absolute inset-y-0 left-0 rounded-full opacity-30"
+                    style={{
+                      width: `${Math.round((row.leads / maxLeadsConversion) * 100)}%`,
+                      background: profileHex(row.name)
+                    }} />
+                  {row.compras > 0 && (
+                    <div className="absolute inset-y-0 left-0 rounded-full"
+                      style={{
+                        width: `${Math.round((row.compras / maxLeadsConversion) * 100)}%`,
+                        background: "#22c55e"
+                      }} />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 mt-4 text-[10px] text-muted">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded-full bg-white/20 inline-block" />Leads captados</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded-full bg-green-400 inline-block" />Compras confirmadas</span>
+          </div>
+        </div>
+      )}
+
+      {/* Province Distribution */}
+      {(data?.provinceDistribution ?? []).length > 0 && (
+        <div className="bg-black/20 border border-white/5 rounded-2xl p-5">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-ink">Distribuição Geográfica — Angola</h2>
+            <p className="text-[11px] text-muted mt-0.5">Top 5 províncias com mais leads registados</p>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={data?.provinceDistribution ?? []} layout="vertical" margin={{ left: 10, right: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+              <XAxis type="number" tick={{ fill: "#6b7f71", fontSize: 10 }} allowDecimals={false} />
+              <YAxis type="category" dataKey="province" tick={{ fill: "#8f9d93", fontSize: 10 }} width={100} />
+              <Tooltip {...TOOLTIP_STYLE} formatter={(val) => [val, "Leads"]} />
+              <Bar dataKey="count" fill="#20e67e" radius={[0, 4, 4, 0]} name="Leads" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       )}

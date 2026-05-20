@@ -6,6 +6,7 @@ import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/600.css";
 import "./globals.css";
 import { JourneyTracker } from "@/components/JourneyTracker";
+import { AffiliateTracker } from "@/components/affiliate/AffiliateTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.riquezaoculta.click"),
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         </noscript>
         <JourneyTracker />
+        <AffiliateTracker />
         {children}
       </body>
     </html>

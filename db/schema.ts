@@ -1,5 +1,8 @@
 import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, varchar } from "drizzle-orm/pg-core";
 
+export const affiliateStatusEnum = pgEnum("affiliate_status", ["pending", "active", "suspended"]);
+export const payoutStatusEnum = pgEnum("payout_status", ["pending", "approved", "paid", "rejected"]);
+
 export const settings = pgTable("settings", {
   key: varchar("key", { length: 64 }).primaryKey(),
   value: varchar("value", { length: 255 }).notNull()
@@ -32,6 +35,7 @@ export const checkouts = pgTable("checkouts", {
   amount: integer("amount").notNull(),
   status: checkoutStatusEnum("status").default("pending").notNull(),
   providerPayload: jsonb("provider_payload"),
+  affiliateToken: varchar("affiliate_token", { length: 32 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });
@@ -69,8 +73,36 @@ export const memberContent = pgTable("member_content", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
+export const affiliates = pgTable("affiliates", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  token: varchar("token", { length: 32 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  iban: varchar("iban", { length: 34 }),
+  status: affiliateStatusEnum("status").default("pending").notNull(),
+  commissionRate: integer("commission_rate").default(30).notNull(),
+  totalClicks: integer("total_clicks").default(0).notNull(),
+  totalSales: integer("total_sales").default(0).notNull(),
+  totalEarnings: integer("total_earnings").default(0).notNull(),
+  currentBalance: integer("current_balance").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const payoutRequests = pgTable("payout_requests", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  affiliateId: integer("affiliate_id").notNull(),
+  amount: integer("amount").notNull(),
+  status: payoutStatusEnum("status").default("pending").notNull(),
+  notes: varchar("notes", { length: 500 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type LeadInsert = typeof leads.$inferInsert;
 export type CheckoutInsert = typeof checkouts.$inferInsert;
 export type QuizSubmissionInsert = typeof quizSubmissions.$inferInsert;
 export type FunnelContentInsert = typeof funnelContent.$inferInsert;
 export type MemberContentInsert = typeof memberContent.$inferInsert;
+export type AffiliateInsert = typeof affiliates.$inferInsert;
+export type PayoutRequestInsert = typeof payoutRequests.$inferInsert;

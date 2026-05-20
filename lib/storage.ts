@@ -1,10 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
-import { checkouts, funnelContent, leads, memberContent, quizSubmissions, settings } from "@/db/schema";
-import type { FunnelContentInsert, MemberContentInsert, QuizSubmissionInsert } from "@/db/schema";
+import { affiliates, checkouts, funnelContent, leads, memberContent, payoutRequests, quizSubmissions, settings } from "@/db/schema";
+import type { AffiliateInsert, FunnelContentInsert, MemberContentInsert, PayoutRequestInsert, QuizSubmissionInsert } from "@/db/schema";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logger";
-import type { CheckoutRecord, CheckoutStatus, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, QuizSubmissionRecord } from "@/lib/types";
+import type { AffiliateRecord, AffiliateStatus, CheckoutRecord, CheckoutStatus, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, PayoutRequestRecord, PayoutStatus, QuizSubmissionRecord } from "@/lib/types";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
 const fallbackPath = path.join(process.cwd(), "data", "runtime.json");
@@ -12,9 +12,10 @@ const fallbackPath = path.join(process.cwd(), "data", "runtime.json");
 type Settings = {
   priceOriginal: number;
   pricePromo: number;
+  priceQuiz: number;
 };
 
-const SETTINGS_DEFAULTS: Settings = { priceOriginal: 7500, pricePromo: 4500 };
+const SETTINGS_DEFAULTS: Settings = { priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 };
 
 // In-memory cache for settings (60 seconds TTL)
 let settingsCache: { data: Settings; expires: number } | null = null;
@@ -59,7 +60,7 @@ export async function insertLead(payload: LeadPayload) {
 
 export async function insertCheckout(record: CheckoutRecord) {
   if (db) {
-    await db.insert(checkouts).values({
+    const base = {
       reference: record.reference,
       name: record.name,
       phone: record.phone,
@@ -69,7 +70,19 @@ export async function insertCheckout(record: CheckoutRecord) {
       status: record.status,
       providerPayload: record.providerPayload,
       updatedAt: new Date(record.updatedAt)
-    });
+    };
+    try {
+      await db.insert(checkouts).values({ ...base, affiliateToken: record.affiliateToken ?? null });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("affiliate_token") || msg.includes("column")) {
+        // Column not yet migrated — insert without it so checkouts are never lost
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await db.insert(checkouts).values(base as any);
+      } else {
+        throw err;
+      }
+    }
     return;
   }
 
@@ -99,6 +112,7 @@ export async function findCheckout(reference: string): Promise<CheckoutRecord | 
       amount: row.amount,
       status: row.status,
       providerPayload: row.providerPayload,
+      affiliateToken: row.affiliateToken ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString()
     };
@@ -235,7 +249,8 @@ export async function getSettings(): Promise<Settings> {
     const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
     result = {
       priceOriginal: map.priceOriginal ? Number(map.priceOriginal) : SETTINGS_DEFAULTS.priceOriginal,
-      pricePromo: map.pricePromo ? Number(map.pricePromo) : SETTINGS_DEFAULTS.pricePromo
+      pricePromo: map.pricePromo ? Number(map.pricePromo) : SETTINGS_DEFAULTS.pricePromo,
+      priceQuiz: map.priceQuiz ? Number(map.priceQuiz) : SETTINGS_DEFAULTS.priceQuiz
     };
   } else {
     const data = await readFallback();
@@ -469,6 +484,65 @@ export async function getStatusDistribution(): Promise<{ status: string; count: 
   return rows as { status: string; count: number }[];
 }
 
+export async function getProvinceDistribution(): Promise<{ province: string; count: number }[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({ province: leads.province, count: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(sql`${leads.province} IS NOT NULL AND ${leads.province} != ''`)
+    .groupBy(leads.province)
+    .orderBy(desc(sql`count(*)`))
+    .limit(5);
+  return (rows as { province: string | null; count: number }[]).filter(r => r.province !== null) as { province: string; count: number }[];
+}
+
+export async function getProfileConversion(): Promise<{ profile: string; leads: number; conversions: number; rate: number }[]> {
+  if (!db) return [];
+
+  // Get all quiz submissions grouped by profile (dominant pillar)
+  const submissions = await db
+    .select({ profile: quizSubmissions.profile, phone: quizSubmissions.phone })
+    .from(quizSubmissions);
+
+  if (submissions.length === 0) return [];
+
+  // Build a map of phone -> dominant pillar (first part of "clareza-acao" format)
+  const phoneToProfile = new Map<string, string>();
+  for (const s of submissions) {
+    if (!phoneToProfile.has(s.phone)) {
+      const dominant = s.profile.split("-")[0] ?? s.profile;
+      phoneToProfile.set(s.phone, dominant);
+    }
+  }
+
+  // Get leads that have converted (status = comprou or upsell)
+  const convertedLeads = await db
+    .select({ phone: leads.phone })
+    .from(leads)
+    .where(sql`${leads.status} IN ('comprou', 'upsell')`);
+
+  const convertedPhones = new Set(convertedLeads.map(l => l.phone));
+
+  // Aggregate by profile
+  const profileMap = new Map<string, { leads: number; conversions: number }>();
+
+  for (const [phone, profile] of phoneToProfile.entries()) {
+    const existing = profileMap.get(profile) ?? { leads: 0, conversions: 0 };
+    existing.leads += 1;
+    if (convertedPhones.has(phone)) existing.conversions += 1;
+    profileMap.set(profile, existing);
+  }
+
+  return Array.from(profileMap.entries())
+    .map(([profile, data]) => ({
+      profile,
+      leads: data.leads,
+      conversions: data.conversions,
+      rate: data.leads > 0 ? Math.round((data.conversions / data.leads) * 100) : 0
+    }))
+    .sort((a, b) => b.leads - a.leads);
+}
+
 // ── Funnel content ────────────────────────────────────────────────────────────
 
 export const DEFAULT_WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/EY84u93L1uy3CSOFF6mBl7";
@@ -481,20 +555,6 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     cta_text: "Iniciar simulador →",
     trust_badge_1: "100% Anónimo",
     trust_badge_2: "Resultado Imediato",
-  },
-  oferta: {
-    headline: "Riqueza Oculta: Guia Definitivo",
-    subheading: "descobre os pilares estratégicos que separam quem gera resultados reais de quem apenas observa. Não é sobre sofrer mais, é sobre dominar o sistema.",
-    cta_text: "DESBLOQUEAR AGORA",
-    guarantee_text: "Se não ficares satisfeito, devolvemos 100% do valor. Sem perguntas.",
-    scarcity_text: "Restam 14 vagas ao preço promocional",
-    social_proof: "327+ pessoas já garantiram o seu acesso",
-    bullet_1: "Os 5 Pilares da Riqueza Mental",
-    bullet_2: "Como Reprogramar Crenças Limitantes",
-    bullet_3: "Hábitos Estratégicos de Foco",
-    bullet_4: "A Fórmula do Crescimento Financeiro",
-    bullet_5: "Checklist de Hábitos Diários",
-    bullet_6: "Garantia de 7 dias ou dinheiro de volta",
   },
   resultado: {
     explanation_text: "Muitas vezes trabalhamos duro, corremos de manhã a noite, mas o progresso parece não acompanhar o esforço. Isso não é falta de sorte — é o teu código mental que precisa de ser atualizado para uma nova realidade.",
@@ -515,6 +575,54 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     vip_cta: "Aceder ao Grupo VIP →",
     vip_context_payment: "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",
     vip_context_confirmed: "Pagamento confirmado! Entra na comunidade 🎉",
+    testimonial_1_name: "Maria Santos",
+    testimonial_1_text: "Acesso imediato após o pagamento. Foi mesmo fácil e rápido.",
+    testimonial_1_stars: "5",
+    testimonial_2_name: "Carlos Mendes",
+    testimonial_2_text: "Paguei pela referência no ATM e o acesso foi automático. Recomendo.",
+    testimonial_2_stars: "5",
+    testimonial_3_name: "João Ferreira",
+    testimonial_3_text: "Processo simples e seguro. O guia chegou no momento a seguir ao pagamento.",
+    testimonial_3_stars: "5",
+  },
+  oferta: {
+    headline: "Riqueza Oculta: Guia Definitivo",
+    subheading: "descobre os pilares estratégicos que separam quem gera resultados reais de quem apenas observa. Não é sobre sofrer mais, é sobre dominar o sistema.",
+    cta_text: "DESBLOQUEAR AGORA",
+    guarantee_text: "Se não ficares satisfeito, devolvemos 100% do valor. Sem perguntas.",
+    scarcity_text: "Restam 14 vagas ao preço promocional",
+    social_proof: "327+ pessoas já garantiram o seu acesso",
+    bullet_1: "Os 5 Pilares da Riqueza Mental",
+    bullet_2: "Como Reprogramar Crenças Limitantes",
+    bullet_3: "Hábitos Estratégicos de Foco",
+    bullet_4: "A Fórmula do Crescimento Financeiro",
+    bullet_5: "Checklist de Hábitos Diários",
+    bullet_6: "Garantia de 7 dias ou dinheiro de volta",
+    testimonial_1_name: "Maria Santos",
+    testimonial_1_text: "Fiz o simulador por curiosidade e fiquei chocada com o resultado. Em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças.",
+    testimonial_1_stars: "5",
+    testimonial_2_name: "Carlos Mendes",
+    testimonial_2_text: "Sempre achei que o problema era o salário. O guia mostrou-me que o problema era a minha forma de pensar. Recomendo a toda a gente.",
+    testimonial_2_stars: "5",
+    testimonial_3_name: "João Ferreira",
+    testimonial_3_text: "Comprei sem muita expectativa, mas o conteúdo é directo ao ponto. Sem teorias, só estratégias que funcionam mesmo.",
+    testimonial_3_stars: "5",
+    testimonial_4_name: "Ana Pereira",
+    testimonial_4_text: "O perfil que recebi descreveu-me exactamente. Senti que foi feito para mim. Já indiquei a 4 amigas.",
+    testimonial_4_stars: "5",
+    testimonial_5_name: "José Nunes",
+    testimonial_5_text: "Vale muito mais do que o preço. Tenho lido e relido o guia — cada vez encontro algo novo para aplicar.",
+    testimonial_5_stars: "4",
+    testimonial_6_name: "Etiene Kimbangu",
+    testimonial_6_text: "Nunca pensei que um quiz pudesse revelar tanto sobre mim. Os exercícios práticos mudam mesmo a mentalidade.",
+    testimonial_6_stars: "5",
+  },
+  simulador: {
+    step_label: "Passo 1 de 5",
+    headline: "Cria o teu Perfil Financeiro",
+    subtitle: "Vamos enviar a tua análise personalizada directamente para o teu WhatsApp. É rápido e gratuito.",
+    cta_text: "Iniciar análise gratuita →",
+    privacy_text: "Não partilhamos os teus dados. Apenas usamos para te enviar os resultados.",
   },
 };
 
@@ -617,4 +725,149 @@ export async function updateMemberContent(id: number, patch: Partial<MemberConte
 export async function deleteMemberContent(id: number) {
   if (!db) return;
   await db.delete(memberContent).where(eq(memberContent.id, id));
+}
+
+// ── Affiliates ─────────────────────────────────────────────────────────────────
+
+export function generateAffiliateToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "ROA-";
+  for (let i = 0; i < 8; i++) result += chars[Math.floor(Math.random() * chars.length)];
+  return result;
+}
+
+function rowToAffiliate(row: typeof affiliates.$inferSelect): AffiliateRecord {
+  return {
+    id: row.id,
+    token: row.token,
+    name: row.name,
+    phone: row.phone,
+    email: row.email,
+    iban: row.iban,
+    status: row.status as AffiliateStatus,
+    commissionRate: row.commissionRate,
+    totalClicks: row.totalClicks,
+    totalSales: row.totalSales,
+    totalEarnings: row.totalEarnings,
+    currentBalance: row.currentBalance,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export async function insertAffiliate(payload: AffiliateInsert): Promise<AffiliateRecord | null> {
+  if (!db) return null;
+  const rows = await db.insert(affiliates).values(payload).returning();
+  return rows[0] ? rowToAffiliate(rows[0]) : null;
+}
+
+export async function findAffiliateByToken(token: string): Promise<AffiliateRecord | null> {
+  if (!db) return null;
+  const rows = await db.select().from(affiliates).where(eq(affiliates.token, token)).limit(1);
+  return rows[0] ? rowToAffiliate(rows[0]) : null;
+}
+
+export async function findAffiliateByPhone(phone: string): Promise<AffiliateRecord | null> {
+  if (!db) return null;
+  const rows = await db.select().from(affiliates).where(eq(affiliates.phone, phone)).limit(1);
+  return rows[0] ? rowToAffiliate(rows[0]) : null;
+}
+
+export async function getAffiliates(page = 1, limit = 50): Promise<AffiliateRecord[]> {
+  if (!db) return [];
+  const offset = (page - 1) * limit;
+  const rows = await db.select().from(affiliates).orderBy(desc(affiliates.createdAt)).limit(limit).offset(offset);
+  return rows.map(rowToAffiliate);
+}
+
+export async function getPagedAffiliates(page = 1, limit = 20): Promise<PaginatedResult<AffiliateRecord>> {
+  const offset = (page - 1) * limit;
+  if (!db) {
+    return { data: [], total: 0, page: 1, totalPages: 1 };
+  }
+  const [rows, [{ count }]] = await Promise.all([
+    db.select().from(affiliates).orderBy(desc(affiliates.createdAt)).limit(limit).offset(offset),
+    db.select({ count: sql<number>`count(*)::int` }).from(affiliates)
+  ]);
+  return {
+    data: rows.map(rowToAffiliate),
+    total: count,
+    page,
+    totalPages: Math.ceil(count / limit)
+  };
+}
+
+
+export async function updateAffiliate(id: number, patch: Partial<AffiliateInsert>) {
+  if (!db) return;
+  await db.update(affiliates).set(patch).where(eq(affiliates.id, id));
+}
+
+export async function recordAffiliateClick(token: string) {
+  if (!db) return;
+  await db
+    .update(affiliates)
+    .set({ totalClicks: sql`${affiliates.totalClicks} + 1` })
+    .where(eq(affiliates.token, token));
+}
+
+export async function recordAffiliateSale(checkoutReference: string) {
+  if (!db) return;
+  // Get checkout to find the affiliateToken
+  const checkout = await findCheckout(checkoutReference);
+  if (!checkout?.affiliateToken) return;
+
+  const affiliate = await findAffiliateByToken(checkout.affiliateToken);
+  if (!affiliate || affiliate.status !== "active") return;
+
+  const commission = Math.floor(checkout.amount * affiliate.commissionRate / 100);
+  await db
+    .update(affiliates)
+    .set({
+      totalSales: sql`${affiliates.totalSales} + 1`,
+      totalEarnings: sql`${affiliates.totalEarnings} + ${commission}`,
+      currentBalance: sql`${affiliates.currentBalance} + ${commission}`,
+    })
+    .where(eq(affiliates.id, affiliate.id));
+}
+
+// ── Payout Requests ────────────────────────────────────────────────────────────
+
+function rowToPayout(row: typeof payoutRequests.$inferSelect): PayoutRequestRecord {
+  return {
+    id: row.id,
+    affiliateId: row.affiliateId,
+    amount: row.amount,
+    status: row.status as PayoutStatus,
+    notes: row.notes,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export async function insertPayoutRequest(affiliateId: number, amount: number): Promise<PayoutRequestRecord | null> {
+  if (!db) return null;
+  const rows = await db.insert(payoutRequests).values({ affiliateId, amount } as PayoutRequestInsert).returning();
+  return rows[0] ? rowToPayout(rows[0]) : null;
+}
+
+export async function getPayoutRequestsByAffiliate(affiliateId: number): Promise<PayoutRequestRecord[]> {
+  if (!db) return [];
+  const rows = await db.select().from(payoutRequests).where(eq(payoutRequests.affiliateId, affiliateId)).orderBy(desc(payoutRequests.createdAt));
+  return rows.map(rowToPayout);
+}
+
+export async function getPayoutRequests(status?: PayoutStatus): Promise<PayoutRequestRecord[]> {
+  if (!db) return [];
+  const query = db.select().from(payoutRequests).orderBy(desc(payoutRequests.createdAt));
+  if (status) {
+    const rows = await db.select().from(payoutRequests).where(eq(payoutRequests.status, status)).orderBy(desc(payoutRequests.createdAt));
+    return rows.map(rowToPayout);
+  }
+  const rows = await query;
+  return rows.map(rowToPayout);
+}
+
+export async function updatePayoutRequest(id: number, status: PayoutStatus, notes?: string) {
+  if (!db) return;
+  await db.update(payoutRequests).set({ status, notes: notes ?? null, updatedAt: new Date() }).where(eq(payoutRequests.id, id));
 }

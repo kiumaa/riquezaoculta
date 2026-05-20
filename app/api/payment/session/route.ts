@@ -11,7 +11,9 @@ const schema = z.object({
   name: z.string().min(2).max(80),
   phone: z.string().min(7).max(24),
   method: z.enum(["express", "reference"]).default("reference"),
-  expressPhone: z.string().min(9).max(15).optional()
+  expressPhone: z.string().min(9).max(15).optional(),
+  affiliateToken: z.string().max(32).optional(),
+  product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
 });
 
 function makeReference() {
@@ -42,7 +44,18 @@ export async function POST(req: NextRequest) {
 
   const reference = makeReference();
   const now = new Date().toISOString();
-  const { pricePromo } = await getSettings();
+  const { pricePromo, priceQuiz } = await getSettings();
+
+  let amount = pricePromo;
+  let description = "Ebook Riqueza Oculta V2";
+
+  if (parsed.data.product === "quiz") {
+    amount = priceQuiz;
+    description = "Análise Completa do Quiz - Riqueza Oculta";
+  } else if (parsed.data.product === "ebook_upsell") {
+    amount = 3000;
+    description = "Ebook Riqueza Oculta V2 (Upsell Especial)";
+  }
 
   if (parsed.data.method === "express") {
     if (!parsed.data.expressPhone) {
@@ -52,8 +65,8 @@ export async function POST(req: NextRequest) {
     let charge: Awaited<ReturnType<typeof createExpressCharge>>;
     try {
       charge = await createExpressCharge({
-        phone: parsed.data.expressPhone,
-        amount: pricePromo,
+        phone: parsed.data.expressPhone.replace(/\D/g, ""),
+        amount,
         reference
       });
     } catch {
@@ -71,7 +84,8 @@ export async function POST(req: NextRequest) {
       entity: "express",
       paymentReference: charge.reference,
       status: "pending",
-      providerPayload: { method: "express", mode: charge.mode },
+      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product },
+      affiliateToken: parsed.data.affiliateToken ?? null,
       createdAt: now,
       updatedAt: now
     });
@@ -96,9 +110,9 @@ export async function POST(req: NextRequest) {
   });
 
   const charge = await createCharge({
-    amount: pricePromo,
+    amount,
     reference,
-    description: "Ebook Riqueza Oculta V2"
+    description
   });
 
   console.log("[Payment Session] Charge created", {
@@ -146,7 +160,8 @@ export async function POST(req: NextRequest) {
     entity: charge.entity,
     paymentReference: charge.paymentReference,
     status: "pending",
-    providerPayload: charge.raw,
+    providerPayload: { ...(charge.raw as Record<string, unknown>), product: parsed.data.product },
+    affiliateToken: parsed.data.affiliateToken ?? null,
     createdAt: now,
     updatedAt: now
   });
