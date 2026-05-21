@@ -30,6 +30,17 @@ export default function SimuladorQuizPage() {
   const currentIndex = Math.min(answeredCount, questions.length - 1);
   const current = questions[currentIndex];
 
+  const contextText = useMemo(() => {
+    const userName = name || "";
+    if (currentIndex < 2) {
+      return `${userName}, as tuas respostas estão a construir o teu perfil exclusivo...`;
+    }
+    if (currentIndex < questions.length - 1) {
+      return `Muito bem ${userName}. Cada resposta revela uma camada do teu padrão.`;
+    }
+    return `🔒 O teu resultado está quase pronto, ${userName}.`;
+  }, [currentIndex, name, questions.length]);
+
   useEffect(() => {
     if (!name || questions.length === 0 || !current) {
       router.replace("/simulador/inicio");
@@ -62,14 +73,14 @@ export default function SimuladorQuizPage() {
         <div className="space-y-6">
           <div className="space-y-3">
             <p className="text-center text-[11px] font-medium uppercase tracking-[0.18em] text-brandBright">
-              Etapa {currentIndex + 1} de {questions.length} · Matrix 2026
+              Diagnóstico {currentIndex + 1}/{questions.length} — Quase lá!
             </p>
             <ProgressBar current={currentIndex + 1} total={questions.length} />
           </div>
 
           <div className="space-y-2 text-center">
             <p className="text-[11px] leading-relaxed text-soft/50">
-              {name}, responde com honestidade. Em menos de 2 minutos vamos revelar o teu padrão mental financeiro.
+              {contextText}
             </p>
             <h2 className="text-xl font-semibold leading-tight sm:text-2xl">{current.prompt}</h2>
           </div>

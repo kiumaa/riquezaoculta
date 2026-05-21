@@ -51,8 +51,27 @@
       "source": "ebook-offer"
     }
   ],
-  "settings": { "priceOriginal": 7500, "pricePromo": 4500 },
+  "settings": {
+    "priceOriginal": 7500,
+    "pricePromo": 4500
+  },
   "checkouts": [
+    {
+      "reference": "ROV2-MPEP8Z3S-I9EY1",
+      "name": "Teste Quiz",
+      "phone": "244912345678",
+      "amount": 1000,
+      "entity": "00999",
+      "paymentReference": "945704090",
+      "status": "pending",
+      "providerPayload": {
+        "reason": "KB_AGENCY_API_KEY missing",
+        "product": "quiz"
+      },
+      "affiliateToken": null,
+      "createdAt": "2026-05-20T23:35:04.120Z",
+      "updatedAt": "2026-05-20T23:35:04.120Z"
+    },
     {
       "reference": "ROV2-MMDK3D6I-QRWQM",
       "name": "gggg",

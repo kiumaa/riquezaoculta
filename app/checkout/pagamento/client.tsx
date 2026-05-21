@@ -148,11 +148,12 @@ function CheckoutPagamentoInner({
 
   const benefits = product === "quiz"
     ? [
-        "Relatório Aprofundado Detalhado (Desbloqueado)",
-        "Diagnóstico Personalizado do Teu Pilar Dominante",
-        "Plano de Ação para Superar o Teu Pilar Fraco",
-        "Acesso Vitalício ao Teu Painel de Resultados",
-        "Garantia de Satisfação de 7 dias"
+        "🧠 Análise completa dos teus 4 pilares financeiros",
+        "⚡ Sabotador oculto identificado e como neutralizá-lo",
+        "📋 Plano prático de 7 dias para começar hoje",
+        "⏱️ Micro-hábito dos 2 minutos personalizado",
+        "✅ Acesso imediato — desbloqueio automático após pagamento",
+        "🛡️ 7 dias de garantia total ou devolução do valor"
       ]
     : [
         content.benefit_1,
@@ -546,10 +547,26 @@ function CheckoutPagamentoInner({
 
           {/* Header */}
           <div className="space-y-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">Passo 5 de 5</p>
-            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-              {uiState === "select" ? "Garantir acesso agora" : "Finalizar pagamento"}
-            </h1>
+            {product === "quiz" ? (
+              <>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brandBright flex items-center justify-center gap-1.5">
+                  <span>🧠</span> <span>ANÁLISE COMPLETA DESBLOQUEADA</span>
+                </p>
+                <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
+                  {uiState === "select" ? "Desbloquear Análise" : "Finalizar Pagamento"}
+                </h1>
+                <p className="text-xs text-soft max-w-sm mx-auto leading-relaxed">
+                  O teu diagnóstico financeiro está pronto. Só precisas de confirmar o pagamento para ver tudo.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">Passo 5 de 5</p>
+                <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
+                  {uiState === "select" ? "Garantir acesso agora" : "Finalizar pagamento"}
+                </h1>
+              </>
+            )}
           </div>
 
           {/* Resumo da compra */}
@@ -950,8 +967,8 @@ function CheckoutPagamentoInner({
               {/* O que recebes */}
               <div className="rounded-xl border border-white/[0.07] bg-black/20 px-4 py-3 space-y-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Após o pagamento recebes</p>
-                {benefits.slice(0, 3).map(item => (
-                  <div key={item} className="flex items-center gap-2.5">
+                {(product === "quiz" ? benefits : benefits.slice(0, 3)).map(item => (
+                  <div key={item} className="flex items-center gap-2.5 text-left">
                     <CheckSmallIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
                     <span className="text-[12px] text-soft">{item}</span>
                   </div>

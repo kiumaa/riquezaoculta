@@ -549,16 +549,16 @@ export const DEFAULT_WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/EY84u93L1u
 
 export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
   landing: {
-    badge_text: "Simulador Riqueza 2026",
-    headline: "Trabalhas, corres, prometes mudar... mas nada muda.",
-    subtitle: "O que te trava não é azar. É um padrão invisível que decide as tuas escolhas sem que percebas. Este simulador revela-o em 2 minutos.",
-    cta_text: "Iniciar simulador →",
-    trust_badge_1: "100% Anónimo",
-    trust_badge_2: "Resultado Imediato",
+    badge_text: "⚡ 2.847 pessoas já descobriram",
+    headline: "O dinheiro passa pelas tuas mãos mas nunca fica.",
+    subtitle: "Não é falta de esforço. É o teu padrão mental financeiro a sabotar-te em silêncio. Em 3 minutos descobres exatamente o que te trava — e como inverter.",
+    cta_text: "Descobrir o meu padrão agora →",
+    trust_badge_1: "✓ Gratuito e Imediato",
+    trust_badge_2: "✓ 2.847 análises feitas",
   },
   resultado: {
-    explanation_text: "Muitas vezes trabalhamos duro, corremos de manhã a noite, mas o progresso parece não acompanhar o esforço. Isso não é falta de sorte — é o teu código mental que precisa de ser atualizado para uma nova realidade.",
-    closing_text: "Vais continuar a aceitar os mesmos resultados ou vais desbloquear o caminho de abundância que mereces construir?",
+    explanation_text: "Trabalhaste, esforçaste-te, prometeste mudar. Mas existe um padrão invisível que repete o mesmo ciclo — e não é culpa tua. É neurológico. As tuas respostas revelam exatamente onde esse ciclo se quebra.",
+    closing_text: "A maioria das pessoas vai fechar esta página e amanhã vai estar na mesma situação. Os que agem agora são os que mudam.",
     cta_text: "Quero a solução →",
   },
   payment: {
@@ -618,11 +618,11 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     testimonial_6_stars: "5",
   },
   simulador: {
-    step_label: "Passo 1 de 5",
-    headline: "Cria o teu Perfil Financeiro",
-    subtitle: "Vamos enviar a tua análise personalizada directamente para o teu WhatsApp. É rápido e gratuito.",
-    cta_text: "Iniciar análise gratuita →",
-    privacy_text: "Não partilhamos os teus dados. Apenas usamos para te enviar os resultados.",
+    step_label: "Análise Gratuita • Resultado em 3 minutos",
+    headline: "Para quem enviamos a tua análise?",
+    subtitle: "Vamos personalizar o teu diagnóstico financeiro com base nas tuas respostas. O resultado chega direto ao teu WhatsApp.",
+    cta_text: "Começar agora →",
+    privacy_text: "🔒 Os teus dados são privados. Só usamos para enviar o teu resultado.",
   },
 };
 

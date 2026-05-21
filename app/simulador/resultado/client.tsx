@@ -371,37 +371,63 @@ export default function SimuladorResultadoClient({
                 </div>
               </div>
             ) : (
-              <div className="relative overflow-hidden rounded-xl border border-white/[0.04] bg-black/40 p-5 mt-4 text-left">
-                {/* Texto desfocado de fundo */}
-                <div className="space-y-4 text-sm leading-relaxed text-soft/20 select-none blur-[4px] pointer-events-none max-h-32 overflow-hidden">
-                  <p>{content.explanation_text || "O teu perfil financeiro detalhado indica que tens grandes oportunidades de crescimento. No entanto, existem certos sabotadores invisíveis a bloquear os teus resultados diários..."}</p>
-                  <p className="font-medium text-white/10">{result.profileSummary || "Os teus sabotadores invisíveis limitam a tua clareza e ação diária."}</p>
+              <div className="relative rounded-xl border border-white/[0.04] bg-black/40 p-6 mt-4 text-center">
+                {/* Texto desfocado de fundo no topo */}
+                <div className="space-y-3 text-xs leading-relaxed text-soft/10 select-none blur-[5px] pointer-events-none max-h-24 overflow-hidden mb-4 border-b border-white/[0.02] pb-4">
+                  <p>As tuas respostas indicam um padrão comportamental profundo no pilar do planeamento...</p>
+                  <p>O sabotador secundário atua diretamente no momento da poupança imediata, gerando impulsos...</p>
                 </div>
                 
-                {/* Painel por cima */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-t from-bg/95 via-bg/75 to-transparent">
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand/[0.12] text-brand">
+                {/* Secção de bloqueio no fluxo normal */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand/[0.12] text-brand">
                     <svg className="h-5 w-5 text-brandBright animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">Relatório Completo Bloqueado</h3>
-                  <p className="text-xs text-soft max-w-xs mb-3">
-                    Descobre a análise profunda de cada pilar, os teus sabotadores financeiros ocultos e o plano prático de reprogramação.
+                  <h3 className="text-base font-bold text-white mb-2">Acesso ao Relatório Bloqueado 🔒</h3>
+                  <p className="text-xs text-soft max-w-sm mb-4 leading-relaxed">
+                    Acabaste de completar o teu diagnóstico financeiro. Os resultados mostram padrões importantes — mas a análise profunda e o plano prático de reprogramação estão bloqueados:
                   </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-left text-[11px] text-soft/80 w-full max-w-md mb-2 bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-brandBright font-bold">🔒</span> <span>Análise profunda dos 4 pilares</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-brandBright font-bold">🔒</span> <span>Nome do teu Sabotador Oculto</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-brandBright font-bold">🔒</span> <span>Plano de Reprogramação 7 Dias</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-brandBright font-bold">🔒</span> <span>O teu Micro-hábito de 2 minutos</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* CTA para a oferta do Quiz ou nenhuma se já estiver pago */}
             {!quizPaid && (
-              <Link
-                href="/checkout/pagamento?product=quiz"
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative">DESBLOQUEAR MINHA ANÁLISE COMPLETA ({initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz) 🔓</span>
-              </Link>
+              <div className="space-y-3 mt-4">
+                <p className="text-center text-[10px] uppercase tracking-widest text-brandBright font-semibold">
+                  Desbloqueia agora por apenas {initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz
+                </p>
+                <Link
+                  href="/checkout/pagamento?product=quiz"
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                  <span className="relative flex items-center gap-2">
+                    <span>🔓</span>
+                    <span>Quero ver a minha análise completa ({initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz)</span>
+                  </span>
+                </Link>
+                <p className="text-center text-[11px] text-soft/60">
+                  ✓ Acesso imediato · ✓ Pagamento seguro · ✓ 7 dias de garantia
+                </p>
+              </div>
             )}
           </div>
         </GlassCard>
