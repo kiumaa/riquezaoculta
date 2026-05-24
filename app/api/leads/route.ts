@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { insertLead } from "@/lib/storage";
 import { normalizePhone } from "@/lib/phone";
-import { env } from "@/lib/env";
 import { sendFBConversionLead } from "@/lib/capi";
 import { z } from "zod";
 
