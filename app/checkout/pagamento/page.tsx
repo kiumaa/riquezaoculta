@@ -25,7 +25,7 @@ export default async function CheckoutPagamentoPage() {
           c.quick_reply_1 ?? "É seguro pagar aqui?",
           c.quick_reply_2 ?? "O que recebo exactamente?",
           c.quick_reply_3 ?? "Como pago no ATM?",
-          c.quick_reply_4 ?? "4500 Kz é muito caro?",
+          c.quick_reply_4 ?? "2499 Kz é muito caro?",
         ],
         vip_cta:               c.vip_cta               ?? "Aceder ao Grupo VIP →",
         vip_context_payment:   c.vip_context_payment   ?? "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",

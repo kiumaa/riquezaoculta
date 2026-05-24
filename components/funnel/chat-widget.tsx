@@ -11,7 +11,7 @@ const DEFAULT_QUICK_REPLIES = [
   "É seguro pagar aqui?",
   "O que recebo exactamente?",
   "Como pago no ATM?",
-  "4500 Kz é muito caro?",
+  "2499 Kz é muito caro?",
 ];
 
 export function ChatWidget({

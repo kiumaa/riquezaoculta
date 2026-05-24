@@ -583,7 +583,7 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     quick_reply_1: "É seguro pagar aqui?",
     quick_reply_2: "O que recebo exactamente?",
     quick_reply_3: "Como pago no ATM?",
-    quick_reply_4: "4500 Kz é muito caro?",
+    quick_reply_4: "2499 Kz é muito caro?",
     vip_cta: "Aceder ao Grupo VIP →",
     vip_context_payment: "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",
     vip_context_confirmed: "Pagamento confirmado! Entra na comunidade 🎉",
