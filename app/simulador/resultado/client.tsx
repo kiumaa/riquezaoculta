@@ -246,30 +246,34 @@ export default function SimuladorResultadoClient({
                 return (
                   <div
                     key={pillar}
-                    className={`rounded-xl border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] relative overflow-hidden transition-all duration-500 ${
-                      isLocked ? "filter blur-[6px] select-none opacity-40 pointer-events-none" : ""
-                    } ${color.bg}`}
+                    className={`rounded-xl border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] relative overflow-hidden transition-all duration-500 ${color.bg}`}
                   >
                     {isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px] z-10">
-                        <svg className="h-5 w-5 text-brandBright animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 z-20">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/20 border border-brand/40 text-brand shadow-[0_0_10px_rgba(32,230,126,0.3)] animate-pulse">
+                          <svg className="h-4.5 w-4.5 text-brandBright" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </div>
                       </div>
                     )}
-                    <div className="mb-3 flex items-end justify-between">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                        {pillar}
-                      </p>
-                      <p className={`text-xl font-bold tabular-nums leading-none ${color.text}`}>
-                        {score}
-                      </p>
-                    </div>
-                    <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className={`h-full rounded-full bg-gradient-to-r ${color.bar} ${color.glow} [width:var(--score-pct)] transition-all duration-1000 ease-out`}
-                        style={{ "--score-pct": `${pct}%` } as CSSProperties}
-                      />
+                    <div className={`transition-all duration-500 ${
+                      isLocked ? "filter blur-[2.2px] select-none opacity-55 pointer-events-none" : ""
+                    }`}>
+                      <div className="mb-3 flex items-end justify-between">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
+                          {pillar}
+                        </p>
+                        <p className={`text-xl font-bold tabular-nums leading-none ${color.text}`}>
+                          {score}
+                        </p>
+                      </div>
+                      <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
+                        <div
+                          className={`h-full rounded-full bg-gradient-to-r ${color.bar} ${color.glow} [width:var(--score-pct)] transition-all duration-1000 ease-out`}
+                          style={{ "--score-pct": `${pct}%` } as CSSProperties}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -373,10 +377,10 @@ export default function SimuladorResultadoClient({
               </div>
             ) : (
               <div className="relative rounded-xl border border-white/[0.04] bg-black/40 p-6 mt-4 text-center">
-                {/* Texto desfocado de fundo no topo */}
-                <div className="space-y-3 text-xs leading-relaxed text-soft/10 select-none blur-[5px] pointer-events-none max-h-24 overflow-hidden mb-4 border-b border-white/[0.02] pb-4">
-                  <p>As tuas respostas indicam um padrão comportamental profundo no pilar do planeamento...</p>
-                  <p>O sabotador secundário atua diretamente no momento da poupança imediata, gerando impulsos...</p>
+                {/* Texto desfocado de fundo no topo - Spoiler misterioso */}
+                <div className="space-y-3 text-[11px] leading-relaxed text-soft/25 select-none blur-[3.2px] pointer-events-none max-h-24 overflow-hidden mb-4 border-b border-white/[0.02] pb-4">
+                  <p>ATENÇÃO: O teu pilar mais fraco está a sabotar silenciosamente a tua capacidade de reter riqueza. Os dados indicam que sempre que atinges o teu limite de stress financeiro, o teu cérebro ativa um gatilho de fuga inconsciente que te força a...</p>
+                  <p>Para neutralizar este bloqueio financeiro no mercado angolano, deves aplicar imediatamente a fórmula dos 2 minutos que consiste em reverter o ciclo através de...</p>
                 </div>
                 
                 {/* Secção de bloqueio no fluxo normal */}
@@ -386,23 +390,41 @@ export default function SimuladorResultadoClient({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2">Acesso ao Relatório Reservado</h3>
+                  <h3 className="text-base font-bold text-white mb-2 flex items-center gap-1.5 justify-center">
+                    ⚠️ Bloqueio Financeiro Detetado
+                  </h3>
                   <p className="text-xs text-soft max-w-sm mb-4 leading-relaxed">
-                    Acabaste de completar o teu diagnóstico financeiro. Os resultados mostram padrões importantes — mas a análise profunda e o plano prático de reprogramação estão reservados:
+                    Identificámos o teu perfil dominante &ldquo;{result.profileTitle}&rdquo;, mas a tua menor pontuação revela um sabotador ativo que está a drenar o teu esforço. Sem conheceres o nome dele e a estratégia de reprogramação, continuarás a correr sem sair do mesmo lugar.
                   </p>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-left text-[11px] text-soft/80 w-full max-w-md mb-2 bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-left text-[11px] text-soft/90 w-full max-w-md mb-2 bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Análise profunda dos 4 pilares</span>
+                      <span className="text-brand font-bold text-xs">🔒</span>
+                      <div>
+                        <p className="font-semibold text-white">O Teu Sabotador Oculto</p>
+                        <p className="text-[10px] text-muted leading-tight">O padrão exato que te faz perder kwanzas sem veres.</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Nome do teu Sabotador Oculto</span>
+                      <span className="text-brand font-bold text-xs">🎯</span>
+                      <div>
+                        <p className="font-semibold text-white">Reprogramação em 7 Dias</p>
+                        <p className="text-[10px] text-muted leading-tight">Passos diários práticos desenhados para o teu perfil.</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Plano de Reprogramação 7 Dias</span>
+                      <span className="text-brand font-bold text-xs">⚡</span>
+                      <div>
+                        <p className="font-semibold text-white">Fórmula dos 2 Minutos</p>
+                        <p className="text-[10px] text-muted leading-tight">O micro-hábito que neutraliza o teu bloqueio.</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>O teu Micro-hábito de 2 minutos</span>
+                      <span className="text-brand font-bold text-xs">📊</span>
+                      <div>
+                        <p className="font-semibold text-white">Pontuações Ocultas</p>
+                        <p className="text-[10px] text-muted leading-tight">Desbloqueio total das tuas notas secretas em 3 pilares.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -412,8 +434,8 @@ export default function SimuladorResultadoClient({
             {/* CTA para a oferta do Quiz ou nenhuma se já estiver pago */}
             {!quizPaid && (
               <div className="space-y-3 mt-4">
-                <p className="text-center text-[10px] uppercase tracking-widest text-brandBright font-semibold">
-                  Desbloqueia agora por apenas {initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz
+                <p className="text-center text-[10px] uppercase tracking-widest text-brandBright font-semibold animate-pulse">
+                  Oferta Exclusiva: Desbloqueia hoje por apenas {initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz
                 </p>
                 <Link
                   href="/checkout/pagamento?product=quiz"
@@ -421,11 +443,11 @@ export default function SimuladorResultadoClient({
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                   <span className="relative flex items-center gap-2">
-                    <span>Quero ver a minha análise completa ({initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz)</span>
+                    <span>DESBLOQUEAR O MEU DIAGNÓSTICO COMPLETO</span>
                   </span>
                 </Link>
                 <p className="text-center text-[11px] text-soft/60">
-                  ✓ Acesso imediato · ✓ Pagamento seguro · ✓ 7 dias de garantia
+                  ✓ Acesso imediato · ✓ Confirmação instantânea · ✓ 7 dias de garantia sem risco
                 </p>
               </div>
             )}
