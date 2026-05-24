@@ -8,8 +8,8 @@ const WarningIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" v
 const CheckIcon = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
 
 export default function DefinicoesPage() {
-  const [prices, setPrices] = useState({ priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 });
-  const [form, setForm] = useState({ priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 });
+  const [prices, setPrices] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 });
+  const [form, setForm] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 });
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
   const [confirm, setConfirm] = useState<{ leads: boolean; checkouts: boolean }>({ leads: false, checkouts: false });

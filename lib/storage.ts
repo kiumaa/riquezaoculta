@@ -15,7 +15,7 @@ type Settings = {
   priceQuiz: number;
 };
 
-const SETTINGS_DEFAULTS: Settings = { priceOriginal: 7500, pricePromo: 4500, priceQuiz: 1000 };
+const SETTINGS_DEFAULTS: Settings = { priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 };
 
 // In-memory cache for settings (60 seconds TTL)
 let settingsCache: { data: Settings; expires: number } | null = null;

@@ -52,8 +52,9 @@
     }
   ],
   "settings": {
-    "priceOriginal": 7500,
-    "pricePromo": 4500
+    "priceOriginal": 4500,
+    "pricePromo": 2499,
+    "priceQuiz": 1000
   },
   "checkouts": [
     {

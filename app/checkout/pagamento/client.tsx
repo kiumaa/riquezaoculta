@@ -154,8 +154,8 @@ function CheckoutPagamentoInner({
   }, [product, isProductPaid, paymentStatus, setPaymentStatus, setPaymentReference]);
 
   const prices = {
-    priceOriginal: product === "quiz" ? Math.round(initialPrices.priceQuiz * 2.5) : (product === "ebook_upsell" ? 4500 : initialPrices.priceOriginal),
-    pricePromo: product === "quiz" ? initialPrices.priceQuiz : (product === "ebook_upsell" ? 3000 : initialPrices.pricePromo)
+    priceOriginal: product === "quiz" ? Math.round(initialPrices.priceQuiz * 2.5) : initialPrices.priceOriginal,
+    pricePromo: product === "quiz" ? initialPrices.priceQuiz : initialPrices.pricePromo
   };
 
   const benefits = product === "quiz"
