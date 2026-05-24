@@ -3,6 +3,7 @@ import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
+import { sendFBConversionPurchase } from "@/lib/capi";
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -77,7 +78,18 @@ export async function POST(req: NextRequest) {
       try {
         await updateCheckoutStatus(reference, "paid", payload);
         void recordAffiliateSale(reference).catch(() => {});
-        console.log("[Webhook] Payment marked as paid", {
+        
+        // Enviar evento Purchase Server-Side para Meta Conversions API (non-blocking)
+        const referer = req.headers.get("referer") ?? undefined;
+        void sendFBConversionPurchase(
+          checkout.name,
+          checkout.phone,
+          checkout.amount,
+          checkout.reference,
+          referer
+        ).catch(() => {});
+
+        console.log("[Webhook] Payment marked as paid & Purchase sent to CAPI", {
           reference,
           duration: Date.now() - startTime,
           previousStatus: checkout.status

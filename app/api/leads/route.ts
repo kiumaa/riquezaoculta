@@ -3,8 +3,8 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { insertLead } from "@/lib/storage";
 import { normalizePhone } from "@/lib/phone";
 import { env } from "@/lib/env";
+import { sendFBConversionLead } from "@/lib/capi";
 import { z } from "zod";
-import crypto from "crypto";
 
 const schema = z.object({
   name: z.string().min(2).max(80),
@@ -17,43 +17,6 @@ const schema = z.object({
     duration: z.number().optional()
   })).optional()
 });
-
-function sha256(value: string): string {
-  return crypto.createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
-}
-
-async function sendFBConversionLead(name: string, phone: string, eventSourceUrl?: string) {
-  const pixelId = env.FACEBOOK_PIXEL_ID;
-  const accessToken = env.FACEBOOK_ACCESS_TOKEN;
-  if (!pixelId || !accessToken) return;
-
-  const payload = {
-    data: [{
-      event_name: "Lead",
-      event_time: Math.floor(Date.now() / 1000),
-      event_id: crypto.randomUUID(),
-      event_source_url: eventSourceUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://riquezaoculta.click",
-      action_source: "website",
-      user_data: {
-        ph: sha256(phone),
-        fn: sha256(name.split(" ")[0]),
-      },
-      custom_data: {
-        value: 0.00,
-        currency: "AOA"
-      }
-    }]
-  };
-
-  await fetch(
-    `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }
-  ).catch(() => { }); // non-blocking — never break the lead flow
-}
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "local";
