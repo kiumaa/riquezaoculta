@@ -60,11 +60,9 @@ const TESTIMONIAL_AVATARS = [avatarMaria, avatarCarlos, avatarJoao, avatarAna, a
 export default function OfertaClient({
   initialPrices,
   content,
-  whatsappLink,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number };
   content: OfertaContent;
-  whatsappLink: string;
 }) {
   const name = useFunnelStore(state => state.name);
   const whatsapp = useFunnelStore(state => state.whatsapp);
@@ -153,7 +151,7 @@ export default function OfertaClient({
   return (
     <>
       <FunnelShell>
-        <ChatWidget whatsappLink={whatsappLink} />
+        <ChatWidget />
         <GlassCard>
           <div className="space-y-6">
 

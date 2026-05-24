@@ -146,6 +146,7 @@ export default function SimuladorResultadoClient({
   const finalizeResult = useFunnelStore(state => state.finalizeResult);
   const quizPaid = useFunnelStore(state => state.quizPaid);
   const ebookPaid = useFunnelStore(state => state.ebookPaid);
+  const paymentReference = useFunnelStore(state => state.paymentReference);
   const { playReveal } = useSound();
 
   useEffect(() => {
@@ -304,7 +305,7 @@ export default function SimuladorResultadoClient({
                     <div className="bg-black/40 border border-emerald-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-emerald-500/[0.04] transition-all" />
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl">⚡</span>
+                        <span className="text-xl text-emerald-400">✦</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                           A Tua Superpotência ({REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.title || result.dominant})
                         </h3>
@@ -321,7 +322,7 @@ export default function SimuladorResultadoClient({
                     <div className="bg-black/40 border border-red-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-red-500/[0.04] transition-all" />
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl">⚠️</span>
+                        <span className="text-xl text-red-400">✦</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-red-400">
                           O Teu Sabotador Oculto ({REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.title || result.weakest})
                         </h3>
@@ -338,7 +339,7 @@ export default function SimuladorResultadoClient({
                     <div className="bg-black/40 border border-cyan-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-cyan-500/[0.04] transition-all" />
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl">⏱️</span>
+                        <span className="text-xl text-cyan-400">✦</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
                           Fórmula dos 2 Minutos
                         </h3>
@@ -355,7 +356,7 @@ export default function SimuladorResultadoClient({
                     <div className="bg-black/40 border border-purple-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-purple-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-purple-500/[0.04] transition-all" />
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl">🏆</span>
+                        <span className="text-xl text-purple-400">✦</span>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
                           Desafio Semanal dos 7 Dias
                         </h3>
@@ -385,23 +386,23 @@ export default function SimuladorResultadoClient({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2">Acesso ao Relatório Bloqueado 🔒</h3>
+                  <h3 className="text-base font-bold text-white mb-2">Acesso ao Relatório Reservado</h3>
                   <p className="text-xs text-soft max-w-sm mb-4 leading-relaxed">
-                    Acabaste de completar o teu diagnóstico financeiro. Os resultados mostram padrões importantes — mas a análise profunda e o plano prático de reprogramação estão bloqueados:
+                    Acabaste de completar o teu diagnóstico financeiro. Os resultados mostram padrões importantes — mas a análise profunda e o plano prático de reprogramação estão reservados:
                   </p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-left text-[11px] text-soft/80 w-full max-w-md mb-2 bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">🔒</span> <span>Análise profunda dos 4 pilares</span>
+                      <span className="text-brandBright font-bold">✦</span> <span>Análise profunda dos 4 pilares</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">🔒</span> <span>Nome do teu Sabotador Oculto</span>
+                      <span className="text-brandBright font-bold">✦</span> <span>Nome do teu Sabotador Oculto</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">🔒</span> <span>Plano de Reprogramação 7 Dias</span>
+                      <span className="text-brandBright font-bold">✦</span> <span>Plano de Reprogramação 7 Dias</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">🔒</span> <span>O teu Micro-hábito de 2 minutos</span>
+                      <span className="text-brandBright font-bold">✦</span> <span>O teu Micro-hábito de 2 minutos</span>
                     </div>
                   </div>
                 </div>
@@ -420,7 +421,6 @@ export default function SimuladorResultadoClient({
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                   <span className="relative flex items-center gap-2">
-                    <span>🔓</span>
                     <span>Quero ver a minha análise completa ({initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz)</span>
                   </span>
                 </Link>
@@ -450,7 +450,7 @@ export default function SimuladorResultadoClient({
 
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
-                Acesso Garantido ⚡
+                Acesso Garantido
               </p>
               <h3 className="text-xl font-bold text-white sm:text-2xl">
                 O Teu Ebook e Grupo VIP Estão Prontos!
@@ -462,7 +462,7 @@ export default function SimuladorResultadoClient({
 
             <div className="grid grid-cols-1 gap-3 max-w-md mx-auto pt-2">
               <a
-                href="/Riqueza_Oculta.pdf"
+                href={paymentReference ? `/api/download/${paymentReference}` : "#"}
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />

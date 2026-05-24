@@ -29,7 +29,7 @@ export default async function CheckoutPagamentoPage() {
         ],
         vip_cta:               c.vip_cta               ?? "Aceder ao Grupo VIP →",
         vip_context_payment:   c.vip_context_payment   ?? "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",
-        vip_context_confirmed: c.vip_context_confirmed ?? "Pagamento confirmado! Entra na comunidade 🎉",
+        vip_context_confirmed: c.vip_context_confirmed ?? "Pagamento confirmado! Entra na comunidade",
         testimonial_1_name:  c.testimonial_1_name  ?? "Maria Santos",
         testimonial_1_text:  c.testimonial_1_text  ?? "Fiz o simulador por curiosidade e em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças.",
         testimonial_1_stars: c.testimonial_1_stars ?? "5",

@@ -123,13 +123,25 @@ export async function findCheckout(reference: string): Promise<CheckoutRecord | 
 }
 
 export async function updateCheckoutStatus(reference: string, status: CheckoutStatus, payload?: unknown) {
+  const current = await findCheckout(reference);
+  const oldPayload = current?.providerPayload;
+  
+  let mergedPayload = payload;
+  if (oldPayload && typeof oldPayload === "object" && oldPayload !== null) {
+    if (payload && typeof payload === "object" && payload !== null) {
+      mergedPayload = { ...oldPayload, ...payload };
+    } else if (payload === undefined || payload === null) {
+      mergedPayload = oldPayload;
+    }
+  }
+
   if (db) {
     try {
       await db
         .update(checkouts)
         .set({
           status,
-          providerPayload: payload,
+          providerPayload: mergedPayload,
           updatedAt: new Date()
         })
         .where(eq(checkouts.reference, reference));
@@ -145,7 +157,7 @@ export async function updateCheckoutStatus(reference: string, status: CheckoutSt
     return {
       ...item,
       status,
-      providerPayload: payload ?? item.providerPayload,
+      providerPayload: mergedPayload ?? item.providerPayload,
       updatedAt: new Date().toISOString()
     };
   });

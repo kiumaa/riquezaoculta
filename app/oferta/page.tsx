@@ -1,14 +1,13 @@
-import { getFunnelContentMap, getSettings, getWhatsAppGroupLink } from "@/lib/storage";
+import { getFunnelContentMap, getSettings } from "@/lib/storage";
 import OfertaClient from "./client";
 
 export const dynamic = "force-dynamic";
 
 export default async function OfertaPage() {
-  const [prices, c, whatsappLink] = await Promise.all([getSettings(), getFunnelContentMap("oferta"), getWhatsAppGroupLink()]);
+  const [prices, c] = await Promise.all([getSettings(), getFunnelContentMap("oferta")]);
   return (
     <OfertaClient
       initialPrices={prices}
-      whatsappLink={whatsappLink}
       content={{
         headline:      c.headline      ?? "Riqueza Oculta: Guia Definitivo",
         subheading:    c.subheading    ?? "descobre os pilares estratégicos que separam quem gera resultados reais de quem apenas observa. Não é sobre sofrer mais, é sobre dominar o sistema.",

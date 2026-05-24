@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { UpsellModal } from "@/components/funnel/upsell-modal";
@@ -11,18 +12,27 @@ import { trackEvent } from "@/lib/pixel";
 const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/EY84u93L1uy3CSOFF6mBl7?mode=gi_t";
 
 export default function AcessoPage() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
   const [upsellAccepted, setUpsellAccepted] = useState(false);
   const [upsellDeclined, setUpsellDeclined] = useState(false);
   const name = useFunnelStore(state => state.name);
-  const paymentStatus = useFunnelStore(state => state.paymentStatus);
+  const ebookPaid = useFunnelStore(state => state.ebookPaid);
+  const paymentReference = useFunnelStore(state => state.paymentReference);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Show upsell modal when page loads (if payment was confirmed)
   useEffect(() => {
+    if (!mounted) return;
+    
     // Check if we've already shown upsell this session
     const hasSeenUpsell = sessionStorage.getItem("ro_upsell_shown");
     
-    if (paymentStatus === "paid" && !hasSeenUpsell && !upsellDeclined) {
+    if (ebookPaid && !hasSeenUpsell && !upsellDeclined) {
       // Small delay for better UX
       const timer = setTimeout(() => {
         setShowUpsell(true);
@@ -32,7 +42,13 @@ export default function AcessoPage() {
       
       return () => clearTimeout(timer);
     }
-  }, [paymentStatus, upsellDeclined]);
+  }, [mounted, ebookPaid, upsellDeclined]);
+
+  useEffect(() => {
+    if (mounted && (!ebookPaid || !paymentReference)) {
+      router.push("/simulador/resultado");
+    }
+  }, [mounted, ebookPaid, paymentReference, router]);
 
   const handleUpsellAccept = () => {
     setUpsellAccepted(true);
@@ -48,6 +64,19 @@ export default function AcessoPage() {
     setShowUpsell(false);
     trackEvent("UpsellDeclined", { product: "consultoria" });
   };
+
+  // Se não estiver montado ou se não tiver pago o ebook, não renderiza nada para evitar flash de conteúdo
+  if (!mounted || !ebookPaid || !paymentReference) {
+    return (
+      <FunnelShell>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        </div>
+      </FunnelShell>
+    );
+  }
+
+  const downloadUrl = `/api/download/${paymentReference}`;
 
   // If upsell was accepted, show special confirmation
   if (upsellAccepted) {
@@ -83,7 +112,7 @@ export default function AcessoPage() {
 
             <div className="space-y-3">
               <a
-                href="/Riqueza_Oculta.pdf"
+                href={downloadUrl}
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
@@ -129,7 +158,7 @@ export default function AcessoPage() {
             <div className="rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm text-soft/80 space-y-2 text-left">
               <p className="flex items-center gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand text-xs font-bold">1</span>
-                Verifica o WhatsApp para instruções e suporte.
+                Descarrega o teu Guia Definitivo em formato PDF.
               </p>
               <p className="flex items-center gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand text-xs font-bold">2</span>
@@ -143,7 +172,7 @@ export default function AcessoPage() {
 
             <div className="space-y-3">
               <a
-                href="/Riqueza_Oculta.pdf"
+                href={downloadUrl}
                 className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
               >
                 <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
