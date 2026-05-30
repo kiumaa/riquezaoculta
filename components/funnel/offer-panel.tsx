@@ -5,10 +5,10 @@ import { formatPriceKz } from "@/lib/format";
 import ebookCover from "@/assets/ebook_cover_3d.webp";
 
 const features = [
-  "Ebook Completo Riqueza Oculta (PDF)",
-  "Acesso ao Simulador de Riqueza 2026",
-  "Checklist de Hábitos Diários",
-  "Audiobook para ouvir em qualquer lugar",
+  "Guia 1M em Uma Semana (PDF Completo)",
+  "Script Exato de Vendas por WhatsApp",
+  "Checklist de Estruturação da Oferta",
+  "Acesso ao Grupo VIP",
   "Garantia de 7 dias ou dinheiro de volta"
 ];
 
@@ -32,7 +32,7 @@ export function OfferPanel({
 }) {
   const priceOriginal = initialPrices.priceOriginal;
   const pricePromo = initialPrices.pricePromo;
-  const ctaLink = isUpsell ? "/checkout/pagamento?product=ebook_upsell" : "/oferta";
+  const ctaLink = isUpsell ? "/checkout/pagamento?product=ebook" : "/oferta";
   const ctaText = isUpsell ? `ADICIONAR GUIA AO MEU PEDIDO (${formatPriceKz(pricePromo)})` : "ACESSAR AGORA";
   const badgeText = isUpsell ? "Desconto de Aluno Ativado" : "Oferta recomendada";
 
@@ -52,14 +52,14 @@ export function OfferPanel({
         <div className="w-full drop-shadow-[0_20px_40px_rgba(32,230,126,0.15)]">
           <Image
             src={ebookCover}
-            alt="Riqueza Oculta: Guia Definitivo"
+            alt="Guia 1M em Uma Semana"
             className="w-full rounded-xl object-contain"
           />
         </div>
 
         {/* Título + ângulo */}
         <div className="text-center">
-          <h3 className="text-xl font-bold text-ink sm:text-2xl">Riqueza Oculta: Guia Definitivo</h3>
+          <h3 className="text-xl font-bold text-ink sm:text-2xl">1M em Uma Semana: O Guia Definitivo</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-soft">{angle}</p>
         </div>
 

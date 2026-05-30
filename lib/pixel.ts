@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const trackEvent = (eventName: string, data?: Record<string, unknown>) => {
+export const trackEvent = (eventName: string, data?: Record<string, unknown>, options?: Record<string, unknown>) => {
     if (typeof window !== "undefined" && (window as any).fbq) {
-        (window as any).fbq("track", eventName, data);
+        (window as any).fbq("track", eventName, data, options);
     }
 };
 

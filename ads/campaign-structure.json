@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-05-24",
+  "brand": "Riqueza Oculta",
+  "currency": "AOA",
+  "funnel_model": "paid_quiz_tripwire_then_ebook_upsell",
+  "products": [
+    {
+      "id": "quiz_report",
+      "name": "Analise Completa do Quiz",
+      "price": 1000,
+      "checkout_url": "https://www.riquezaoculta.click/checkout/pagamento?product=quiz"
+    },
+    {
+      "id": "ebook_riqueza_oculta",
+      "name": "Riqueza Oculta: Guia Definitivo",
+      "price": 2499,
+      "offer_url": "https://www.riquezaoculta.click/oferta"
+    }
+  ],
+  "campaigns": [
+    {
+      "name": "RO_V2_SALES_QUIZ_PAGO_AO_20260524",
+      "objective": "OUTCOME_SALES",
+      "status": "PAUSED",
+      "daily_budget_kz": 20000,
+      "optimization_event_initial": "InitiateCheckout",
+      "optimization_event_scale": "Purchase",
+      "destination_url": "https://www.riquezaoculta.click/?utm_source=meta&utm_medium=paid_social&utm_campaign=ro_v2_sales_quiz_pago&utm_content={{ad.name}}&utm_term={{adset.name}}",
+      "adsets": [
+        {
+          "name": "AO_BROAD_18-45_ADV",
+          "geo": ["AO"],
+          "age_min": 18,
+          "age_max": 45,
+          "targeting": "broad",
+          "budget_weight": 0.4
+        },
+        {
+          "name": "AO_INTERESSES_DINHEIRO_MENTALIDADE_18-45",
+          "geo": ["AO"],
+          "age_min": 18,
+          "age_max": 45,
+          "targeting": ["educacao financeira", "empreendedorismo", "desenvolvimento pessoal", "livros", "negocios"],
+          "budget_weight": 0.3
+        },
+        {
+          "name": "AO_JOVENS_AMBICIOSOS_18-34",
+          "geo": ["AO"],
+          "age_min": 18,
+          "age_max": 34,
+          "targeting": ["carreira", "universidade", "pequenos negocios", "tecnologia", "marketing digital"],
+          "budget_weight": 0.2
+        },
+        {
+          "name": "CPLP_TESTE_18-45",
+          "geo": ["AO", "MZ", "CV", "PT", "BR"],
+          "age_min": 18,
+          "age_max": 45,
+          "targeting": "broad",
+          "budget_weight": 0.1
+        }
+      ],
+      "ads": [
+        {
+          "name": "VID_QUIZ_PERFIL_9x16_V1",
+          "format": "vertical_video",
+          "primary_text": "O Simulador Riqueza Oculta mostra uma previa do teu perfil financeiro e ajuda-te a perceber qual pilar pode precisar de mais atencao: clareza, disciplina, acao ou emocional.\n\nDepois da previa, podes desbloquear a analise completa por apenas 1.000 Kz.",
+          "headline": "Descobre o teu perfil financeiro",
+          "description": "Previa do resultado + analise completa por 1.000 Kz.",
+          "cta": "GET_STARTED"
+        },
+        {
+          "name": "IMG_RELATORIO_1000KZ_4x5_V1",
+          "format": "image",
+          "primary_text": "Uma analise personalizada pode mostrar onde o teu comportamento financeiro ganha forca e onde perde consistencia.\n\nFaz o simulador e desbloqueia o relatorio completo por 1.000 Kz.",
+          "headline": "Relatorio completo por 1.000 Kz",
+          "description": "Resultado personalizado apos o quiz.",
+          "cta": "LEARN_MORE"
+        },
+        {
+          "name": "CAR_4_PILARES_1x1_V1",
+          "format": "carousel",
+          "primary_text": "Nem todo bloqueio financeiro vem de falta de esforco. As vezes o problema esta no pilar errado: clareza, disciplina, acao ou emocional.\n\nFaz o simulador e recebe uma leitura personalizada.",
+          "headline": "Qual pilar precisa de mais atencao?",
+          "description": "Faz o simulador.",
+          "cta": "GET_STARTED"
+        }
+      ]
+    },
+    {
+      "name": "RO_V2_RT_QUIZ_UNLOCK_AO_20260524",
+      "objective": "OUTCOME_SALES",
+      "status": "PAUSED",
+      "daily_budget_kz": 6000,
+      "optimization_event_initial": "InitiateCheckout",
+      "optimization_event_scale": "Purchase",
+      "destination_url": "https://www.riquezaoculta.click/?utm_source=meta&utm_medium=paid_social&utm_campaign=ro_v2_retargeting_quiz&utm_content={{ad.name}}&utm_term={{adset.name}}",
+      "audiences": [
+        "site_visitors_30d_no_quiz_purchase",
+        "leads_30d_no_quiz_purchase",
+        "result_view_14d_no_quiz_purchase",
+        "quiz_checkout_14d_no_purchase",
+        "meta_engagers_30d"
+      ],
+      "exclusions": ["quiz_buyers", "ebook_buyers"],
+      "ads": [
+        {
+          "name": "VID_RESULTADO_BLOQUEADO_9x16_V1",
+          "format": "vertical_video",
+          "primary_text": "Comecaste a descobrir o teu perfil financeiro. Agora podes desbloquear a analise completa e ver os pontos que ficaram ocultos no resultado.\n\nDisponivel por 1.000 Kz.",
+          "headline": "Desbloqueia a tua analise completa",
+          "description": "Continua de onde paraste.",
+          "cta": "SHOP_NOW"
+        }
+      ]
+    },
+    {
+      "name": "RO_V2_UPSELL_EBOOK_QUIZ_BUYERS_AO_20260524",
+      "objective": "OUTCOME_SALES",
+      "status": "PAUSED",
+      "daily_budget_kz": 5000,
+      "optimization_event_initial": "InitiateCheckout",
+      "optimization_event_scale": "Purchase",
+      "destination_url": "https://www.riquezaoculta.click/oferta?utm_source=meta&utm_medium=paid_social&utm_campaign=ro_v2_upsell_ebook_quiz_buyers&utm_content={{ad.name}}&utm_term={{adset.name}}",
+      "audiences": ["quiz_buyers_30d", "quiz_buyers_180d_if_low_volume"],
+      "exclusions": ["ebook_buyers"],
+      "ads": [
+        {
+          "name": "IMG_UPSELL_EBOOK_4x5_V1",
+          "format": "image",
+          "primary_text": "Ja tens a tua analise do quiz. O proximo passo e aplicar um metodo mais completo para organizar pensamentos, habitos e decisoes financeiras.\n\nO Guia Definitivo Riqueza Oculta aprofunda os pilares do teu perfil com passos praticos.",
+          "headline": "Continua com o Guia Definitivo",
+          "description": "E-book completo com acesso imediato.",
+          "cta": "SHOP_NOW"
+        }
+      ]
+    },
+    {
+      "name": "RO_V2_DIRECT_EBOOK_TEST_AO_20260524",
+      "objective": "OUTCOME_SALES",
+      "status": "PAUSED",
+      "daily_budget_kz": 3000,
+      "optimization_event_initial": "InitiateCheckout",
+      "optimization_event_scale": "Purchase",
+      "destination_url": "https://www.riquezaoculta.click/oferta?utm_source=meta&utm_medium=paid_social&utm_campaign=ro_v2_direct_ebook_test&utm_content={{ad.name}}&utm_term={{adset.name}}",
+      "adsets": [
+        {
+          "name": "AO_BROAD_18-45_ADV",
+          "geo": ["AO"],
+          "age_min": 18,
+          "age_max": 45,
+          "targeting": "broad"
+        }
+      ],
+      "ads": [
+        {
+          "name": "IMG_EBOOK_DIRECT_4x5_V1",
+          "format": "image",
+          "primary_text": "Um guia pratico para organizar pensamentos, habitos e decisoes financeiras com mais clareza.\n\nAcesso imediato apos pagamento. Garantia de 7 dias.",
+          "headline": "Riqueza Oculta: Guia Definitivo",
+          "description": "Disponivel por 2.499 Kz.",
+          "cta": "SHOP_NOW"
+        }
+      ]
+    }
+  ],
+  "target_metrics": {
+    "quiz_purchase_cpa_ideal_kz": 500,
+    "quiz_purchase_cpa_acceptable_kz": 800,
+    "quiz_purchase_cpa_limit_kz": 1000,
+    "ebook_purchase_cpa_ideal_kz": 900,
+    "ebook_purchase_cpa_acceptable_kz": 1300,
+    "quiz_buyer_to_ebook_rate_target_min": 0.1,
+    "quiz_buyer_to_ebook_rate_target_good": 0.2
+  },
+  "optimization_rules": {
+    "pause_ad_if_ctr_link_below_after_1500_impressions": 0.008,
+    "pause_adset_if_spend_without_quiz_purchase_exceeds_kz": 2000,
+    "scale_budget_daily_max_percent": 30,
+    "switch_to_purchase_optimization_after_weekly_purchases": 50
+  },
+  "implementation_notes": [
+    "Confirmar se textos publicos devem dizer previa gratuita + relatorio pago ou quiz pago desde o inicio.",
+    "Confirmar se ebook_upsell deve ficar em 3000 Kz ou alinhar com o preco principal de 2499 Kz.",
+    "Criar publico de compradores do quiz separado de compradores do e-book."
+  ]
+}

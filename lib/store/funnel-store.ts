@@ -50,7 +50,7 @@ export const useFunnelStore = create<FunnelState>()(
       paymentReference: null,
       paymentStatus: "idle",
       paymentMethod: null,
-      quizPaid: false,
+      quizPaid: true,
       ebookPaid: false,
       setName: name => set({ name }),
       setWhatsapp: whatsapp => set({ whatsapp }),
@@ -65,7 +65,7 @@ export const useFunnelStore = create<FunnelState>()(
           paymentReference: null,
           paymentStatus: "idle",
           paymentMethod: null,
-          quizPaid: false
+          quizPaid: true
         });
       },
       trackStep: (page, url) => {
@@ -118,7 +118,7 @@ export const useFunnelStore = create<FunnelState>()(
           paymentReference: null,
           paymentStatus: "idle",
           paymentMethod: null,
-          quizPaid: false,
+          quizPaid: true,
           ebookPaid: false
         });
       }

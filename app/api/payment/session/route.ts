@@ -47,14 +47,14 @@ export async function POST(req: NextRequest) {
   const { pricePromo, priceQuiz } = await getSettings();
 
   let amount = pricePromo;
-  let description = "Ebook Riqueza Oculta V2";
+  let description = "Guia 1M Em Uma Semana";
 
   if (parsed.data.product === "quiz") {
     amount = priceQuiz;
-    description = "Análise Completa do Quiz - Riqueza Oculta";
+    description = "Análise Completa do Quiz - 1M Em Uma Semana";
   } else if (parsed.data.product === "ebook_upsell") {
-    amount = 3000;
-    description = "Ebook Riqueza Oculta V2 (Upsell Especial)";
+    amount = pricePromo;
+    description = "Guia 1M Em Uma Semana (Upsell Especial)";
   }
 
   if (parsed.data.method === "express") {

@@ -242,7 +242,7 @@ function CheckoutPagamentoInner({
 
   useEffect(() => {
     trackEvent("InitiateCheckout", { 
-      content_name: product === "quiz" ? "Riqueza Oculta Relatório Quiz" : "Riqueza Oculta Ebook", 
+      content_name: product === "quiz" ? "1M Em Uma Semana Relatório Quiz" : "Guia 1M Em Uma Semana", 
       value: prices.pricePromo, 
       currency: "AOA" 
     });
@@ -321,8 +321,10 @@ function CheckoutPagamentoInner({
           trackEvent("Purchase", {
             value: data.amount || prices.pricePromo,
             currency: "AOA",
-            content_name: product === "quiz" ? "Riqueza Oculta - Relatório Quiz" : "Riqueza Oculta - Ebook",
+            content_name: product === "quiz" ? "1M Em Uma Semana - Relatório Quiz" : "Guia 1M Em Uma Semana",
             content_category: "Educação Financeira"
+          }, {
+            eventID: `purchase_${paymentReference}`
           });
           return true; // Stop polling
         }
@@ -406,7 +408,7 @@ function CheckoutPagamentoInner({
       // Fire AddPaymentInfo event to pixel
       trackEvent("AddPaymentInfo", { 
         payment_method: method, 
-        content_name: product === "quiz" ? "Riqueza Oculta Relatório Quiz" : "Riqueza Oculta Ebook" 
+        content_name: product === "quiz" ? "1M Em Uma Semana Relatório Quiz" : "Guia 1M Em Uma Semana" 
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado");
@@ -483,7 +485,7 @@ function CheckoutPagamentoInner({
                 {isQuiz ? "Análise Desbloqueada" : "Acesso libertado"}
               </p>
               <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-                {isQuiz ? "Relatório Desbloqueado!" : "Bem-vindo à Riqueza Oculta!"}
+                {isQuiz ? "Relatório Desbloqueado!" : "Bem-vindo ao 1M Em Uma Semana!"}
               </h1>
               <p className="text-sm leading-relaxed text-soft">
                 {isQuiz 
@@ -498,7 +500,7 @@ function CheckoutPagamentoInner({
                   <Lottie animationData={animationData} loop={true} />
                 </div>
               ) : (
-                <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
+                <Image src={ebookCover} alt="Guia 1M em Uma Semana" className="w-full rounded-lg object-contain" />
               )}
             </div>
 
@@ -589,12 +591,12 @@ function CheckoutPagamentoInner({
                   <Lottie animationData={animationData} loop={true} />
                 </div>
               ) : (
-                <Image src={ebookCover} alt="Riqueza Oculta" className="w-full rounded-md object-contain" />
+                <Image src={ebookCover} alt="Guia 1M em Uma Semana" className="w-full rounded-md object-contain" />
               )}
             </div>
             <div className="flex-1">
               <p className="text-xs font-medium text-soft">
-                {product === "quiz" ? "Desbloqueio: Relatório Financeiro Completo" : "Riqueza Oculta: Guia Definitivo"}
+                {product === "quiz" ? "Desbloqueio: Relatório Financeiro Completo" : "1M em Uma Semana: Guia Definitivo"}
               </p>
               <div className="mt-0.5 flex items-center gap-2">
                 <span className="text-xs text-muted line-through">{formatPriceKz(prices.priceOriginal)}</span>
@@ -935,7 +937,7 @@ function CheckoutPagamentoInner({
               {/* Botão Guardar no WhatsApp - só para Referência */}
               {paymentData.method !== "express" && paymentData.payment.entity && (
                 <a
-                  href={`https://wa.me/?text=*Referência Riqueza Oculta*%0A%0AEntidade: ${paymentData.payment.entity}%0AReferência: ${paymentData.payment.reference}%0AValor: ${paymentData.payment.amount} Kz%0A%0APaga no ATM ou Internet Banking.%0A%0ASite: ${typeof window !== 'undefined' ? window.location.origin : 'https://www.riquezaoculta.click'}`}
+                  href={`https://wa.me/?text=*Referência 1M Em Uma Semana*%0A%0AEntidade: ${paymentData.payment.entity}%0AReferência: ${paymentData.payment.reference}%0AValor: ${paymentData.payment.amount} Kz%0A%0APaga no ATM ou Internet Banking.%0A%0ASite: ${typeof window !== 'undefined' ? window.location.origin : 'https://www.riquezaoculta.click'}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#25D366]/10 border border-[#25D366]/30 px-4 py-3 text-sm text-[#25D366] hover:bg-[#25D366]/20 transition"

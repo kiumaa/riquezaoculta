@@ -15,7 +15,7 @@ type Settings = {
   priceQuiz: number;
 };
 
-const SETTINGS_DEFAULTS: Settings = { priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 };
+const SETTINGS_DEFAULTS: Settings = { priceOriginal: 10000, pricePromo: 2999, priceQuiz: 1000 };
 
 // In-memory cache for settings (60 seconds TTL)
 let settingsCache: { data: Settings; expires: number } | null = null;
@@ -577,13 +577,13 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     support_label: "Precisas de ajuda para pagar? Tem alguma dúvida?",
     support_cta: "Falar com a equipa no WhatsApp",
     support_context: "Atendimento humano imediato",
-    benefit_1: "Download imediato do Guia Definitivo",
+    benefit_1: "Download imediato do Guia 1M em Uma Semana",
     benefit_2: "Acesso ao Grupo VIP no WhatsApp",
     benefit_3: "Garantia de 7 dias sem risco",
     quick_reply_1: "É seguro pagar aqui?",
     quick_reply_2: "O que recebo exactamente?",
     quick_reply_3: "Como pago no ATM?",
-    quick_reply_4: "2499 Kz é muito caro?",
+    quick_reply_4: "2999 Kz é muito caro?",
     vip_cta: "Aceder ao Grupo VIP →",
     vip_context_payment: "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",
     vip_context_confirmed: "Pagamento confirmado! Entra na comunidade 🎉",
@@ -598,17 +598,17 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     testimonial_3_stars: "5",
   },
   oferta: {
-    headline: "Riqueza Oculta: Guia Definitivo",
-    subheading: "descobre os pilares estratégicos que separam quem gera resultados reais de quem apenas observa. Não é sobre sofrer mais, é sobre dominar o sistema.",
-    cta_text: "DESBLOQUEAR AGORA",
+    headline: "1M em Uma Semana: o guia definitivo",
+    subheading: "Aprende a transformar uma ideia, serviço ou produto num plano de venda de 7 dias com meta, copy, checkout, WhatsApp e execução diária.",
+    cta_text: "QUERO O MEU GUIA",
     guarantee_text: "Se não ficares satisfeito, devolvemos 100% do valor. Sem perguntas.",
     scarcity_text: "Restam 14 vagas ao preço promocional",
     social_proof: "327+ pessoas já garantiram o seu acesso",
-    bullet_1: "Os 5 Pilares da Riqueza Mental",
-    bullet_2: "Como Reprogramar Crenças Limitantes",
-    bullet_3: "Hábitos Estratégicos de Foco",
-    bullet_4: "A Fórmula do Crescimento Financeiro",
-    bullet_5: "Checklist de Hábitos Diários",
+    bullet_1: "A matemática por trás da meta de 1.000.000 Kz",
+    bullet_2: "Como criar uma oferta simples e irresistível",
+    bullet_3: "Checkout fácil e rápido para Angola",
+    bullet_4: "Scripts de WhatsApp para fechar vendas",
+    bullet_5: "Como criar urgência real",
     bullet_6: "Garantia de 7 dias ou dinheiro de volta",
     testimonial_1_name: "Maria Santos",
     testimonial_1_text: "Fiz o simulador por curiosidade e fiquei chocada com o resultado. Em 3 semanas mudei 2 hábitos que estavam a sabotar as minhas finanças.",

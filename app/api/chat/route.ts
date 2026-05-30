@@ -11,7 +11,7 @@ const schema = z.object({
   name: z.string().max(80).optional()
 });
 
-const SYSTEM_PROMPT = `És a Sofia, assistente virtual da Riqueza Oculta — um ebook sobre mentalidade financeira e estratégias de crescimento em Angola. O produto custa 2.499 Kz (preço promocional, valor normal 4.500 Kz) e inclui: ebook completo em PDF + acesso ao grupo VIP no WhatsApp + garantia de 7 dias com devolução total sem perguntas.
+const SYSTEM_PROMPT = `És a Sofia, assistente virtual do guia 1M em Uma Semana — um guia prático sobre como criar uma oferta, fazer copy, checkout e vender muito em 7 dias em Angola. O produto custa 2.999 Kz (preço promocional, valor normal 10.000 Kz) e inclui: guia prático completo em PDF + acesso ao grupo VIP no WhatsApp + garantia de 7 dias com devolução total sem perguntas.
 
 MÉTODOS DE PAGAMENTO DISPONÍVEIS:
 1. Multicaixa Express — pagamento directo no telemóvel (mais rápido)
@@ -45,14 +45,14 @@ CONTEXTO: O utilizador está a navegar no funil de vendas (quiz → resultado �
 // ─── Fallback inteligente para quando a API não está disponível ──────────────
 const FALLBACK_RESPONSES: Record<string, string> = {
   // Preço / valor / objeções de preço
-  "caro": "2.499 Kz é menos de 10 Kz por dia durante um mês. Imagina o que podes aprender sobre finanças com este guia. E se não gostares, tens 7 dias para devolver. Sem risco!",
-  "preço": "2.499 Kz é o preço promocional (era 4.500 Kz). Inclui ebook completo + grupo VIP no WhatsApp + garantia de 7 dias. Investimento pequeno, retorno potencialmente enorme!",
-  "2499": "Exacto, 2.499 Kz! Preço promocional por tempo limitado. Já inclui o ebook, acesso ao grupo VIP e garantia de devolução. Queres que te explique como funciona o pagamento?",
+  "caro": "2.999 Kz é menos de 10 Kz por dia durante um mês. Imagina o que podes aprender sobre finanças com este guia. E se não gostares, tens 7 dias para devolver. Sem risco!",
+  "preço": "2.999 Kz é o preço promocional (era 10.000 Kz). Inclui ebook completo + grupo VIP no WhatsApp + garantia de 7 dias. Investimento pequeno, retorno potencialmente enorme!",
+  "2999": "Exacto, 2.999 Kz! Preço promocional por tempo limitado. Já inclui o ebook, acesso ao grupo VIP e garantia de devolução. Queres que te explique como funciona o pagamento?",
   "valor": "Recebes o Guia Definitivo completo (PDF) com estratégias financeiras práticas, mais acesso ao grupo VIP no WhatsApp com conteúdo exclusivo. Tudo disponível imediatamente após pagamento!",
   "muito caro": "Entendo perfeitamente. Mas pensa: quanto gastas em coisas que não te acrescentam valor? Este guia pode mudar a tua relação com o dinheiro. E tens 7 dias para testar sem compromisso!",
-  "desconto": "O preço actual já tem desconto (de 4.500 Kz para 2.499 Kz). Não posso fazer mais desconto, mas posso garantir-te que o valor do conteúdo supera em muito o preço. E tens 7 dias de garantia!",
+  "desconto": "O preço actual já tem desconto (de 10.000 Kz para 2.999 Kz). Não posso fazer mais desconto, mas posso garantir-te que o valor do conteúdo supera em muito o preço. E tens 7 dias de garantia!",
   "barato": "É um investimento acessível comparado com o valor que podes retirar deste conhecimento. Muitos dos nossos leitores recuperam este valor em pouco tempo aplicando as estratégias!",
-  "investimento": "Exacto, é um investimento no teu futuro financeiro. O conhecimento que vais adquirir pode gerar retornos muito superiores a estes 2.499 Kz. E com garantia de 7 dias, não tens nada a perder!",
+  "investimento": "Exacto, é um investimento no teu futuro financeiro. O conhecimento que vais adquirir pode gerar retornos muito superiores a estes 2.999 Kz. E com garantia de 7 dias, não tens nada a perder!",
 
   // Segurança / confiança / medo de fraude
   "seguro": "Totalmente seguro! Pagas via Multicaixa Express (no telemóvel) ou Referência no ATM/Internet Banking — métodos oficiais do BNA. O site usa ligação segura e tens garantia de 7 dias!",
@@ -69,7 +69,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "multicaixa": "Podes usar Multicaixa Express (recebes notificação no telemóvel para aprovar) ou Referência Multicaixa (pagas no ATM ou Internet Banking). Ambos são seguros e confirmam em minutos!",
   "express": "O Express é super prático! Insere o teu número de telemóvel, recebes uma notificação no app Multicaixa Express, aprovas o pagamento, e pronto! Mais rápido que ir ao ATM.",
   "referência": "A referência aparece depois de clicares em GERAR REFERÊNCIA. Vais ver a Entidade (número) e a Referência (número). Anota os dois e usa no ATM ou Internet Banking. Tens 30 minutos para pagar!",
-  "internet banking": "No Internet Banking do teu banco, procura 'Pagar por Referência' ou 'Pagamentos'. Introduz a Entidade e Referência que aparecem no ecrã, confirma o valor (2.499 Kz), e pronto!",
+  "internet banking": "No Internet Banking do teu banco, procura 'Pagar por Referência' ou 'Pagamentos'. Introduz a Entidade e Referência que aparecem no ecrã, confirma o valor (2.999 Kz), e pronto!",
   "banco": "Funciona com qualquer banco em Angola que tenha ATM Multicaixa ou Internet Banking — BFA, BIC, Atlântico, BPC, etc. Todos aceitam pagamento por referência!",
   "bfa": "Sim, funciona perfeitamente no BFA! Podes usar o Internet Banking ou ir a um ATM BFA. É o mesmo processo: Pagamentos de Serviços → Referências → Entidade → Referência.",
   "bic": "Sim, funciona no BIC! Podes usar o Internet Banking BIC ou qualquer ATM Multicaixa. O processo é o mesmo para todos os bancos em Angola.",
@@ -78,7 +78,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "como funciona": "É simples: 1) Escolhes o método (Express ou Referência) 2) Pagas 3) Recebes email/WhatsApp com o link do ebook e convite para o grupo VIP. Tudo imediato após confirmação do pagamento!",
 
   // O que recebe / conteúdo / entrega
-  "recebo": "Recebes o Guia Definitivo Riqueza Oculta em PDF (podes ler no telemóvel ou computador) + convite para o grupo VIP no WhatsApp com conteúdo exclusivo. E tens garantia de 7 dias!",
+  "recebo": "Recebes o Guia 1M em Uma Semana em PDF (podes ler no telemóvel ou computador) + convite para o grupo VIP no WhatsApp com conteúdo exclusivo. E tens garantia de 7 dias!",
   "ebook": "É um guia completo sobre mentalidade e estratégia financeira, com dezenas de páginas de conteúdo prático. Não são teorias vazias — são estratégias que podes aplicar já no teu dia a dia!",
   "pdf": "Sim, recebes em formato PDF. Podes abrir no telemóvel, tablet ou computador. E podes guardar para sempre, consultar quando quiseres!",
   "acesso": "Recebes acesso imediato! Assim que o pagamento for confirmado, aparece o botão de download no ecrã e recebes o link também. O grupo WhatsApp é por convite directo.",
@@ -93,19 +93,19 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "quando recebo": "Recebes imediatamente! Assim que o sistema confirmar o teu pagamento (minutos), tens acesso ao download do ebook e ao grupo WhatsApp. Sem espera!",
 
   // Garantia / devolução / risco
-  "garantia": "Tens 7 dias de garantia total! Se por qualquer razão não ficares satisfeito, envias uma mensagem e devolvemos os 2.499 Kz sem perguntas nem burocracia. O risco é zero para ti!",
+  "garantia": "Tens 7 dias de garantia total! Se por qualquer razão não ficares satisfeito, envias uma mensagem e devolvemos os 2.999 Kz sem perguntas nem burocracia. O risco é zero para ti!",
   "devolu": "Sim, durante 7 dias após a compra. Se não gostares, mandas mensagem a dizer que queres devolver e transferimos o valor de volta. Simples assim, sem complicações!",
   "dinheiro de volta": "Totalmente! Se nos primeiros 7 dias decidires que não é para ti, devolvemos 100% do valor. Não fazemos perguntas, não há letras pequeninas. É garantia de verdade!",
-  "risco": "Zero risco! Pagas 2.499 Kz, tens 7 dias para experimentar o conteúdo e a comunidade. Se não valer a pena para ti, recebes o dinheiro de volta. Não tens nada a perder, só conhecimento a ganhar!",
+  "risco": "Zero risco! Pagas 2.999 Kz, tens 7 dias para experimentar o conteúdo e a comunidade. Se não valer a pena para ti, recebes o dinheiro de volta. Não tens nada a perder, só conhecimento a ganhar!",
   "testar": "É isso mesmo — podes testar durante 7 dias. Lê o ebook, entra no grupo WhatsApp, vê o valor. Se não ficares convencido, devolves e recebes o dinheiro. Justo, não achas?",
   "satisfação": "A tua satisfação é garantida. Ou ficas satisfeito com o ebook e a comunidade, ou recebes o dinheiro de volta. Não há cenário em que saias prejudicado!",
 
   // Urgência / escassez / tomada de decisão
-  "quando": "O preço promocional de 2.499 Kz é por tempo limitado. Não posso garantir que amanhã ainda estará este valor. Se estás interessado, aproveita agora enquanto há vagas ao preço reduzido!",
-  "depois": "Podes voltar mais tarde, mas não garanto que o preço ainda seja 2.499 Kz. O valor normal é 4.500 Kz e as vagas ao preço promocional são limitadas. Se queres aproveitar, agora é a hora!",
+  "quando": "O preço promocional de 2.999 Kz é por tempo limitado. Não posso garantir que amanhã ainda estará este valor. Se estás interessado, aproveita agora enquanto há vagas ao preço reduzido!",
+  "depois": "Podes voltar mais tarde, mas não garanto que o preço ainda seja 2.999 Kz. O valor normal é 10.000 Kz e as vagas ao preço promocional são limitadas. Se queres aproveitar, agora é a hora!",
   "pensar": "Percebo que queiras pensar. Mas pergunta a ti mesmo: o que vai mudar daqui a umas horas? O preço promocional pode não estar disponível. E lembra-te, tens 7 dias de garantia para decidir em paz!",
   "decidir": "Decidir é difícil, por isso é que damos 7 dias de garantia. Compra agora ao preço promocional, vê o conteúdo com calma durante uma semana, e depois decide se ficas ou se pedes devolução!",
-  "urgente": "Não é urgente em si, mas as vagas ao preço promocional de 2.499 Kz são limitadas. O preço normal é 4.500 Kz. Se queres aproveitar esta oportunidade, não deixes para depois!",
+  "urgente": "Não é urgente em si, mas as vagas ao preço promocional de 2.999 Kz são limitadas. O preço normal é 10.000 Kz. Se queres aproveitar esta oportunidade, não deixes para depois!",
   "hoje": "Hoje é um bom dia porque o preço ainda está promocional. Mas honestamente, o melhor momento é quando estás pronto. Só te peço que não deixes passar este preço se te interessa o conteúdo!",
   "limitado": "Sim, as vagas ao preço promocional são limitadas. Não é marketing — é porque o valor do grupo VIP é alto e não podemos manter este preço para sempre. Aproveita enquanto podes!",
 
@@ -119,7 +119,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "crianças": "É mais direcionado para adultos, mas adolescentes responsáveis também podem beneficiar. Se tens filhos na idade de aprender sobre dinheiro, pode ser uma boa introdução!",
   "empresário": "Sim! Mesmo empresários beneficiam. Às vezes sabemos gerar dinheiro mas não sabemos gerir o pessoal. O guia ajuda nos dois lados — crescer e manter riqueza!",
   "funcionário": "É perfeito para funcionários! Vais aprender a maximizar o teu salário, poupar mesmo ganhando pouco, e criar hábitos que te levam à liberdade financeira. Não dependes do patrão!",
-  "estudante": "Excelente para estudantes! Quanto mais cedo aprendes a gerir dinheiro, melhor. E 2.499 Kz é um investimento que fazes uma vez e beneficias para a vida toda!",
+  "estudante": "Excelente para estudantes! Quanto mais cedo aprendes a gerir dinheiro, melhor. E 2.999 Kz é um investimento que fazes uma vez e beneficias para a vida toda!",
 
   // Outras dúvidas comuns
   "outras pessoas": "Já somos centenas no grupo VIP! Pessoas de todas as províncias, de diferentes profissões, todas focadas em crescer financeiramente. A comunidade é muito activa e de apoio!",
@@ -128,22 +128,22 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "tempo resultados": "Alguns hábitos podes mudar já no primeiro dia. Outros resultados demoram semanas ou meses. O importante é começar — e este guia dá-te o mapa para começar correctamente!",
   "dinheiro de volta quanto tempo": "Se pedires devolução dentro dos 7 dias, processamos em 24-48 horas úteis. O dinheiro volta para a tua conta por transferência bancária. É rápido e sem complicações!",
   "contactar": "Estou aqui para ajudar por chat! Também podes usar o email de suporte que recebes após a compra. E no grupo WhatsApp tens acesso directo à equipa e à comunidade!",
-  "quem é sofia": "Sou a Sofia, assistente virtual da Riqueza Oculta! Estou aqui para tirar as tuas dúvidas sobre o ebook, ajudar com o processo de compra, e apoiar-te. Em que posso ajudar? 😊",
-  "quem criou": "O ebook Riqueza Oculta foi criado por uma equipa de especialistas em finanças pessoais e desenvolvimento pessoal, focados no contexto angolano. O grupo VIP é moderado pela equipa!",
-  "empresa": "Somos a equipa Riqueza Oculta, focados em educação financeira para Angolanos. Já ajudámos centenas de pessoas a melhorarem a sua relação com o dinheiro através deste ebook e comunidade!",
+  "quem é sofia": "Sou a Sofia, assistente virtual do Guia 1M em Uma Semana! Estou aqui para tirar as tuas dúvidas sobre o ebook, ajudar com o processo de compra, e apoiar-te. Em que posso ajudar? 😊",
+  "quem criou": "O Guia 1M em Uma Semana foi criado por uma equipa de especialistas em finanças pessoais e desenvolvimento pessoal, focados no contexto angolano. O grupo VIP é moderado pela equipa!",
+  "empresa": "Somos a equipa do 1M em Uma Semana, focados em educação financeira para Angolanos. Já ajudámos centenas de pessoas a melhorarem a sua relação com o dinheiro através deste ebook e comunidade!",
 
   // Genérico / saudações / despedidas
-  "olá": "Olá! Sou a Sofia, assistente da Riqueza Oculta. Tudo bem contigo? Estou aqui para tirar todas as tuas dúvidas sobre o ebook e o pagamento! 😊",
-  "oi": "Oi! Tudo bem? Sou a Sofia, estou aqui para ajudar com qualquer dúvida sobre o Guia Riqueza Oculta. Do que precisas?",
-  "bom dia": "Bom dia! ☀️ Sou a Sofia, assistente da Riqueza Oculta. Em que posso ajudar-te hoje?",
+  "olá": "Olá! Sou a Sofia, assistente do Guia 1M em Uma Semana. Tudo bem contigo? Estou aqui para tirar todas as tuas dúvidas sobre o ebook e o pagamento! 😊",
+  "oi": "Oi! Tudo bem? Sou a Sofia, estou aqui para ajudar com qualquer dúvida sobre o Guia 1M em Uma Semana. Do que precisas?",
+  "bom dia": "Bom dia! ☀️ Sou a Sofia, assistente do Guia 1M em Uma Semana. Em que posso ajudar-te hoje?",
   "boa tarde": "Boa tarde! 🌤️ Espero que estejas a ter um dia produtivo! Sou a Sofia, estou aqui para esclarecer as tuas dúvidas sobre o ebook!",
-  "boa noite": "Boa noite! 🌙 Ainda acordado a pensar em finanças? Sou a Sofia, posso ajudar com qualquer dúvida sobre o Guia Riqueza Oculta!",
+  "boa noite": "Boa noite! 🌙 Ainda acordado a pensar em finanças? Sou a Sofia, posso ajudar com qualquer dúvida sobre o Guia 1M em Uma Semana!",
   "obrigad": "De nada! Fico feliz em ajudar. Se surgir mais alguma dúvida, estou por aqui. E lembra-te, as vagas ao preço promocional são limitadas! 😊",
   "obrigada": "De nada! Fico feliz em ajudar. Se surgir mais alguma dúvida, estou por aqui. E lembra-te, as vagas ao preço promocional são limitadas! 😊",
   "valeu": "Valeu! Fico contente em ajudar. Qualquer coisa é só chamar. Boa sorte na tua jornada financeira! 💪",
   "adeus": "Adeus! Fico por aqui se precisares de mais alguma coisa. Lembra-te: o melhor investimento que podes fazer é em ti mesmo! Até já!",
   "tchau": "Tchau! Estou aqui se precisares. Não deixes escapar esta oportunidade de transformar as tuas finanças! 👋",
-  "ajuda": "Posso ajudar-te com: preço (2.499 Kz promoção), métodos de pagamento (Express ou ATM), o que recebes (ebook + grupo VIP), garantia (7 dias), ou conteúdo do ebook. O que te interessa mais?",
+  "ajuda": "Posso ajudar-te com: preço (2.999 Kz promoção), métodos de pagamento (Express ou ATM), o que recebes (ebook + grupo VIP), garantia (7 dias), ou conteúdo do ebook. O que te interessa mais?",
   "?": "Tens dúvidas? Posso ajudar-te com o preço, formas de pagamento, o que recebes, garantia, ou conteúdo do ebook. Sobre o que queres saber?",
   "não sei": "Sem problema! Pergunta-me o que quiseres — preço, como pagar, o que vais receber, ou a garantia. Estou aqui para esclarecer tudo!",
   "interessado": "Excelente! Fico feliz que estejas interessado! Posso ajudar-te a esclarecer alguma dúvida antes de comprares, ou preferes ir directo ao checkout?",
@@ -151,7 +151,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
   "compro": "Boa decisão! Vais ver que vale a pena. Clica no botão de pagamento, escolhe Express ou Referência, e em minutos tens o ebook e acesso ao grupo. Precisas de ajuda com algo?",
 };
 
-const DEFAULT_FALLBACK = "Boas pergunta! Posso ajudar-te com o preço (2.499 Kz promoção), métodos de pagamento (Multicaixa Express ou Referência no ATM/Internet Banking), o que recebes exactamente (ebook + grupo VIP), ou a garantia de 7 dias. Qual destes te interessa mais?";
+const DEFAULT_FALLBACK = "Boas pergunta! Posso ajudar-te com o preço (2.999 Kz promoção), métodos de pagamento (Multicaixa Express ou Referência no ATM/Internet Banking), o que recebes exactamente (ebook + grupo VIP), ou a garantia de 7 dias. Qual destes te interessa mais?";
 
 function findFallbackResponse(userMessage: string, userName?: string): string {
   const msg = userMessage.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");

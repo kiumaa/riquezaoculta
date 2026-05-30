@@ -29,8 +29,8 @@ export function ChatWidget({
 
   const firstName = name ? name.split(" ")[0] : null;
   const greeting = firstName
-    ? `Olá ${firstName}! Sou a Sofia, assistente da Riqueza Oculta. Posso ajudar-te com alguma dúvida?`
-    : "Olá! Sou a Sofia, assistente da Riqueza Oculta. Posso ajudar-te com alguma dúvida?";
+    ? `Olá ${firstName}! Sou a Sofia, assistente da 1M em Uma Semana. Posso ajudar-te com alguma dúvida?`
+    : "Olá! Sou a Sofia, assistente da 1M em Uma Semana. Posso ajudar-te com alguma dúvida?";
 
   // Auto-open desactivado — o utilizador abre manualmente
 
@@ -145,7 +145,7 @@ export function ChatWidget({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white leading-tight">Sofia</p>
-              <p className="text-[11px] text-brand/80">Assistente Riqueza Oculta • Online</p>
+              <p className="text-[11px] text-brand/80">Assistente 1M em Uma Semana • Online</p>
             </div>
             <button
               type="button"

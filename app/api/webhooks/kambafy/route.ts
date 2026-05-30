@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { findCheckout, insertCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
+import { sendFBConversionPurchase } from "@/lib/capi";
 
 async function notifyPushcut(title: string, text: string) {
   const url = env.PUSHCUT_URL;
@@ -162,6 +163,13 @@ export async function POST(req: NextRequest) {
       // Checkout existe — atualizar status
       await updateCheckoutStatus(reference, "paid", payload);
       void recordAffiliateSale(reference).catch(() => {});
+      void sendFBConversionPurchase(
+        existing.name,
+        existing.phone,
+        existing.amount,
+        existing.reference,
+        "https://www.riquezaoculta.click/checkout/pagamento"
+      ).catch(() => {});
       console.log("[Kambafy] Checkout atualizado para pago", { reference, duration: Date.now() - startTime });
     } else {
       // Checkout não existe (fluxo normal com Kambafy external) — criar diretamente como pago
@@ -178,12 +186,19 @@ export async function POST(req: NextRequest) {
         createdAt: now,
         updatedAt: now,
       });
+      void sendFBConversionPurchase(
+        customerName,
+        customerPhone,
+        amount,
+        reference,
+        "https://www.riquezaoculta.click/checkout/pagamento"
+      ).catch(() => {});
       console.log("[Kambafy] Novo checkout criado como pago", { reference, name: customerName, phone: customerPhone, amount, duration: Date.now() - startTime });
     }
 
     // Notificação Pushcut (fire-and-forget)
     void notifyPushcut(
-      "💰 Nova Venda — Riqueza Oculta",
+      "💰 Nova Venda — 1M em Uma Semana",
       `${customerName} (${customerPhone || "sem tel"}) · ${amount > 0 ? `${amount} AOA` : "valor desconhecido"}\nRef: ${reference}`
     );
 

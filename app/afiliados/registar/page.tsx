@@ -82,7 +82,7 @@ export default function AfiliadosRegistarPage() {
           <div className="space-y-2 text-center">
             <h1 className="text-2xl font-semibold text-ink">Torna-te Afiliado</h1>
             <p className="text-sm text-soft/70">
-              Partilha o Riqueza Oculta e ganha <strong className="text-brand">30% de comissão</strong> por cada venda.
+              Partilha o Guia 1M Em Uma Semana e ganha <strong className="text-brand">30% de comissão</strong> por cada venda.
             </p>
           </div>
 

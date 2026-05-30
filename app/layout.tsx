@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     title: "Simulador de Riqueza",
     description: "Descobre os 5 pilares que determinam o teu potencial de riqueza.",
     url: "https://www.riquezaoculta.click",
-    siteName: "Riqueza Oculta",
+    siteName: "1M em Uma Semana",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Simulador de Riqueza" }],
     locale: "pt_PT",
     type: "website",
@@ -38,7 +38,7 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1657596105292926";
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || process.env.FACEBOOK_PIXEL_ID || "1657596105292926";
 
   return (
     <html lang="pt">

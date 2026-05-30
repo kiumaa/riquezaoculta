@@ -90,7 +90,7 @@ export function ExitIntentModal({
             <div className="mx-auto w-32 drop-shadow-[0_12px_24px_rgba(32,230,126,0.15)]">
               <Image 
                 src={ebookCover} 
-                alt="Riqueza Oculta" 
+                alt="1M em Uma Semana" 
                 className="w-full rounded-lg object-contain" 
               />
             </div>
@@ -128,7 +128,7 @@ export function ExitIntentModal({
               <p className="text-xs font-semibold text-muted uppercase tracking-wider">Inclui:</p>
               <ul className="space-y-1.5">
                 {[
-                  "Ebook Riqueza Oculta completo",
+                  "Ebook 1M em Uma Semana completo",
                   "Acesso ao Grupo VIP WhatsApp",
                   "Garantia de 7 dias",
                   "BÔNUS: Checklist de Hábitos"

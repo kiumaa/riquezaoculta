@@ -75,7 +75,7 @@ export default function SimuladorInicioClient({ content }: { content: SimuladorC
           journey
         })
       });
-      trackEvent("Lead", { content_name: "Riqueza Oculta - Simulador" });
+      trackEvent("Lead", { content_name: "1M Em Uma Semana - Simulador" });
     } catch {
       // Lead save failure is non-blocking — continue the funnel
     } finally {

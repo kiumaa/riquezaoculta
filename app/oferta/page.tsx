@@ -9,7 +9,7 @@ export default async function OfertaPage() {
     <OfertaClient
       initialPrices={prices}
       content={{
-        headline:      c.headline      ?? "Riqueza Oculta: Guia Definitivo",
+        headline:      c.headline      ?? "1M em Uma Semana: o guia definitivo",
         subheading:    c.subheading    ?? "descobre os pilares estratégicos que separam quem gera resultados reais de quem apenas observa. Não é sobre sofrer mais, é sobre dominar o sistema.",
         cta_text:      c.cta_text      ?? "DESBLOQUEAR AGORA",
         guarantee_text: c.guarantee_text ?? "Se não ficares satisfeito, devolvemos 100% do valor. Sem perguntas.",

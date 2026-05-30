@@ -5,6 +5,7 @@ import { and, eq, gt, sql } from "drizzle-orm";
 import { updateCheckoutStatus } from "@/lib/storage";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
+import { sendFBConversionPurchase } from "@/lib/capi";
 
 // Processa checkouts criados nas últimas 48 horas (para pegar referências antigas)
 const MAX_AGE_HOURS = 48;
@@ -126,6 +127,13 @@ export async function GET(req: NextRequest) {
         if (statusResult.status === "paid") {
           // Atualizar para pago
           await updateCheckoutStatus(checkout.reference, "paid", statusResult.raw);
+          void sendFBConversionPurchase(
+            checkout.name,
+            checkout.phone,
+            checkout.amount,
+            checkout.reference,
+            "https://www.riquezaoculta.click/checkout/pagamento"
+          ).catch(() => {});
           console.log(`[Cron Recover] Updated ${checkout.reference} to PAID`);
           results.updated++;
           

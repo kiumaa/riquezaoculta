@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     if (parsed.data.product === "quiz") {
       amount = priceQuiz;
     } else if (parsed.data.product === "ebook_upsell") {
-      amount = 3000;
+      amount = pricePromo;
     }
 
     // Create charge - THIS IS THE BOTTLENECK (KB API)

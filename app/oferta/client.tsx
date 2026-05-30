@@ -83,7 +83,7 @@ export default function OfertaClient({
   });
 
   useEffect(() => {
-    trackEvent("ViewContent", { content_name: "Oferta Riqueza Oculta", value: initialPrices.pricePromo, currency: "AOA" });
+    trackEvent("ViewContent", { content_name: "Oferta 1M Em Uma Semana", value: initialPrices.pricePromo, currency: "AOA" });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -187,7 +187,7 @@ export default function OfertaClient({
 
             {/* Imagem centrada */}
             <div className="mx-auto w-48 drop-shadow-[0_24px_48px_rgba(32,230,126,0.18)] sm:w-56">
-              <Image src={ebookCover} alt="Riqueza Oculta: Guia Definitivo" className="w-full rounded-lg object-contain" />
+              <Image src={ebookCover} alt="Guia 1M em Uma Semana" className="w-full rounded-lg object-contain" />
             </div>
 
             {/* Bullets + preço — mesma largura que o botão */}
