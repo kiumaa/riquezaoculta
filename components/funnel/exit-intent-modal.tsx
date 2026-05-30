@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
 import ebookCover from "@/public/capa_1m_v1.jpg";
 import { formatPriceKz } from "@/lib/format";
 import { trackEvent } from "@/lib/pixel";

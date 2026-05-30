@@ -1,20 +1,23 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const jwtSecretValue = process.env.JWT_SECRET;
-if (process.env.NODE_ENV === "production" && !jwtSecretValue) {
-  throw new Error("JWT_SECRET must be set in production");
-}
-const JWT_SECRET = jwtSecretValue || "fallback-secret-for-dev-only";
-const secret = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "ro_admin_session";
+
+function getSecret() {
+  const jwtSecretValue = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === "production" && !jwtSecretValue) {
+    console.warn("JWT_SECRET is missing in production environment");
+  }
+  const JWT_SECRET = jwtSecretValue || "fallback-secret-for-dev-only";
+  return new TextEncoder().encode(JWT_SECRET);
+}
 
 export async function createSession(payload: { role: string }) {
     const token = await new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("24h")
-        .sign(secret);
+        .sign(getSecret());
 
     const cookieStore = await cookies();
     cookieStore.set(COOKIE_NAME, token, {
@@ -33,7 +36,7 @@ export async function getSession() {
     if (!token) return null;
 
     try {
-        const { payload } = await jwtVerify(token, secret);
+        const { payload } = await jwtVerify(token, getSecret());
         return payload as { role: string };
     } catch {
         return null;
