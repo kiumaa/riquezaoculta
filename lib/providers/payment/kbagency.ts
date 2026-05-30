@@ -113,7 +113,7 @@ export async function createExpressCharge(input: ExpressChargeInput): Promise<Ex
     amount: input.amount,
     reference: input.reference,
     redirect_url: `${env.NEXT_PUBLIC_APP_URL}/checkout/pagamento?success=true&ref=${input.reference}`,
-    description: "Ebook Riqueza Oculta V2"
+    description: "Guia 1M em Uma Semana"
   });
 
   try {

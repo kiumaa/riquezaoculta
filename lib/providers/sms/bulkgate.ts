@@ -37,7 +37,7 @@ export async function sendAccessSms(phone: string, accessCode: string) {
 
 export async function sendRecoveryMessage(phone: string, name: string, offerUrl: string) {
   const firstName = name.split(" ")[0];
-  const text = `${firstName} o teu acesso ao Guia Riqueza Oculta continua reservado. Completa a compra agora e garante o teu lugar em: ${offerUrl}\nEsperamos por ti!`;
+  const text = `${firstName} o teu acesso ao Guia 1M em Uma Semana continua reservado. Completa a compra agora e garante o teu lugar em: ${offerUrl}\nEsperamos por ti!`;
   return sendSms(phone, text);
 }
 
@@ -50,7 +50,7 @@ export async function sendPaymentReferenceSms(
 ) {
   const firstName = name.split(" ")[0];
   const entityPart = entity ? `Entidade ${entity} | ` : "";
-  const text = `${firstName} a tua referencia Riqueza Oculta: ${entityPart}Ref ${reference} | Valor ${amount} Kz. Paga no ATM ou Internet Banking.`;
+  const text = `${firstName} a tua referencia 1M em Uma Semana: ${entityPart}Ref ${reference} | Valor ${amount} Kz. Paga no ATM ou Internet Banking.`;
   return sendSms(phone, text).catch(() => ({ success: false, reason: "SMS failed silently" }));
 }
 
@@ -65,7 +65,7 @@ export async function sendReferenceReminderSms(
   const firstName = name.split(" ")[0];
   
   if (reminderType === "1h") {
-    const text = `${firstName} ainda nao pagaste. A tua ref Riqueza Oculta: Entidade ${entity} | Ref ${reference} | ${amount} Kz. Paga no ATM ou Internet Banking. Tens ate amanha.`;
+    const text = `${firstName} ainda nao pagaste. A tua ref 1M em Uma Semana: Entidade ${entity} | Ref ${reference} | ${amount} Kz. Paga no ATM ou Internet Banking. Tens ate amanha.`;
     return sendSms(phone, text).catch(() => ({ success: false, reason: "SMS failed silently" }));
   } else {
     const text = `${firstName} ultima chamada - a tua ref expira em breve: Entidade ${entity} | Ref ${reference} | ${amount} Kz. Paga agora.`;

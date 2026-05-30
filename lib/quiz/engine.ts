@@ -114,10 +114,10 @@ const profileMap: Record<string, { title: string; summary: string }> = {
 
 function resolveOfferAngle(weakest: Pillar) {
   const map: Record<Pillar, string> = {
-    clareza: "O teu perfil precisa de um roteiro claro. O Riqueza Oculta dá-te exactamente isso.",
-    disciplina: "O teu perfil precisa de um sistema prático. O Riqueza Oculta é o teu método.",
-    acao: "O teu perfil precisa de acções imediatas. O Riqueza Oculta mostra-te cada passo.",
-    emocional: "O teu perfil precisa de estrutura e confiança. O Riqueza Oculta é o teu guia."
+    clareza: "O teu perfil precisa de um roteiro claro. O 1M em Uma Semana dá-te exactamente isso.",
+    disciplina: "O teu perfil precisa de um sistema prático. O 1M em Uma Semana é o teu método.",
+    acao: "O teu perfil precisa de acções imediatas. O 1M em Uma Semana mostra-te cada passo.",
+    emocional: "O teu perfil precisa de estrutura e confiança. O 1M em Uma Semana é o teu guia."
   };
 
   return map[weakest];

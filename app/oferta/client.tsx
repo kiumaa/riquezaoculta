@@ -2,9 +2,7 @@
 
 import { type SVGProps, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore — filename contains spaces
-import ebookCover from "@/assets/main ebook cover.png";
+import ebookCover from "@/public/capa_1m_v1.jpg";
 import avatarMaria from "@/assets/avatar_maria.jpg";
 import avatarCarlos from "@/assets/avatar_carlos.png";
 import avatarJoao from "@/assets/avatar_joao.jpg";

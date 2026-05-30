@@ -9,9 +9,7 @@ import { PrimaryButton } from "@/components/funnel/primary-button";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import mcLogo from "@/assets/mc.png";
 import mcxLogo from "@/assets/mcx.png";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore — filename contains spaces
-import ebookCover from "@/assets/main ebook cover.png";
+import ebookCover from "@/public/capa_1m_v1.jpg";
 import { trackEvent } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";

@@ -2,7 +2,7 @@ import type { SVGProps } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatPriceKz } from "@/lib/format";
-import ebookCover from "@/assets/ebook_cover_3d.webp";
+import ebookCover from "@/public/capa_1m_v1.jpg";
 
 const features = [
   "Guia 1M em Uma Semana (PDF Completo)",

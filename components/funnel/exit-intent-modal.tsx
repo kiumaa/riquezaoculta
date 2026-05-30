@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore — filename contains spaces
-import ebookCover from "@/assets/main ebook cover.png";
+import { X } from "lucide-react";
+import ebookCover from "@/public/capa_1m_v1.jpg";
 import { formatPriceKz } from "@/lib/format";
 import { trackEvent } from "@/lib/pixel";
 
