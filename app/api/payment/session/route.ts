@@ -15,6 +15,8 @@ const schema = z.object({
   affiliateToken: z.string().max(32).optional(),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
   orderBump: z.number().min(0).max(5000).optional(),
+  fbp: z.string().max(255).optional(),
+  fbc: z.string().max(255).optional(),
 });
 
 function makeReference() {
@@ -46,6 +48,14 @@ export async function POST(req: NextRequest) {
   const reference = makeReference();
   const now = new Date().toISOString();
   const { pricePromo, priceQuiz } = await getSettings();
+
+  // Sinais de correspondência (EMQ) para o evento Purchase server-side (CAPI)
+  const metaMatch = {
+    fbp: parsed.data.fbp,
+    fbc: parsed.data.fbc,
+    clientIpAddress: (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || undefined,
+    clientUserAgent: req.headers.get("user-agent") ?? undefined,
+  };
 
   let amount = pricePromo;
   let description = "Guia 1M Em Uma Semana";
@@ -91,7 +101,7 @@ export async function POST(req: NextRequest) {
       entity: "express",
       paymentReference: charge.reference,
       status: "pending",
-      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product },
+      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, _mq: metaMatch },
       affiliateToken: parsed.data.affiliateToken ?? null,
       createdAt: now,
       updatedAt: now
@@ -167,7 +177,7 @@ export async function POST(req: NextRequest) {
     entity: charge.entity,
     paymentReference: charge.paymentReference,
     status: "pending",
-    providerPayload: { ...(charge.raw as Record<string, unknown>), product: parsed.data.product },
+    providerPayload: { ...(charge.raw as Record<string, unknown>), product: parsed.data.product, _mq: metaMatch },
     affiliateToken: parsed.data.affiliateToken ?? null,
     createdAt: now,
     updatedAt: now

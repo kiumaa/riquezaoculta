@@ -3,7 +3,7 @@ import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
-import { sendFBConversionPurchase } from "@/lib/capi";
+import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
 export async function POST(req: NextRequest) {
@@ -87,7 +87,8 @@ export async function POST(req: NextRequest) {
           checkout.phone,
           checkout.amount,
           checkout.reference,
-          referer
+          referer,
+          extractMetaMatch(checkout.providerPayload)
         ).catch(() => {});
         void sendOrderConfirmation(checkout.phone, checkout.name, { reference: checkout.reference }).catch(() => {});
 

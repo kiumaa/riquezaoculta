@@ -10,7 +10,7 @@ import { useFunnelStore } from "@/lib/store/funnel-store";
 import mcLogo from "@/assets/mc.png";
 import mcxLogo from "@/assets/mcx.png";
 import ebookCover from "@/public/capa_1m_v1.jpg";
-import { trackEvent } from "@/lib/pixel";
+import { trackEvent, getFbp, getFbc } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
@@ -404,6 +404,10 @@ function CheckoutPagamentoInner({
       if (method === "reference") body.method = "reference";
       if (affiliateToken) body.affiliateToken = affiliateToken;
       if (orderBumpChecked) body.orderBump = ORDER_BUMP_PRICE;
+      const fbp = getFbp();
+      const fbc = getFbc();
+      if (fbp) body.fbp = fbp;
+      if (fbc) body.fbc = fbc;
 
       const res = await fetch(endpoint, {
         method: "POST",

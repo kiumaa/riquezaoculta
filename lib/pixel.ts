@@ -11,6 +11,27 @@ export const trackCustomEvent = (eventName: string, data?: Record<string, unknow
     }
 };
 
+// ─── Meta advanced matching (browser identifiers para o CAPI server-side) ────
+function readCookie(name: string): string | undefined {
+    if (typeof document === "undefined") return undefined;
+    const match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+/** Cookie do pixel (_fbp), usado para correspondência de eventos server-side. */
+export function getFbp(): string | undefined {
+    return readCookie("_fbp");
+}
+
+/** Identificador de clique (_fbc); deriva-o do parâmetro fbclid se o cookie ainda não existir. */
+export function getFbc(): string | undefined {
+    const cookie = readCookie("_fbc");
+    if (cookie) return cookie;
+    if (typeof window === "undefined") return undefined;
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    return fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined;
+}
+
 const UTM_KEY = "ro-utms";
 const UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 

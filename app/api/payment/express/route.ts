@@ -15,6 +15,8 @@ const schema = z.object({
   expressPhone: z.string().min(9).max(15),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
   orderBump: z.number().min(0).max(5000).optional(),
+  fbp: z.string().max(255).optional(),
+  fbc: z.string().max(255).optional(),
 });
 
 function makeReference() {
@@ -56,6 +58,14 @@ export async function POST(req: NextRequest) {
     const reference = makeReference();
     const now = new Date().toISOString();
 
+    // Sinais de correspondência (EMQ) para o evento Purchase server-side (CAPI)
+    const metaMatch = {
+      fbp: parsed.data.fbp,
+      fbc: parsed.data.fbc,
+      clientIpAddress: (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || undefined,
+      clientUserAgent: req.headers.get("user-agent") ?? undefined,
+    };
+
     // Get settings (cached)
     const settingsStart = Date.now();
     const { pricePromo, priceQuiz } = await getSettings();
@@ -92,7 +102,7 @@ export async function POST(req: NextRequest) {
       entity: "express",
       paymentReference: charge.reference,
       status: "pending",
-      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product },
+      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, _mq: metaMatch },
       createdAt: now,
       updatedAt: now
     });

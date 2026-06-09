@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { normalizePhone } from "@/lib/phone";
 import { findCheckout, insertCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
-import { sendFBConversionPurchase } from "@/lib/capi";
+import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
 async function notifyPushcut(title: string, text: string) {
@@ -172,7 +172,8 @@ export async function POST(req: NextRequest) {
         existing.phone,
         existing.amount,
         existing.reference,
-        "https://www.riquezaoculta.click/checkout/pagamento"
+        "https://www.riquezaoculta.click/checkout/pagamento",
+        extractMetaMatch(existing.providerPayload)
       ).catch(() => {});
       void sendOrderConfirmation(existing.phone, existing.name, { reference: existing.reference }).catch(() => {});
       console.log("[Kambafy] Checkout atualizado para pago", { reference, duration: Date.now() - startTime });

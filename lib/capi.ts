@@ -15,6 +15,37 @@ function getCleanFirstName(name: string): string {
   return parts[0] || "";
 }
 
+// ─── Advanced matching (Event Match Quality) ─────────────────────────────────
+export type MetaMatch = {
+  fbp?: string;
+  fbc?: string;
+  clientIpAddress?: string;
+  clientUserAgent?: string;
+};
+
+/** Lê os parâmetros de correspondência guardados em checkout.providerPayload._mq. */
+export function extractMetaMatch(providerPayload: unknown): MetaMatch | undefined {
+  if (providerPayload && typeof providerPayload === "object" && "_mq" in providerPayload) {
+    const mq = (providerPayload as { _mq?: unknown })._mq;
+    if (mq && typeof mq === "object") return mq as MetaMatch;
+  }
+  return undefined;
+}
+
+/** Constrói o user_data do CAPI: identificadores hasheados + sinais de correspondência (não hasheados). */
+function buildUserData(cleanPhone: string, cleanName: string, match?: MetaMatch) {
+  const ud: Record<string, unknown> = {
+    ph: [sha256(cleanPhone)],
+    fn: [sha256(cleanName)],
+    external_id: [sha256(cleanPhone)],
+  };
+  if (match?.fbp) ud.fbp = match.fbp;
+  if (match?.fbc) ud.fbc = match.fbc;
+  if (match?.clientIpAddress) ud.client_ip_address = match.clientIpAddress;
+  if (match?.clientUserAgent) ud.client_user_agent = match.clientUserAgent;
+  return ud;
+}
+
 export async function sendFBConversionLead(
   name: string,
   phone: string,
@@ -69,7 +100,8 @@ export async function sendFBConversionPurchase(
   phone: string,
   amount: number,
   reference: string,
-  eventSourceUrl?: string
+  eventSourceUrl?: string,
+  match?: MetaMatch
 ) {
   const pixelId = env.FACEBOOK_PIXEL_ID;
   const accessToken = env.FACEBOOK_ACCESS_TOKEN;
@@ -88,10 +120,7 @@ export async function sendFBConversionPurchase(
       event_id: `purchase_${reference}`,
       event_source_url: eventSourceUrl ?? "https://www.riquezaoculta.click/checkout/pagamento",
       action_source: "website",
-      user_data: {
-        ph: [sha256(cleanPhone)],
-        fn: [sha256(cleanName)],
-      },
+      user_data: buildUserData(cleanPhone, cleanName, match),
       custom_data: {
         value: amount,
         currency: "AOA",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
-import { sendFBConversionPurchase } from "@/lib/capi";
+import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
 // Express payments get grace period (10 minutes backend) for user to confirm on app
@@ -46,7 +46,8 @@ export async function GET(
           record.phone,
           record.amount,
           record.reference,
-          "https://www.riquezaoculta.click/checkout/pagamento"
+          "https://www.riquezaoculta.click/checkout/pagamento",
+          extractMetaMatch(record.providerPayload)
         ).catch(() => {});
         void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
       } else if (provider.status === "failed") {
@@ -66,7 +67,8 @@ export async function GET(
             record.phone,
             record.amount,
             record.reference,
-            "https://www.riquezaoculta.click/checkout/pagamento"
+            "https://www.riquezaoculta.click/checkout/pagamento",
+            extractMetaMatch(record.providerPayload)
           ).catch(() => {});
           void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
         }
