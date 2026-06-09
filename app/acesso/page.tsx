@@ -20,9 +20,15 @@ export default function AcessoPage() {
   const name = useFunnelStore(state => state.name);
   const ebookPaid = useFunnelStore(state => state.ebookPaid);
   const paymentReference = useFunnelStore(state => state.paymentReference);
+  const [urlRef, setUrlRef] = useState<string | null>(null);
+  const [verifiedRef, setVerifiedRef] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyFailed, setVerifyFailed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    setUrlRef(params.get("ref"));
   }, []);
 
   // Show upsell modal when page loads (if payment was confirmed)
@@ -44,11 +50,31 @@ export default function AcessoPage() {
     }
   }, [mounted, ebookPaid, upsellDeclined]);
 
+  // Verifica uma referência vinda no URL (?ref=) — permite aceder a partir do
+  // link do WhatsApp em QUALQUER dispositivo, sem depender do estado do browser.
   useEffect(() => {
-    if (mounted && (!ebookPaid || !paymentReference)) {
-      router.push("/simulador/resultado");
-    }
-  }, [mounted, ebookPaid, paymentReference, router]);
+    if (!mounted || !urlRef) return;
+    if (ebookPaid && paymentReference) return;
+    if (verifiedRef || verifyFailed) return;
+    setVerifying(true);
+    fetch(`/api/payment/verify/${encodeURIComponent(urlRef)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.paid && d?.isEbook) setVerifiedRef(urlRef);
+        else setVerifyFailed(true);
+      })
+      .catch(() => setVerifyFailed(true))
+      .finally(() => setVerifying(false));
+  }, [mounted, urlRef, ebookPaid, paymentReference, verifiedRef, verifyFailed]);
+
+  // Sem acesso válido (nem store nem ?ref pago) → volta ao funil.
+  useEffect(() => {
+    if (!mounted) return;
+    if (ebookPaid && paymentReference) return;
+    if (verifiedRef) return;
+    if (urlRef && !verifyFailed) return; // a verificar ou prestes a verificar
+    router.push("/simulador/resultado");
+  }, [mounted, ebookPaid, paymentReference, urlRef, verifiedRef, verifyFailed, router]);
 
   const handleUpsellAccept = () => {
     setUpsellAccepted(true);
@@ -65,8 +91,13 @@ export default function AcessoPage() {
     trackEvent("UpsellDeclined", { product: "consultoria" });
   };
 
-  // Se não estiver montado ou se não tiver pago o ebook, não renderiza nada para evitar flash de conteúdo
-  if (!mounted || !ebookPaid || !paymentReference) {
+  // Acesso efetivo: do store (fluxo normal) OU de um ?ref verificado (link WhatsApp)
+  const effectiveRef = paymentReference || verifiedRef;
+  const effectivePaid = (ebookPaid && !!paymentReference) || !!verifiedRef;
+
+  // Enquanto monta/verifica, ou se ainda não há acesso válido, mostra loader
+  // (o efeito de redirect trata dos casos sem acesso possível).
+  if (!mounted || verifying || !effectivePaid || !effectiveRef) {
     return (
       <FunnelShell>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -76,7 +107,7 @@ export default function AcessoPage() {
     );
   }
 
-  const downloadUrl = `/api/download/${paymentReference}`;
+  const downloadUrl = `/api/download/${effectiveRef}`;
 
   // If upsell was accepted, show special confirmation
   if (upsellAccepted) {

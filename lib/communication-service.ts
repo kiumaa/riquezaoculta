@@ -4,7 +4,7 @@ import {
   sendAbandonedCartWhatsApp
 } from "@/lib/whatsapp";
 import { sendRecoveryMessage, sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
-import { insertCommunicationLog } from "@/lib/storage";
+import { insertCommunicationLog, getWhatsAppGroupLink } from "@/lib/storage";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import type { CommunicationChannel, CommunicationTrigger, CommunicationType } from "@/lib/types";
 
@@ -84,7 +84,12 @@ export async function sendOrderConfirmation(
   name: string,
   ctx: CommunicationContext = {}
 ): Promise<boolean> {
-  const r = await sendOrderConfirmationWhatsApp(phone, name);
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://www.riquezaoculta.click";
+  const accessUrl = ctx.reference
+    ? `${base}/acesso?ref=${encodeURIComponent(ctx.reference)}`
+    : `${base}/acesso`;
+  const vipLink = await getWhatsAppGroupLink().catch(() => undefined);
+  const r = await sendOrderConfirmationWhatsApp(phone, name, { accessUrl, vipLink: vipLink || undefined });
   await record(phone, "confirmation", r.ok, ctx, "whatsapp", r.reason);
   return r.ok;
 }

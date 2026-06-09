@@ -92,16 +92,24 @@ export async function getWhatsAppSessionStatus(): Promise<{ connected: boolean; 
 /**
  * Envia mensagem de confirmação de encomenda (Pagamento Concluído)
  */
-export async function sendOrderConfirmationWhatsApp(phone: string, name: string): Promise<{ ok: boolean; reason?: string }> {
+export async function sendOrderConfirmationWhatsApp(
+  phone: string,
+  name: string,
+  opts?: { accessUrl?: string; vipLink?: string }
+): Promise<{ ok: boolean; reason?: string }> {
+  const base = process.env.NEXT_PUBLIC_APP_URL || "https://www.riquezaoculta.click";
+  const accessUrl = opts?.accessUrl || `${base}/acesso`;
+  const vipPart = opts?.vipLink
+    ? `\n\nEntra também no nosso *Grupo VIP* no WhatsApp:\n👉 ${opts.vipLink}`
+    : "";
+
   const text = `Olá *${name}*! 🎉
 
 O teu pagamento do *Guia 1M em Uma Semana* foi confirmado com sucesso!
-O teu acesso imediato está pronto. 
+O teu acesso imediato está pronto.
 
-Podes aceder ao teu guia e ao bónus agora mesmo através deste link:
-👉 https://www.riquezaoculta.click/sucesso
-
-Também já podes entrar no nosso Grupo VIP! O link está na página de sucesso.
+Acede e descarrega o teu guia aqui (link pessoal):
+👉 ${accessUrl}${vipPart}
 
 Qualquer dúvida, responde a esta mensagem. Parabéns pela decisão! 🚀`;
 
