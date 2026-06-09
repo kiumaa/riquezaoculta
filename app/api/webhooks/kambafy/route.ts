@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { findCheckout, insertCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 import { sendFBConversionPurchase } from "@/lib/capi";
+import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp";
 
 async function notifyPushcut(title: string, text: string) {
   const url = env.PUSHCUT_URL;
@@ -170,6 +171,7 @@ export async function POST(req: NextRequest) {
         existing.reference,
         "https://www.riquezaoculta.click/checkout/pagamento"
       ).catch(() => {});
+      void sendOrderConfirmationWhatsApp(existing.phone, existing.name).catch(() => {});
       console.log("[Kambafy] Checkout atualizado para pago", { reference, duration: Date.now() - startTime });
     } else {
       // Checkout não existe (fluxo normal com Kambafy external) — criar diretamente como pago
@@ -193,6 +195,7 @@ export async function POST(req: NextRequest) {
         reference,
         "https://www.riquezaoculta.click/checkout/pagamento"
       ).catch(() => {});
+      void sendOrderConfirmationWhatsApp(customerPhone, customerName).catch(() => {});
       console.log("[Kambafy] Novo checkout criado como pago", { reference, name: customerName, phone: customerPhone, amount, duration: Date.now() - startTime });
     }
 

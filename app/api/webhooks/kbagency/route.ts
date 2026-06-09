@@ -4,6 +4,7 @@ import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
 import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 import { sendFBConversionPurchase } from "@/lib/capi";
+import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp";
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
           checkout.reference,
           referer
         ).catch(() => {});
+        void sendOrderConfirmationWhatsApp(checkout.phone, checkout.name).catch(() => {});
 
         console.log("[Webhook] Payment marked as paid & Purchase sent to CAPI", {
           reference,
