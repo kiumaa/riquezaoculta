@@ -34,7 +34,17 @@ const PROOF_SLIDES = [
   },
 ];
 
-export default function ProvasSociaisClient() {
+export default function ProvasSociaisClient({
+  content,
+}: {
+  content: {
+    badge_text: string;
+    headline: string;
+    subtitle: string;
+    cta_text: string;
+    trust_badge: string;
+  };
+}) {
   const name = useFunnelStore((state) => state.name);
   const trackStep = useFunnelStore((state) => state.trackStep);
   const [slide, setSlide] = useState(0);
@@ -68,15 +78,13 @@ export default function ProvasSociaisClient() {
           <div className="space-y-2 text-center">
             <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-brandBright">
               <span className="mr-2 inline-block animate-glow-pulse">◆</span>
-              Resultados Reais
+              {content.badge_text}
             </p>
             <h1 className="text-xl font-semibold leading-tight sm:text-2xl">
-              {name ? `${name}, v` : "V"}ê o que está a acontecer com quem já
-              tomou a decisão…
+              {name ? `${name}, ${content.headline.toLowerCase()}` : content.headline}
             </h1>
             <p className="text-sm leading-relaxed text-soft">
-              Conversas reais de pessoas que compraram o Guia e aplicaram em
-              menos de 48 horas.
+              {content.subtitle}
             </p>
           </div>
 
@@ -190,7 +198,7 @@ export default function ProvasSociaisClient() {
           {/* Trust badge */}
           <div className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.08] px-3 py-2">
             <span className="text-xs text-yellow-400 font-medium">
-              ⚠️ Estas são conversas reais. Os nomes foram usados com autorização.
+              {content.trust_badge}
             </span>
           </div>
 
@@ -202,7 +210,7 @@ export default function ProvasSociaisClient() {
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
             <span className="relative">
-              QUERO ESTES RESULTADOS — ACESSAR O CHECKOUT
+              {content.cta_text}
             </span>
           </button>
 

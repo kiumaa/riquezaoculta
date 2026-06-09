@@ -13,9 +13,10 @@ type Settings = {
   priceOriginal: number;
   pricePromo: number;
   priceQuiz: number;
+  priceOrderBump: number;
 };
 
-const SETTINGS_DEFAULTS: Settings = { priceOriginal: 10000, pricePromo: 2999, priceQuiz: 1000 };
+const SETTINGS_DEFAULTS: Settings = { priceOriginal: 10000, pricePromo: 2999, priceQuiz: 1000, priceOrderBump: 999 };
 
 // In-memory cache for settings (60 seconds TTL)
 let settingsCache: { data: Settings; expires: number } | null = null;
@@ -262,7 +263,8 @@ export async function getSettings(): Promise<Settings> {
     result = {
       priceOriginal: map.priceOriginal ? Number(map.priceOriginal) : SETTINGS_DEFAULTS.priceOriginal,
       pricePromo: map.pricePromo ? Number(map.pricePromo) : SETTINGS_DEFAULTS.pricePromo,
-      priceQuiz: map.priceQuiz ? Number(map.priceQuiz) : SETTINGS_DEFAULTS.priceQuiz
+      priceQuiz: map.priceQuiz ? Number(map.priceQuiz) : SETTINGS_DEFAULTS.priceQuiz,
+      priceOrderBump: map.priceOrderBump ? Number(map.priceOrderBump) : SETTINGS_DEFAULTS.priceOrderBump
     };
   } else {
     const data = await readFallback();
@@ -596,6 +598,17 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     testimonial_3_name: "João Ferreira",
     testimonial_3_text: "Processo simples e seguro. O guia chegou no momento a seguir ao pagamento.",
     testimonial_3_stars: "5",
+    countdown_text: "A tua reserva expira em:",
+    order_bump_title: "SIM! Quero adicionar o Guia Riqueza Oculta à minha encomenda",
+    order_bump_subtitle: "Por apenas mais {preço}, descobre como encontrar o dinheiro que estás a deixar na mesa.",
+    order_bump_label: "Oferta Única",
+  },
+  provasSociais: {
+    badge_text: "Resultados Reais",
+    headline: "Vê o que está a acontecer com quem já tomou a decisão…",
+    subtitle: "Conversas reais de pessoas que compraram o Guia e aplicaram em menos de 48 horas.",
+    cta_text: "QUERO ESTES RESULTADOS — ACESSAR O CHECKOUT",
+    trust_badge: "⚠️ Estas são conversas reais. Os nomes foram usados com autorização.",
   },
   oferta: {
     headline: "1M em Uma Semana: o guia definitivo",

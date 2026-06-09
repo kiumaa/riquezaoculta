@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FunnelContentRecord } from "@/lib/types";
 
-type PageType = "landing" | "simulador" | "oferta" | "resultado" | "payment";
+type PageType = "landing" | "simulador" | "oferta" | "provasSociais" | "resultado" | "payment";
 
 const PAGES: { id: PageType; label: string }[] = [
-  { id: "landing",   label: "Landing Page" },
-  { id: "simulador", label: "Simulador (Início)" },
-  { id: "oferta",    label: "Página de Oferta" },
-  { id: "resultado", label: "Resultado do Quiz" },
-  { id: "payment",   label: "Pagamento" },
+  { id: "landing",       label: "Landing Page" },
+  { id: "simulador",     label: "Simulador (Início)" },
+  { id: "oferta",        label: "Página de Oferta" },
+  { id: "provasSociais", label: "Provas Sociais" },
+  { id: "resultado",     label: "Resultado do Quiz" },
+  { id: "payment",       label: "Pagamento" },
 ];
 
 const SIMULADOR_FIELDS = [
@@ -45,6 +46,14 @@ const OFERTA_FIELDS = [
   { key: "bullet_6",       label: "Bullet 6",                rows: 1 },
 ];
 
+const PROVAS_FIELDS = [
+  { key: "badge_text",     label: "Texto do Badge (topo)",   rows: 1 },
+  { key: "headline",       label: "Título Principal",        rows: 2 },
+  { key: "subtitle",       label: "Subtítulo / Corpo",       rows: 3 },
+  { key: "cta_text",       label: "Texto do Botão CTA",      rows: 1 },
+  { key: "trust_badge",    label: "Aviso de Confiança (amarelo)", rows: 2 },
+];
+
 const PAYMENT_FIELDS = [
   { key: "support_label",         label: "Texto de Suporte WA (label)",       rows: 2 },
   { key: "support_cta",           label: "Texto Botão Suporte WA",            rows: 1 },
@@ -59,6 +68,10 @@ const PAYMENT_FIELDS = [
   { key: "vip_cta",               label: "Botão VIP (pós-pagamento)",         rows: 1 },
   { key: "vip_context_payment",   label: "Contexto VIP (durante pagamento)",  rows: 2 },
   { key: "vip_context_confirmed", label: "Contexto VIP (pós-confirmação)",    rows: 2 },
+  { key: "countdown_text",        label: "Texto do Relógio (Escassez)",       rows: 1 },
+  { key: "order_bump_title",      label: "Título do Bónus (Order Bump)",      rows: 1 },
+  { key: "order_bump_subtitle",   label: "Descrição do Bónus",                rows: 2 },
+  { key: "order_bump_label",      label: "Etiqueta do Bónus (ex: Oferta Única)", rows: 1 },
 ];
 
 const RESULTADO_PROFILES = [
@@ -202,10 +215,11 @@ export default function FunilPage() {
   }
 
   const activeFields =
-    activePage === "landing"   ? LANDING_FIELDS   :
-    activePage === "simulador" ? SIMULADOR_FIELDS  :
-    activePage === "oferta"    ? OFERTA_FIELDS     :
-    activePage === "payment"   ? PAYMENT_FIELDS    : null;
+    activePage === "landing"       ? LANDING_FIELDS   :
+    activePage === "simulador"     ? SIMULADOR_FIELDS  :
+    activePage === "oferta"        ? OFERTA_FIELDS     :
+    activePage === "provasSociais" ? PROVAS_FIELDS     :
+    activePage === "payment"       ? PAYMENT_FIELDS    : null;
 
   return (
     <div className="space-y-5 max-w-3xl">

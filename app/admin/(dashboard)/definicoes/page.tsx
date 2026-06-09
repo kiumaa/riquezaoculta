@@ -8,8 +8,8 @@ const WarningIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" v
 const CheckIcon = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
 
 export default function DefinicoesPage() {
-  const [prices, setPrices] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 });
-  const [form, setForm] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000 });
+  const [prices, setPrices] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999 });
+  const [form, setForm] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999 });
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
   const [confirm, setConfirm] = useState<{ leads: boolean; checkouts: boolean }>({ leads: false, checkouts: false });
@@ -95,6 +95,20 @@ export default function DefinicoesPage() {
               onChange={e => setForm(f => ({ ...f, priceQuiz: Number(e.target.value) }))}
               className="w-full rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-base font-semibold text-ink focus:border-accent/60 focus:outline-none" />
             <p className="text-[10px] text-muted">Atual: <strong className="text-accent">{prices.priceQuiz.toLocaleString("pt-AO")} Kz</strong></p>
+          </div>
+        </div>
+        {/* Preço do Order Bump */}
+        <div className="border-t border-white/[0.05] pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 border border-brand/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-brand">📦 Order Bump</span>
+            <span className="text-[11px] text-muted">Upsell no momento de checkout (Guia Riqueza Oculta)</span>
+          </div>
+          <div className="max-w-xs space-y-1.5">
+            <label htmlFor="price-order-bump" className="text-[10px] font-bold uppercase tracking-widest text-muted">Preço do Order Bump (Kz)</label>
+            <input id="price-order-bump" type="number" min={1} value={form.priceOrderBump}
+              onChange={e => setForm(f => ({ ...f, priceOrderBump: Number(e.target.value) }))}
+              className="w-full rounded-xl border border-brand/30 bg-brand/5 px-4 py-2.5 text-base font-semibold text-ink focus:border-brand/60 focus:outline-none" />
+            <p className="text-[10px] text-muted">Atual: <strong className="text-brand">{prices.priceOrderBump?.toLocaleString("pt-AO") ?? "999"} Kz</strong></p>
           </div>
         </div>
         <div className="flex items-center gap-4 flex-wrap">

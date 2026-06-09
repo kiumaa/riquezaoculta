@@ -39,6 +39,10 @@ export default async function CheckoutPagamentoPage() {
         testimonial_3_name:  c.testimonial_3_name  ?? "João Ferreira",
         testimonial_3_text:  c.testimonial_3_text  ?? "Conteúdo directo ao ponto. Sem teorias, só estratégias que funcionam mesmo.",
         testimonial_3_stars: c.testimonial_3_stars ?? "5",
+        countdown_text:      c.countdown_text      ?? "A tua reserva expira em:",
+        order_bump_title:    c.order_bump_title    ?? "SIM! Quero adicionar o Guia Riqueza Oculta à minha encomenda",
+        order_bump_subtitle: c.order_bump_subtitle ?? "Por apenas mais {preço}, descobre como encontrar o dinheiro que estás a deixar na mesa.",
+        order_bump_label:    c.order_bump_label    ?? "Oferta Única",
       }}
     />
   );
