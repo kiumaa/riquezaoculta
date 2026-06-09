@@ -137,6 +137,8 @@ function CheckoutPagamentoInner({
   const [isHowToPayOpen, setIsHowToPayOpen] = useState(false);
   const [testimonialSlide, setTestimonialSlide] = useState(0);
   const [urgencyData, setUrgencyData] = useState<{ spots: number; people: number } | null>(null);
+  const [orderBumpChecked, setOrderBumpChecked] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(15 * 60); // 15 min
 
   const productParam = searchParams.get("product") as "ebook" | "quiz" | "ebook_upsell" | null;
   const product = productParam || "ebook";
@@ -246,6 +248,17 @@ function CheckoutPagamentoInner({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, prices.pricePromo]);
+
+  // Countdown timer tick
+  useEffect(() => {
+    const t = setInterval(() => setCountdownSeconds(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const cdMm = String(Math.floor(countdownSeconds / 60)).padStart(2, "0");
+  const cdSs = String(countdownSeconds % 60).padStart(2, "0");
+
+  const ORDER_BUMP_PRICE = 999;
+  const totalPrice = prices.pricePromo + (orderBumpChecked ? ORDER_BUMP_PRICE : 0);
 
   const checkoutTestimonials = [
     { name: content.testimonial_1_name, text: content.testimonial_1_text, stars: Number(content.testimonial_1_stars) || 5 },
@@ -386,6 +399,7 @@ function CheckoutPagamentoInner({
       if (method === "express") body.expressPhone = expressPhone;
       if (method === "reference") body.method = "reference";
       if (affiliateToken) body.affiliateToken = affiliateToken;
+      if (orderBumpChecked) body.orderBump = ORDER_BUMP_PRICE;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -614,6 +628,52 @@ function CheckoutPagamentoInner({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+
+          {/* ── Countdown Vermelho de Urgência ── */}
+          {uiState !== "reference_active" && countdownSeconds > 0 && (
+            <div className="mx-auto w-full max-w-sm animate-in fade-in duration-300">
+              <div className="flex flex-col items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/80">A tua vaga expira em</p>
+                <p className="text-3xl font-bold tabular-nums text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.4)]">{cdMm}:{cdSs}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Order Bump: Guia Riqueza Oculta ── */}
+          {uiState !== "reference_active" && product !== "quiz" && (
+            <div className="mx-auto w-full max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <label
+                htmlFor="order-bump"
+                className={`flex items-start gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer transition-all duration-300 ${
+                  orderBumpChecked
+                    ? "border-yellow-400/50 bg-yellow-400/[0.08]"
+                    : "border-white/[0.1] bg-white/[0.02] hover:border-yellow-400/30"
+                }`}
+              >
+                <input
+                  id="order-bump"
+                  type="checkbox"
+                  checked={orderBumpChecked}
+                  onChange={(e) => setOrderBumpChecked(e.target.checked)}
+                  className="mt-1 h-5 w-5 shrink-0 rounded border-white/20 bg-black/30 text-yellow-400 accent-yellow-400 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-yellow-400">
+                    💡 SIM! Quero adicionar o Guia Riqueza Oculta
+                  </p>
+                  <p className="text-xs text-soft/80 mt-1 leading-relaxed">
+                    Estratégias avançadas de geração de riqueza que complementam o guia principal. Oferta exclusiva para quem compra agora.
+                  </p>
+                  <p className="text-sm font-bold text-yellow-300 mt-1.5">
+                    + apenas {formatPriceKz(ORDER_BUMP_PRICE)}
+                  </p>
+                </div>
+              </label>
+              {orderBumpChecked && (
+                <p className="text-center text-[10px] text-yellow-400/70 mt-1.5">Total: {formatPriceKz(totalPrice)}</p>
+              )}
+            </div>
+          )}
 
           {/* ── Estado: Capturar dados ── */}
           {uiState === "capture" && (

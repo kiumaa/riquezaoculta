@@ -130,8 +130,8 @@ export default function OfertaClient({
       }).catch(() => {});
     }
 
-    // 3. Redirect para checkout interno
-    window.location.href = "/checkout/pagamento";
+    // 3. Redirect para página de provas sociais (ponte para checkout)
+    window.location.href = "/provas-sociais";
   }, [name, whatsapp, prices.pricePromo, journey]);
 
   // Handle exit intent acceptance
@@ -238,7 +238,7 @@ export default function OfertaClient({
                   className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                  <span className="relative">{content.cta_text}</span>
+                  <span className="relative">ACESSAR AGORA {formatPriceKz(prices.pricePromo)}</span>
                 </button>
                 <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
                   <LockIcon className="h-3 w-3" />

@@ -13,7 +13,8 @@ const schema = z.object({
   name: z.string().min(2).max(80),
   phone: z.string().min(7).max(24),
   expressPhone: z.string().min(9).max(15),
-  product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook")
+  product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
+  orderBump: z.number().min(0).max(5000).optional(),
 });
 
 function makeReference() {
@@ -65,6 +66,11 @@ export async function POST(req: NextRequest) {
       amount = priceQuiz;
     } else if (parsed.data.product === "ebook_upsell") {
       amount = pricePromo;
+    }
+
+    // Add order bump amount if selected
+    if (parsed.data.orderBump && parsed.data.orderBump > 0) {
+      amount += parsed.data.orderBump;
     }
 
     // Create charge - THIS IS THE BOTTLENECK (KB API)

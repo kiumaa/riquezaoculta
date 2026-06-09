@@ -14,6 +14,7 @@ const schema = z.object({
   expressPhone: z.string().min(9).max(15).optional(),
   affiliateToken: z.string().max(32).optional(),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
+  orderBump: z.number().min(0).max(5000).optional(),
 });
 
 function makeReference() {
@@ -55,6 +56,12 @@ export async function POST(req: NextRequest) {
   } else if (parsed.data.product === "ebook_upsell") {
     amount = pricePromo;
     description = "Guia 1M Em Uma Semana (Upsell Especial)";
+  }
+
+  // Add order bump amount if selected
+  if (parsed.data.orderBump && parsed.data.orderBump > 0) {
+    amount += parsed.data.orderBump;
+    description += " + Guia Riqueza Oculta";
   }
 
   if (parsed.data.method === "express") {

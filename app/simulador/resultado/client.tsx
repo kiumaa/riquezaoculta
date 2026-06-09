@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 
 function scoreColor(score: number) {
   if (score >= 70) return {
@@ -148,6 +148,7 @@ export default function SimuladorResultadoClient({
   const ebookPaid = useFunnelStore(state => state.ebookPaid);
   const paymentReference = useFunnelStore(state => state.paymentReference);
   const { playReveal } = useSound();
+  const [isPremiumExpanded, setIsPremiumExpanded] = useState(false);
 
   useEffect(() => {
     // Play reveal sound on mount (slight delay for perceived drama)
@@ -285,88 +286,110 @@ export default function SimuladorResultadoClient({
                   <p>{content.closing_text}</p>
                 </div>
 
-                {/* Secção Premium: Plano de Reprogramação Financeira */}
-                <div className="mt-8 pt-6 border-t border-white/5 space-y-6">
-                  <div className="text-center space-y-2">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-brand/20 bg-brand/[0.05]">
+                {/* Secção Premium: Plano de Reprogramação Financeira (colapsável) */}
+                <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsPremiumExpanded(prev => !prev)}
+                    className="group w-full flex items-center justify-center gap-2.5 rounded-xl border border-brand/25 bg-brand/[0.07] px-5 py-3.5 transition-all duration-300 hover:bg-brand/[0.12] hover:border-brand/40"
+                  >
+                    <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                       <span className="text-[10px] font-bold uppercase tracking-widest text-brandBright">Acesso Premium Ativo</span>
                     </div>
-                    <h2 className="text-xl font-bold bg-gradient-to-r from-white via-soft to-white/70 bg-clip-text text-transparent">
-                      O Teu Plano de Reprogramação Financeira
-                    </h2>
-                    <p className="text-xs text-muted max-w-md mx-auto">
-                      Diretrizes estratégicas personalizadas para neutralizar os teus bloqueios e acelerar a tua atração de riqueza.
-                    </p>
-                  </div>
+                    <span className="text-sm font-semibold text-white">
+                      {isPremiumExpanded ? "Fechar plano detalhado" : "Ver o meu plano de reprogramação"}
+                    </span>
+                    <svg
+                      className={`h-4 w-4 text-brandBright transition-transform duration-300 ${isPremiumExpanded ? "rotate-180" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Quadrante 1: Superpotência */}
-                    <div className="bg-black/40 border border-emerald-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-emerald-500/[0.04] transition-all" />
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl text-emerald-400">✦</span>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                          A Tua Superpotência ({REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.title || result.dominant})
-                        </h3>
-                      </div>
-                      <h4 className="text-sm font-bold text-white mb-2">
-                        {REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.power.title}
-                      </h4>
-                      <p className="text-xs text-muted leading-relaxed">
-                        {REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.power.desc}
+                  <div
+                    className={`space-y-6 overflow-hidden transition-all duration-500 ease-in-out ${
+                      isPremiumExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <div className="text-center space-y-2 pt-2">
+                      <h2 className="text-xl font-bold bg-gradient-to-r from-white via-soft to-white/70 bg-clip-text text-transparent">
+                        O Teu Plano de Reprogramação Financeira
+                      </h2>
+                      <p className="text-xs text-muted max-w-md mx-auto">
+                        Diretrizes estratégicas personalizadas para neutralizar os teus bloqueios e acelerar a tua atração de riqueza.
                       </p>
                     </div>
 
-                    {/* Quadrante 2: Sabotador Oculto */}
-                    <div className="bg-black/40 border border-red-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-red-500/[0.04] transition-all" />
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl text-red-400">✦</span>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-red-400">
-                          O Teu Sabotador Oculto ({REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.title || result.weakest})
-                        </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Quadrante 1: Superpotência */}
+                      <div className="bg-black/40 border border-emerald-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-emerald-500/[0.04] transition-all" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl text-emerald-400">✦</span>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                            A Tua Superpotência ({REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.title || result.dominant})
+                          </h3>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mb-2">
+                          {REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.power.title}
+                        </h4>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {REPROGRAMMING_DATA[result.dominant as keyof typeof REPROGRAMMING_DATA]?.power.desc}
+                        </p>
                       </div>
-                      <h4 className="text-sm font-bold text-white mb-2">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.saboteur.title}
-                      </h4>
-                      <p className="text-xs text-muted leading-relaxed">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.saboteur.desc}
-                      </p>
-                    </div>
 
-                    {/* Quadrante 3: Micro-Hábito Diário */}
-                    <div className="bg-black/40 border border-cyan-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-cyan-500/[0.04] transition-all" />
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl text-cyan-400">✦</span>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                          Fórmula dos 2 Minutos
-                        </h3>
+                      {/* Quadrante 2: Sabotador Oculto */}
+                      <div className="bg-black/40 border border-red-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-red-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-red-500/[0.04] transition-all" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl text-red-400">✦</span>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-red-400">
+                            O Teu Sabotador Oculto ({REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.title || result.weakest})
+                          </h3>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mb-2">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.saboteur.title}
+                        </h4>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.saboteur.desc}
+                        </p>
                       </div>
-                      <h4 className="text-sm font-bold text-white mb-2">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.microHabit.title}
-                      </h4>
-                      <p className="text-xs text-muted leading-relaxed">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.microHabit.desc}
-                      </p>
-                    </div>
 
-                    {/* Quadrante 4: Desafio dos 7 Dias */}
-                    <div className="bg-black/40 border border-purple-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-purple-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-purple-500/[0.04] transition-all" />
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl text-purple-400">✦</span>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
-                          Desafio Semanal dos 7 Dias
-                        </h3>
+                      {/* Quadrante 3: Micro-Hábito Diário */}
+                      <div className="bg-black/40 border border-cyan-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-cyan-500/[0.04] transition-all" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl text-cyan-400">✦</span>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                            Fórmula dos 2 Minutos
+                          </h3>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mb-2">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.microHabit.title}
+                        </h4>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.microHabit.desc}
+                        </p>
                       </div>
-                      <h4 className="text-sm font-bold text-white mb-2">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.challenge.title}
-                      </h4>
-                      <p className="text-xs text-muted leading-relaxed">
-                        {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.challenge.desc}
-                      </p>
+
+                      {/* Quadrante 4: Desafio dos 7 Dias */}
+                      <div className="bg-black/40 border border-purple-500/10 p-5 rounded-2xl relative overflow-hidden group hover:border-purple-500/20 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/[0.02] rounded-full blur-xl pointer-events-none group-hover:bg-purple-500/[0.04] transition-all" />
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl text-purple-400">✦</span>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+                            Desafio Semanal dos 7 Dias
+                          </h3>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mb-2">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.challenge.title}
+                        </h4>
+                        <p className="text-xs text-muted leading-relaxed">
+                          {REPROGRAMMING_DATA[result.weakest as keyof typeof REPROGRAMMING_DATA]?.challenge.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
