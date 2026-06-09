@@ -135,20 +135,27 @@ export default function PagamentosPage() {
         setWa(w => ({ ...w, [key]: "error" }));
         setWaError(e => ({ ...e, [key]: body?.error ?? "Erro ao enviar" }));
       }
-    } catch { setWa(w => ({ ...w, [key]: "error" })); }
+    } catch {
+      setWa(w => ({ ...w, [key]: "error" }));
+      setWaError(e => ({ ...e, [key]: "Erro de rede" }));
+    }
   }
 
   function waBtn(reference: string, action: WaAction, label: string, palette: string) {
     const key = `${reference}:${action}`;
     const st = wa[key];
-    if (st === "sent") {
-      return <span className="text-[10px] font-semibold text-brand whitespace-nowrap">✓ {label}</span>;
-    }
+    const display = st === "sending" ? "…" : st === "sent" ? `✓ ${label}` : st === "error" ? `↻ ${label}` : label;
+    const title = st === "error" ? (waError[key] || "Erro ao enviar")
+      : st === "sent" ? `Enviado — clica para reenviar ${label}`
+      : `Enviar ${label} via WhatsApp`;
+    const tone = st === "error" ? "border-red-500/40 bg-red-500/[0.07] text-red-400"
+      : st === "sent" ? "border-brand/40 bg-brand/[0.10] text-brand"
+      : palette;
     return (
       <button type="button" onClick={() => sendWhatsApp(reference, action)} disabled={st === "sending"}
-        title={st === "error" ? waError[key] : `Enviar ${label} via WhatsApp`}
-        className={`rounded-lg border px-2 py-1 text-[10px] font-bold whitespace-nowrap transition disabled:opacity-50 ${st === "error" ? "border-red-500/40 bg-red-500/[0.07] text-red-400" : palette}`}>
-        {st === "sending" ? "…" : st === "error" ? `↻ ${label}` : label}
+        title={title}
+        className={`rounded-lg border px-2 py-1 text-[10px] font-bold whitespace-nowrap transition disabled:opacity-50 ${tone}`}>
+        {display}
       </button>
     );
   }
@@ -262,8 +269,8 @@ export default function PagamentosPage() {
                     <div className="flex flex-wrap gap-1">
                       {c.status === "paid" && waBtn(c.reference, "confirmation", "Confirmação", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
                       {c.status === "pending" && c.entity !== "express" && waBtn(c.reference, "reminder", "Lembrete", "border-blue-500/30 bg-blue-500/[0.07] text-blue-400 hover:bg-blue-500/[0.14]")}
-                      {c.status === "pending" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
-                      {c.status === "failed" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                      {c.status === "pending" && c.entity === "express" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                      {c.status === "failed" && c.entity === "express" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
                     </div>
                   </td>
                 </tr>

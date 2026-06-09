@@ -4,9 +4,8 @@ import { checkouts } from "@/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { updateCheckoutStatus } from "@/lib/storage";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
-import { sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
 import { sendFBConversionPurchase } from "@/lib/capi";
-import { sendReferenceReminder, sendAbandonedCart } from "@/lib/communication-service";
+import { sendReferenceReminder, sendAbandonedCart, sendReferenceReminderSmsLogged } from "@/lib/communication-service";
 
 // Processa checkouts criados nas últimas 48 horas (para pegar referências antigas)
 const MAX_AGE_HOURS = 48;
@@ -97,15 +96,7 @@ export async function GET(req: NextRequest) {
           // Lembrete 1h: entre 55-75 minutos
           if (elapsedMin >= REMINDER_1H_MIN && elapsedMin < REMINDER_1H_MAX) {
             console.log(`[Cron Recover] Sending 1h reminder for ${checkout.reference}`);
-            await sendReferenceReminderSms(
-              checkout.phone,
-              checkout.name,
-              checkout.entity,
-              checkout.paymentReference,
-              checkout.amount,
-              "1h"
-            );
-            await sendReferenceReminder(
+            const sms1h = await sendReferenceReminderSmsLogged(
               checkout.phone,
               checkout.name,
               checkout.entity,
@@ -114,22 +105,23 @@ export async function GET(req: NextRequest) {
               "1h",
               { reference: checkout.reference }
             );
-            results.smsSent["1h"]++;
-            results.waSent["1h"]++;
-          }
-          
-          // Lembrete 6h: entre 350-390 minutos (~6 horas)
-          if (elapsedMin >= REMINDER_6H_MIN && elapsedMin < REMINDER_6H_MAX) {
-            console.log(`[Cron Recover] Sending 6h reminder for ${checkout.reference}`);
-            await sendReferenceReminderSms(
+            const wa1h = await sendReferenceReminder(
               checkout.phone,
               checkout.name,
               checkout.entity,
               checkout.paymentReference,
               checkout.amount,
-              "6h"
+              "1h",
+              { reference: checkout.reference }
             );
-            await sendReferenceReminder(
+            if (sms1h) results.smsSent["1h"]++;
+            if (wa1h) results.waSent["1h"]++;
+          }
+          
+          // Lembrete 6h: entre 350-390 minutos (~6 horas)
+          if (elapsedMin >= REMINDER_6H_MIN && elapsedMin < REMINDER_6H_MAX) {
+            console.log(`[Cron Recover] Sending 6h reminder for ${checkout.reference}`);
+            const sms6h = await sendReferenceReminderSmsLogged(
               checkout.phone,
               checkout.name,
               checkout.entity,
@@ -138,8 +130,17 @@ export async function GET(req: NextRequest) {
               "6h",
               { reference: checkout.reference }
             );
-            results.smsSent["6h"]++;
-            results.waSent["6h"]++;
+            const wa6h = await sendReferenceReminder(
+              checkout.phone,
+              checkout.name,
+              checkout.entity,
+              checkout.paymentReference,
+              checkout.amount,
+              "6h",
+              { reference: checkout.reference }
+            );
+            if (sms6h) results.smsSent["6h"]++;
+            if (wa6h) results.waSent["6h"]++;
           }
         }
 
@@ -173,10 +174,10 @@ export async function GET(req: NextRequest) {
             const payload = (checkout.providerPayload as Record<string, unknown>) || {};
             if (!payload.recoverySent) {
               console.log(`[Cron Recover] Sending abandoned cart WhatsApp for Express ${checkout.reference} (Failed)`);
-              await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
+              const abOk = await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
               await updateCheckoutStatus(checkout.reference, "failed", { ...(statusResult.raw as object), recoverySent: true });
               results.updated++;
-              results.waSent.abandoned++;
+              if (abOk) results.waSent.abandoned++;
               continue;
             }
           }
@@ -192,10 +193,10 @@ export async function GET(req: NextRequest) {
              const payload = (checkout.providerPayload as Record<string, unknown>) || {};
              if (!payload.recoverySent) {
                console.log(`[Cron Recover] Sending abandoned cart WhatsApp for pending Express ${checkout.reference}`);
-               await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
+               const abOk = await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
                await updateCheckoutStatus(checkout.reference, checkout.status, { recoverySent: true });
                results.updated++;
-               results.waSent.abandoned++;
+               if (abOk) results.waSent.abandoned++;
              }
           }
         }

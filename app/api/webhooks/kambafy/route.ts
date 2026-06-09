@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
+import { normalizePhone } from "@/lib/phone";
 import { findCheckout, insertCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 import { sendFBConversionPurchase } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
@@ -157,7 +158,9 @@ export async function POST(req: NextRequest) {
     }
 
     const customerName = extractCustomerName(payload);
-    const customerPhone = extractCustomerPhone(payload);
+    const customerPhoneRaw = extractCustomerPhone(payload);
+    // Normalizar (244XXXXXXXXX) para coincidir com lead.phone e a timeline de comunicações.
+    const customerPhone = customerPhoneRaw ? normalizePhone(customerPhoneRaw) : "";
     const amount = extractAmount(payload);
 
     if (existing) {

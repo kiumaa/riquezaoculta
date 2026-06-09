@@ -76,6 +76,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null);
   const [quizData, setQuizData] = useState<QuizSubmissionRecord | null>(null);
   const [comms, setComms] = useState<CommunicationLog[]>([]);
+  const [commsError, setCommsError] = useState(false);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
 
@@ -98,6 +99,7 @@ export default function LeadsPage() {
     setNotes(lead.notes ?? "");
     setQuizData(null);
     setComms([]);
+    setCommsError(false);
     // fetch quiz submission for this phone
     const res = await fetch(`/api/admin/quiz-submissions`);
     if (res.ok) {
@@ -106,10 +108,16 @@ export default function LeadsPage() {
       setQuizData(sub ?? null);
     }
     // fetch communication timeline for this phone
-    const cres = await fetch(`/api/admin/communications?phone=${encodeURIComponent(lead.phone)}`);
-    if (cres.ok) {
-      const cd = await cres.json();
-      setComms((cd.data as CommunicationLog[]) ?? []);
+    try {
+      const cres = await fetch(`/api/admin/communications?phone=${encodeURIComponent(lead.phone)}`);
+      if (cres.ok) {
+        const cd = await cres.json();
+        setComms((cd.data as CommunicationLog[]) ?? []);
+      } else {
+        setCommsError(true);
+      }
+    } catch {
+      setCommsError(true);
     }
   }
 
@@ -326,7 +334,9 @@ export default function LeadsPage() {
                 {/* Communications timeline */}
                 <div className="space-y-2">
                   <h5 className="text-xs font-bold uppercase tracking-widest text-muted">Comunicações</h5>
-                  {comms.length === 0 ? (
+                  {commsError ? (
+                    <p className="text-xs text-red-400/80 italic">Erro ao carregar comunicações. Tenta reabrir a ficha.</p>
+                  ) : comms.length === 0 ? (
                     <p className="text-xs text-muted italic">Nenhuma comunicação registada para este contacto.</p>
                   ) : (
                     <div className="space-y-1.5">

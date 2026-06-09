@@ -3,8 +3,9 @@ import {
   sendReferenceReminderWhatsApp,
   sendAbandonedCartWhatsApp
 } from "@/lib/whatsapp";
+import { sendRecoveryMessage, sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
 import { insertCommunicationLog } from "@/lib/storage";
-import type { CommunicationTrigger, CommunicationType } from "@/lib/types";
+import type { CommunicationChannel, CommunicationTrigger, CommunicationType } from "@/lib/types";
 
 /**
  * Serviço central de comunicação com o cliente.
@@ -36,7 +37,8 @@ async function record(
   type: CommunicationType,
   ok: boolean,
   ctx: CommunicationContext,
-  channel: "whatsapp" | "sms" = "whatsapp"
+  channel: CommunicationChannel = "whatsapp",
+  reason?: string
 ) {
   await insertCommunicationLog({
     reference: ctx.reference ?? null,
@@ -47,8 +49,12 @@ async function record(
     status: ok ? "sent" : "failed",
     trigger: ctx.trigger ?? "auto",
     messageText: LABELS[type],
-    failureReason: ok ? null : "Envio devolveu falha (ver logs do provedor)"
+    failureReason: ok ? null : (reason ?? "Envio devolveu falha")
   });
+}
+
+function smsReason(res: { success: boolean; reason?: string }): string | undefined {
+  return res.success ? undefined : (res.reason ?? "SMS falhou");
 }
 
 export async function sendOrderConfirmation(
@@ -56,9 +62,9 @@ export async function sendOrderConfirmation(
   name: string,
   ctx: CommunicationContext = {}
 ): Promise<boolean> {
-  const ok = await sendOrderConfirmationWhatsApp(phone, name);
-  await record(phone, "confirmation", ok, ctx);
-  return ok;
+  const r = await sendOrderConfirmationWhatsApp(phone, name);
+  await record(phone, "confirmation", r.ok, ctx, "whatsapp", r.reason);
+  return r.ok;
 }
 
 export async function sendReferenceReminder(
@@ -70,9 +76,9 @@ export async function sendReferenceReminder(
   timeframe: "1h" | "6h",
   ctx: CommunicationContext = {}
 ): Promise<boolean> {
-  const ok = await sendReferenceReminderWhatsApp(phone, name, entity, reference, amount, timeframe);
-  await record(phone, timeframe === "1h" ? "reminder_1h" : "reminder_6h", ok, ctx);
-  return ok;
+  const r = await sendReferenceReminderWhatsApp(phone, name, entity, reference, amount, timeframe);
+  await record(phone, timeframe === "1h" ? "reminder_1h" : "reminder_6h", r.ok, ctx, "whatsapp", r.reason);
+  return r.ok;
 }
 
 export async function sendAbandonedCart(
@@ -80,7 +86,34 @@ export async function sendAbandonedCart(
   name: string,
   ctx: CommunicationContext = {}
 ): Promise<boolean> {
-  const ok = await sendAbandonedCartWhatsApp(phone, name);
-  await record(phone, "abandoned", ok, ctx);
-  return ok;
+  const r = await sendAbandonedCartWhatsApp(phone, name);
+  await record(phone, "abandoned", r.ok, ctx, "whatsapp", r.reason);
+  return r.ok;
+}
+
+/** SMS de recuperação (BulkGate) — registado como channel "sms", type "recovery". */
+export async function sendRecoverySms(
+  phone: string,
+  name: string,
+  offerUrl: string,
+  ctx: CommunicationContext = {}
+): Promise<boolean> {
+  const res = await sendRecoveryMessage(phone, name, offerUrl);
+  await record(phone, "recovery", res.success, ctx, "sms", smsReason(res));
+  return res.success;
+}
+
+/** Lembrete de referência por SMS (BulkGate) — registado como channel "sms". */
+export async function sendReferenceReminderSmsLogged(
+  phone: string,
+  name: string,
+  entity: string,
+  reference: string,
+  amount: number,
+  timeframe: "1h" | "6h",
+  ctx: CommunicationContext = {}
+): Promise<boolean> {
+  const res = await sendReferenceReminderSms(phone, name, entity, reference, amount, timeframe);
+  await record(phone, timeframe === "1h" ? "reminder_1h" : "reminder_6h", res.success, ctx, "sms", smsReason(res));
+  return res.success;
 }

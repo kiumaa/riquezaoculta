@@ -12,14 +12,14 @@ export async function sendWhatsAppMessage(
   phone: string,
   text: string,
   options?: WhatsAppMessageOptions
-): Promise<boolean> {
+): Promise<{ ok: boolean; reason?: string }> {
   const apiUrl = process.env.OPENWA_API_URL;
   const apiKey = process.env.OPENWA_API_KEY;
   const sessionId = process.env.OPENWA_SESSION_ID;
 
   if (!apiUrl || !apiKey || !sessionId) {
     console.warn("[WhatsApp] Variáveis de ambiente OpenWA em falta. Mensagem não enviada.");
-    return false;
+    return { ok: false, reason: "Variáveis OpenWA em falta" };
   }
 
   // Limpar formatação do número (remover + e espaços)
@@ -47,25 +47,26 @@ export async function sendWhatsAppMessage(
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok || !data.success) {
       console.error("[WhatsApp] Falha ao enviar mensagem:", data);
-      return false;
+      const reason = (data && (data.error || data.message)) || `HTTP ${response.status}`;
+      return { ok: false, reason: String(reason).slice(0, 200) };
     }
 
     console.log(`[WhatsApp] Mensagem enviada com sucesso para ${chatId}`);
-    return true;
+    return { ok: true };
   } catch (error) {
     logError("WhatsApp", "Erro inesperado ao enviar mensagem", error);
-    return false;
+    return { ok: false, reason: error instanceof Error ? error.message.slice(0, 200) : "Erro de rede" };
   }
 }
 
 /**
  * Envia mensagem de confirmação de encomenda (Pagamento Concluído)
  */
-export async function sendOrderConfirmationWhatsApp(phone: string, name: string): Promise<boolean> {
+export async function sendOrderConfirmationWhatsApp(phone: string, name: string): Promise<{ ok: boolean; reason?: string }> {
   const text = `Olá *${name}*! 🎉
 
 O teu pagamento do *Guia 1M em Uma Semana* foi confirmado com sucesso!
@@ -91,7 +92,7 @@ export async function sendReferenceReminderWhatsApp(
   reference: string, 
   amount: number,
   timeframe: "1h" | "6h"
-): Promise<boolean> {
+): Promise<{ ok: boolean; reason?: string }> {
   const intro = timeframe === "1h" 
     ? `Olá *${name}*, reparámos que ainda não concluíste o pagamento do teu Guia 1M em Uma Semana.`
     : `Olá *${name}*, a tua referência para o Guia 1M em Uma Semana está quase a expirar!`;
@@ -113,7 +114,7 @@ Se precisares de ajuda com o pagamento, avisa!`;
 /**
  * Envia mensagem de recuperação de Carrinho Abandonado (Pagamento Express Pendente/Falhado)
  */
-export async function sendAbandonedCartWhatsApp(phone: string, name: string): Promise<boolean> {
+export async function sendAbandonedCartWhatsApp(phone: string, name: string): Promise<{ ok: boolean; reason?: string }> {
   const text = `Olá *${name}*! Notámos que estiveste quase a garantir o teu acesso ao *Guia 1M em Uma Semana*, mas algo aconteceu com o pagamento Express. 😕
 
 Não te preocupes, guardámos a tua reserva.

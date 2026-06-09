@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { findCheckout } from "@/lib/storage";
 import { sendOrderConfirmation, sendReferenceReminder, sendAbandonedCart } from "@/lib/communication-service";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -23,6 +24,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { reference, action } = parsed.data;
+
+  // Throttle por (referência + ação) para evitar cliques repetidos e risco de ban do WhatsApp.
+  const { allowed } = consumeRateLimit(`wa-send:${reference}:${action}`, 3, 60_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Demasiados envios para este contacto. Aguarda um momento." }, { status: 429 });
+  }
+
   const checkout = await findCheckout(reference);
   if (!checkout) {
     return NextResponse.json({ error: "Checkout not found" }, { status: 404 });
@@ -50,6 +58,12 @@ export async function POST(req: NextRequest) {
       ctx
     );
   } else {
+    if (checkout.entity !== "express") {
+      return NextResponse.json(
+        { error: "Recuperação de carrinho só se aplica a pagamentos Express (este é por Referência). Usa o Lembrete." },
+        { status: 400 }
+      );
+    }
     ok = await sendAbandonedCart(checkout.phone, checkout.name, ctx);
   }
 

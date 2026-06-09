@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { findCheckout } from "@/lib/storage";
-import { sendRecoveryMessage } from "@/lib/providers/sms/bulkgate";
+import { sendRecoverySms } from "@/lib/communication-service";
 import { z } from "zod";
 
 const schema = z.object({
@@ -31,10 +31,13 @@ export async function POST(req: NextRequest) {
   }
 
   const offerUrl = "www.riquezaoculta.click/oferta";
-  const result = await sendRecoveryMessage(checkout.phone, checkout.name, offerUrl);
+  const ok = await sendRecoverySms(checkout.phone, checkout.name, offerUrl, {
+    reference: checkout.reference,
+    trigger: "manual"
+  });
 
-  if (!result.success) {
-    return NextResponse.json({ error: result.reason ?? "Failed to send message" }, { status: 500 });
+  if (!ok) {
+    return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

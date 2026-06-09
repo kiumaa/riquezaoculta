@@ -16,6 +16,9 @@ export async function GET(req: NextRequest) {
   if (!reference && !phone) {
     return NextResponse.json({ error: "reference or phone required" }, { status: 400 });
   }
+  if ((reference && reference.length > 64) || (phone && phone.length > 24)) {
+    return NextResponse.json({ error: "Invalid params" }, { status: 400 });
+  }
 
   const data = await getCommunicationLogs({ reference, phone, limit: 50 });
   return NextResponse.json({ data });
