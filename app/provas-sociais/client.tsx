@@ -12,25 +12,29 @@ const PROOF_SLIDES = [
     id: 1,
     name: "Mário Silva",
     caption: "Recuperou o investimento em menos de 24 horas",
-    placeholder: true,
-    // Substituir por: "/provas/whatsapp_mario.png"
-    src: "",
+    placeholder: false,
+    src: "/whatsapp/print1.png",
   },
   {
     id: 2,
     name: "Ana L.",
-    caption: "Fechou o primeiro cliente de 50.000 Kz seguindo o guia",
-    placeholder: true,
-    // Substituir por: "/provas/whatsapp_ana.png"
-    src: "",
+    caption: "Fechou o primeiro cliente de 50.000 Kz",
+    placeholder: false,
+    src: "/whatsapp/print2.png",
   },
   {
     id: 3,
     name: "Paulo",
     caption: "Comprou com ceticismo — agora não larga o guia",
-    placeholder: true,
-    // Substituir por: "/provas/whatsapp_paulo.png"
-    src: "",
+    placeholder: false,
+    src: "/whatsapp/print3.png",
+  },
+  {
+    id: 4,
+    name: "Joana",
+    caption: "Resultado incrível logo na primeira semana",
+    placeholder: false,
+    src: "/whatsapp/print4.png",
   },
 ];
 
