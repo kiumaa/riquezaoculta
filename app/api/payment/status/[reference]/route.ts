@@ -3,7 +3,7 @@ import { env, isProd } from "@/lib/env";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 import { sendFBConversionPurchase } from "@/lib/capi";
-import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp";
+import { sendOrderConfirmation } from "@/lib/communication-service";
 
 // Express payments get grace period (10 minutes backend) for user to confirm on app
 // UX shows 5 minutes to create urgency, but backend allows 10 minutes
@@ -48,7 +48,7 @@ export async function GET(
           record.reference,
           "https://www.riquezaoculta.click/checkout/pagamento"
         ).catch(() => {});
-        void sendOrderConfirmationWhatsApp(record.phone, record.name).catch(() => {});
+        void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
       } else if (provider.status === "failed") {
         // For Express: wait grace period before marking as failed
         if (method === "express" && elapsed < EXPRESS_GRACE_PERIOD_MS) {
@@ -68,7 +68,7 @@ export async function GET(
             record.reference,
             "https://www.riquezaoculta.click/checkout/pagamento"
           ).catch(() => {});
-          void sendOrderConfirmationWhatsApp(record.phone, record.name).catch(() => {});
+          void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
         }
       }
     }

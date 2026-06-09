@@ -6,7 +6,7 @@ import { updateCheckoutStatus } from "@/lib/storage";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
 import { sendFBConversionPurchase } from "@/lib/capi";
-import { sendReferenceReminderWhatsApp, sendAbandonedCartWhatsApp } from "@/lib/whatsapp";
+import { sendReferenceReminder, sendAbandonedCart } from "@/lib/communication-service";
 
 // Processa checkouts criados nas últimas 48 horas (para pegar referências antigas)
 const MAX_AGE_HOURS = 48;
@@ -105,13 +105,14 @@ export async function GET(req: NextRequest) {
               checkout.amount,
               "1h"
             );
-            await sendReferenceReminderWhatsApp(
+            await sendReferenceReminder(
               checkout.phone,
               checkout.name,
               checkout.entity,
               checkout.paymentReference,
               checkout.amount,
-              "1h"
+              "1h",
+              { reference: checkout.reference }
             );
             results.smsSent["1h"]++;
             results.waSent["1h"]++;
@@ -128,13 +129,14 @@ export async function GET(req: NextRequest) {
               checkout.amount,
               "6h"
             );
-            await sendReferenceReminderWhatsApp(
+            await sendReferenceReminder(
               checkout.phone,
               checkout.name,
               checkout.entity,
               checkout.paymentReference,
               checkout.amount,
-              "6h"
+              "6h",
+              { reference: checkout.reference }
             );
             results.smsSent["6h"]++;
             results.waSent["6h"]++;
@@ -171,7 +173,7 @@ export async function GET(req: NextRequest) {
             const payload = (checkout.providerPayload as Record<string, unknown>) || {};
             if (!payload.recoverySent) {
               console.log(`[Cron Recover] Sending abandoned cart WhatsApp for Express ${checkout.reference} (Failed)`);
-              await sendAbandonedCartWhatsApp(checkout.phone, checkout.name);
+              await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
               await updateCheckoutStatus(checkout.reference, "failed", { ...(statusResult.raw as object), recoverySent: true });
               results.updated++;
               results.waSent.abandoned++;
@@ -190,7 +192,7 @@ export async function GET(req: NextRequest) {
              const payload = (checkout.providerPayload as Record<string, unknown>) || {};
              if (!payload.recoverySent) {
                console.log(`[Cron Recover] Sending abandoned cart WhatsApp for pending Express ${checkout.reference}`);
-               await sendAbandonedCartWhatsApp(checkout.phone, checkout.name);
+               await sendAbandonedCart(checkout.phone, checkout.name, { reference: checkout.reference });
                await updateCheckoutStatus(checkout.reference, checkout.status, { recoverySent: true });
                results.updated++;
                results.waSent.abandoned++;

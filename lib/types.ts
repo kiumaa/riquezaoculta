@@ -101,6 +101,24 @@ export type CheckoutRecord = {
   updatedAt: string;
 };
 
+export type CommunicationChannel = "whatsapp" | "sms";
+export type CommunicationType = "confirmation" | "reminder_1h" | "reminder_6h" | "abandoned" | "recovery";
+export type CommunicationTrigger = "auto" | "manual";
+
+export type CommunicationLog = {
+  id: number;
+  reference?: string | null;
+  leadId?: number | null;
+  phone: string;
+  type: CommunicationType;
+  channel: CommunicationChannel;
+  status: "sent" | "failed";
+  trigger: CommunicationTrigger;
+  messageText?: string | null;
+  failureReason?: string | null;
+  createdAt: string;
+};
+
 export type AffiliateStatus = "pending" | "active" | "suspended";
 export type PayoutStatus = "pending" | "approved" | "paid" | "rejected";
 

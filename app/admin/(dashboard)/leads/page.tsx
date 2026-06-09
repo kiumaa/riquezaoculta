@@ -1,11 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { LeadRecord, LeadStatus, QuizSubmissionRecord } from "@/lib/types";
+import type { CommunicationLog, LeadRecord, LeadStatus, QuizSubmissionRecord } from "@/lib/types";
 import { JourneyViewer } from "../../components/JourneyViewer";
 
 const PILLAR_LABELS: Record<string, string> = {
   emocional: "Emocional", clareza: "Clareza", acao: "Ação", disciplina: "Disciplina"
+};
+
+const COMM_LABELS: Record<string, string> = {
+  confirmation: "Confirmação de pagamento",
+  reminder_1h: "Lembrete de referência (1h)",
+  reminder_6h: "Lembrete de referência (6h)",
+  abandoned: "Recuperação de carrinho",
+  recovery: "Recuperação (SMS)"
 };
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string; className: string }[] = [
@@ -67,6 +75,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null);
   const [quizData, setQuizData] = useState<QuizSubmissionRecord | null>(null);
+  const [comms, setComms] = useState<CommunicationLog[]>([]);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
 
@@ -88,12 +97,19 @@ export default function LeadsPage() {
     setSelectedLead(lead);
     setNotes(lead.notes ?? "");
     setQuizData(null);
+    setComms([]);
     // fetch quiz submission for this phone
     const res = await fetch(`/api/admin/quiz-submissions`);
     if (res.ok) {
       const data = await res.json();
       const sub = (data.submissions as QuizSubmissionRecord[]).find(s => s.phone === lead.phone);
       setQuizData(sub ?? null);
+    }
+    // fetch communication timeline for this phone
+    const cres = await fetch(`/api/admin/communications?phone=${encodeURIComponent(lead.phone)}`);
+    if (cres.ok) {
+      const cd = await cres.json();
+      setComms((cd.data as CommunicationLog[]) ?? []);
     }
   }
 
@@ -306,6 +322,31 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Communications timeline */}
+                <div className="space-y-2">
+                  <h5 className="text-xs font-bold uppercase tracking-widest text-muted">Comunicações</h5>
+                  {comms.length === 0 ? (
+                    <p className="text-xs text-muted italic">Nenhuma comunicação registada para este contacto.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {comms.map(log => (
+                        <div key={log.id} className="flex items-center gap-2.5 bg-black/20 rounded-xl p-2.5 border border-white/5">
+                          <span className="text-base shrink-0" aria-hidden>{log.channel === "whatsapp" ? "🟢" : "✉️"}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-ink truncate">{COMM_LABELS[log.type] ?? log.type}</p>
+                            <p className="text-[10px] text-muted">
+                              {new Date(log.createdAt).toLocaleString("pt-PT")} · {log.trigger === "manual" ? "manual" : "automático"} · {log.channel}
+                            </p>
+                          </div>
+                          <span className={`text-[10px] font-bold uppercase shrink-0 ${log.status === "sent" ? "text-brand" : "text-red-400"}`}>
+                            {log.status === "sent" ? "enviado" : "falhou"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Notes */}
                 <div className="space-y-2">

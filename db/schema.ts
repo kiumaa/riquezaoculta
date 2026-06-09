@@ -99,6 +99,20 @@ export const payoutRequests = pgTable("payout_requests", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const communicationLogs = pgTable("communication_logs", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  reference: varchar("reference", { length: 64 }),
+  leadId: integer("lead_id"),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  type: varchar("type", { length: 32 }).notNull(),
+  channel: varchar("channel", { length: 16 }).notNull(),
+  status: varchar("status", { length: 16 }).notNull(),
+  trigger: varchar("trigger", { length: 16 }).notNull(),
+  messageText: varchar("message_text", { length: 255 }),
+  failureReason: varchar("failure_reason", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+
 export type LeadInsert = typeof leads.$inferInsert;
 export type CheckoutInsert = typeof checkouts.$inferInsert;
 export type QuizSubmissionInsert = typeof quizSubmissions.$inferInsert;
@@ -106,3 +120,4 @@ export type FunnelContentInsert = typeof funnelContent.$inferInsert;
 export type MemberContentInsert = typeof memberContent.$inferInsert;
 export type AffiliateInsert = typeof affiliates.$inferInsert;
 export type PayoutRequestInsert = typeof payoutRequests.$inferInsert;
+export type CommunicationLogInsert = typeof communicationLogs.$inferInsert;

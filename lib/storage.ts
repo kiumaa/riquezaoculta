@@ -1,10 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
-import { affiliates, checkouts, funnelContent, leads, memberContent, payoutRequests, quizSubmissions, settings } from "@/db/schema";
+import { affiliates, checkouts, communicationLogs, funnelContent, leads, memberContent, payoutRequests, quizSubmissions, settings } from "@/db/schema";
 import type { AffiliateInsert, FunnelContentInsert, MemberContentInsert, PayoutRequestInsert, QuizSubmissionInsert } from "@/db/schema";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logger";
-import type { AffiliateRecord, AffiliateStatus, CheckoutRecord, CheckoutStatus, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, PayoutRequestRecord, PayoutStatus, QuizSubmissionRecord } from "@/lib/types";
+import type { AffiliateRecord, AffiliateStatus, CheckoutRecord, CheckoutStatus, CommunicationLog, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, PayoutRequestRecord, PayoutStatus, QuizSubmissionRecord } from "@/lib/types";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
 const fallbackPath = path.join(process.cwd(), "data", "runtime.json");
@@ -26,6 +26,7 @@ type RuntimeData = {
   leads: LeadPayload[];
   checkouts: CheckoutRecord[];
   settings?: Settings;
+  communicationLogs?: CommunicationLog[];
 };
 
 async function ensureFallbackFile() {
@@ -247,6 +248,95 @@ export async function getCheckouts(page = 1, limit = 20): Promise<PaginatedResul
     page,
     totalPages: Math.ceil(all.length / limit)
   };
+}
+
+export async function insertCommunicationLog(record: {
+  reference?: string | null;
+  leadId?: number | null;
+  phone: string;
+  type: CommunicationLog["type"];
+  channel: CommunicationLog["channel"];
+  status: CommunicationLog["status"];
+  trigger: CommunicationLog["trigger"];
+  messageText?: string | null;
+  failureReason?: string | null;
+}): Promise<void> {
+  // Fail-safe: nunca deixar o logging quebrar um fluxo de pagamento
+  // (ex: tabela ainda não migrada em produção).
+  try {
+    if (db) {
+      await db.insert(communicationLogs).values({
+        reference: record.reference ?? null,
+        leadId: record.leadId ?? null,
+        phone: record.phone,
+        type: record.type,
+        channel: record.channel,
+        status: record.status,
+        trigger: record.trigger,
+        messageText: record.messageText ?? null,
+        failureReason: record.failureReason ?? null
+      });
+      return;
+    }
+
+    const data = await readFallback();
+    const logs = data.communicationLogs ?? [];
+    logs.push({
+      id: logs.length ? Math.max(...logs.map(l => l.id)) + 1 : 1,
+      reference: record.reference ?? null,
+      leadId: record.leadId ?? null,
+      phone: record.phone,
+      type: record.type,
+      channel: record.channel,
+      status: record.status,
+      trigger: record.trigger,
+      messageText: record.messageText ?? null,
+      failureReason: record.failureReason ?? null,
+      createdAt: new Date().toISOString()
+    });
+    data.communicationLogs = logs;
+    await writeFallback(data);
+  } catch (err) {
+    logError("CommLog", "Falha ao gravar log de comunicação", err);
+  }
+}
+
+export async function getCommunicationLogs(filter: { reference?: string; phone?: string; limit?: number }): Promise<CommunicationLog[]> {
+  const limit = filter.limit ?? 50;
+  try {
+    if (db) {
+      const cond = filter.reference
+        ? eq(communicationLogs.reference, filter.reference)
+        : filter.phone
+          ? eq(communicationLogs.phone, filter.phone)
+          : undefined;
+      const rows = cond
+        ? await db.select().from(communicationLogs).where(cond).orderBy(desc(communicationLogs.createdAt)).limit(limit)
+        : await db.select().from(communicationLogs).orderBy(desc(communicationLogs.createdAt)).limit(limit);
+      return rows.map(r => ({
+        id: r.id,
+        reference: r.reference,
+        leadId: r.leadId,
+        phone: r.phone,
+        type: r.type as CommunicationLog["type"],
+        channel: r.channel as CommunicationLog["channel"],
+        status: r.status as CommunicationLog["status"],
+        trigger: r.trigger as CommunicationLog["trigger"],
+        messageText: r.messageText,
+        failureReason: r.failureReason,
+        createdAt: r.createdAt.toISOString()
+      }));
+    }
+
+    const data = await readFallback();
+    let logs = data.communicationLogs ?? [];
+    if (filter.reference) logs = logs.filter(l => l.reference === filter.reference);
+    else if (filter.phone) logs = logs.filter(l => l.phone === filter.phone);
+    return logs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
+  } catch (err) {
+    logError("CommLog", "Falha ao ler logs de comunicação", err);
+    return [];
+  }
 }
 
 export async function getSettings(): Promise<Settings> {

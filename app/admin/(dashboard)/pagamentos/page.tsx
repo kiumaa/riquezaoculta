@@ -87,6 +87,8 @@ export default function PagamentosPage() {
   const [recovering, setRecovering] = useState<Record<string, boolean>>({});
   const [recovered, setRecovered] = useState<Record<string, "sent" | "error">>({});
   const [recoverError, setRecoverError] = useState<Record<string, string>>({});
+  const [wa, setWa] = useState<Record<string, "sending" | "sent" | "error">>({});
+  const [waError, setWaError] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async (p: number) => {
     const res = await fetch(`/api/admin/checkouts?page=${p}&limit=20`);
@@ -114,6 +116,41 @@ export default function PagamentosPage() {
       }
     } catch { setRecovered(r => ({ ...r, [reference]: "error" })); }
     finally { setRecovering(r => ({ ...r, [reference]: false })); }
+  }
+
+  type WaAction = "confirmation" | "reminder" | "abandoned";
+  async function sendWhatsApp(reference: string, action: WaAction) {
+    const key = `${reference}:${action}`;
+    setWa(w => ({ ...w, [key]: "sending" }));
+    setWaError(e => ({ ...e, [key]: "" }));
+    try {
+      const res = await fetch("/api/admin/communications/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference, action })
+      });
+      if (res.ok) {
+        setWa(w => ({ ...w, [key]: "sent" }));
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setWa(w => ({ ...w, [key]: "error" }));
+        setWaError(e => ({ ...e, [key]: body?.error ?? "Erro ao enviar" }));
+      }
+    } catch { setWa(w => ({ ...w, [key]: "error" })); }
+  }
+
+  function waBtn(reference: string, action: WaAction, label: string, palette: string) {
+    const key = `${reference}:${action}`;
+    const st = wa[key];
+    if (st === "sent") {
+      return <span className="text-[10px] font-semibold text-brand whitespace-nowrap">✓ {label}</span>;
+    }
+    return (
+      <button type="button" onClick={() => sendWhatsApp(reference, action)} disabled={st === "sending"}
+        title={st === "error" ? waError[key] : `Enviar ${label} via WhatsApp`}
+        className={`rounded-lg border px-2 py-1 text-[10px] font-bold whitespace-nowrap transition disabled:opacity-50 ${st === "error" ? "border-red-500/40 bg-red-500/[0.07] text-red-400" : palette}`}>
+        {st === "sending" ? "…" : st === "error" ? `↻ ${label}` : label}
+      </button>
+    );
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
@@ -183,6 +220,7 @@ export default function PagamentosPage() {
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Recuperar</th>
+                <th className="px-4 py-3">WhatsApp</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -220,10 +258,18 @@ export default function PagamentosPage() {
                       )
                     )}
                   </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {c.status === "paid" && waBtn(c.reference, "confirmation", "Confirmação", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                      {c.status === "pending" && c.entity !== "express" && waBtn(c.reference, "reminder", "Lembrete", "border-blue-500/30 bg-blue-500/[0.07] text-blue-400 hover:bg-blue-500/[0.14]")}
+                      {c.status === "pending" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                      {c.status === "failed" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {result.data.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted italic">Nenhum checkout encontrado.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-muted italic">Nenhum checkout encontrado.</td></tr>
               )}
             </tbody>
           </table>
