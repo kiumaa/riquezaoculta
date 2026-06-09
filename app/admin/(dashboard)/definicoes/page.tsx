@@ -8,8 +8,8 @@ const WarningIcon = <svg className="w-5 h-5" fill="none" stroke="currentColor" v
 const CheckIcon = <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
 
 export default function DefinicoesPage() {
-  const [prices, setPrices] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999 });
-  const [form, setForm] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999 });
+  const [prices, setPrices] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999, socialProofEnabled: true });
+  const [form, setForm] = useState({ priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999, socialProofEnabled: true });
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<"saved" | "error" | null>(null);
   const [confirm, setConfirm] = useState<{ leads: boolean; checkouts: boolean }>({ leads: false, checkouts: false });
@@ -126,6 +126,35 @@ export default function DefinicoesPage() {
           <p className="text-xs text-muted ml-auto">
             Desconto Ebook: <strong className="text-ink">{prices.priceOriginal > 0 ? Math.round((1 - prices.pricePromo / prices.priceOriginal) * 100) : 0}%</strong>
           </p>
+        </div>
+      </div>
+
+      {/* Controlo do Funil (feature flags) */}
+      <div className="bg-black/20 border border-white/5 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="text-brand">{SettingsIcon}</span>
+          <div>
+            <h2 className="text-sm font-bold text-ink">Controlo do Funil</h2>
+            <p className="text-[11px] text-muted">Liga/desliga passos do funil sem mexer no código</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.05] bg-black/20 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-ink">Página de Provas Sociais</p>
+            <p className="text-[11px] text-muted">Ligada: o botão da oferta passa por /provas-sociais antes do checkout. Desligada: vai direto ao checkout.</p>
+          </div>
+          <button type="button" role="switch" aria-checked={form.socialProofEnabled} aria-label="Ativar página de provas sociais"
+            onClick={() => setForm(f => ({ ...f, socialProofEnabled: !f.socialProofEnabled }))}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${form.socialProofEnabled ? "bg-brand" : "bg-white/15"}`}>
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${form.socialProofEnabled ? "left-[22px]" : "left-0.5"}`} />
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={saveSettings} disabled={saving}
+            className="rounded-xl bg-gradient-to-r from-brandDark to-brand px-5 py-2.5 text-sm font-bold text-[#04140c] transition hover:opacity-90 disabled:opacity-50">
+            {saving ? "A guardar..." : "Guardar"}
+          </button>
+          <p className="text-[11px] text-muted">Estado: <strong className={prices.socialProofEnabled ? "text-brand" : "text-muted"}>{prices.socialProofEnabled ? "Ligada" : "Desligada"}</strong></p>
         </div>
       </div>
 

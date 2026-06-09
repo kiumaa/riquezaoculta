@@ -770,6 +770,13 @@ export async function getWhatsAppGroupLink(): Promise<string> {
   return rows[0]?.value ?? DEFAULT_WHATSAPP_GROUP_LINK;
 }
 
+export async function getSocialProofEnabled(): Promise<boolean> {
+  // Ponte /provas-sociais ligada por defeito; só desligada se explicitamente "false".
+  if (!db) return true;
+  const rows = await db.select().from(settings).where(eq(settings.key, "social_proof_enabled"));
+  return rows[0]?.value !== "false";
+}
+
 export async function upsertSetting(key: string, value: string): Promise<void> {
   if (!db) return;
   await db

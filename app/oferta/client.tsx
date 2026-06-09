@@ -57,9 +57,11 @@ const TESTIMONIAL_AVATARS = [avatarMaria, avatarCarlos, avatarJoao, avatarAna, a
 
 export default function OfertaClient({
   initialPrices,
+  socialProofEnabled,
   content,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number };
+  socialProofEnabled: boolean;
   content: OfertaContent;
 }) {
   const name = useFunnelStore(state => state.name);
@@ -130,9 +132,9 @@ export default function OfertaClient({
       }).catch(() => {});
     }
 
-    // 3. Redirect para página de provas sociais (ponte para checkout)
-    window.location.href = "/provas-sociais";
-  }, [name, whatsapp, prices.pricePromo, journey]);
+    // 3. Redirect: ponte /provas-sociais (se ativa no admin) ou direto ao checkout
+    window.location.href = socialProofEnabled ? "/provas-sociais" : "/checkout/pagamento";
+  }, [name, whatsapp, prices.pricePromo, journey, socialProofEnabled]);
 
   // Handle exit intent acceptance
   const handleExitIntentAccept = () => {

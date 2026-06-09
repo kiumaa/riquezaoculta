@@ -5,7 +5,28 @@ import {
 } from "@/lib/whatsapp";
 import { sendRecoveryMessage, sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
 import { insertCommunicationLog } from "@/lib/storage";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import type { CommunicationChannel, CommunicationTrigger, CommunicationType } from "@/lib/types";
+
+/**
+ * Alerta o operador (Pushcut) quando um envio falha — para que falhas
+ * silenciosas (ex: sessão WhatsApp caída) sejam notadas na hora.
+ * Throttled a 1 alerta / 5 min para não inundar durante uma queda.
+ */
+function alertFailure(channel: CommunicationChannel, type: CommunicationType, phone: string, reason?: string) {
+  const url = process.env.PUSHCUT_URL;
+  if (!url) return;
+  const { allowed } = consumeRateLimit("comm-fail-alert", 1, 300_000);
+  if (!allowed) return;
+  void fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: "⚠️ Falha de envio (WhatsApp/SMS)",
+      text: `${channel.toUpperCase()} "${type}" para ${phone} falhou: ${reason ?? "motivo desconhecido"}. Verifica a ligação da sessão WhatsApp no admin.`
+    })
+  }).catch(() => {});
+}
 
 /**
  * Serviço central de comunicação com o cliente.
@@ -51,6 +72,7 @@ async function record(
     messageText: LABELS[type],
     failureReason: ok ? null : (reason ?? "Envio devolveu falha")
   });
+  if (!ok) alertFailure(channel, type, phone, reason);
 }
 
 function smsReason(res: { success: boolean; reason?: string }): string | undefined {

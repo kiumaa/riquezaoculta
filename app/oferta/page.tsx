@@ -1,13 +1,16 @@
-import { getFunnelContentMap, getSettings } from "@/lib/storage";
+import { getFunnelContentMap, getSettings, getSocialProofEnabled } from "@/lib/storage";
 import OfertaClient from "./client";
 
 export const dynamic = "force-dynamic";
 
 export default async function OfertaPage() {
-  const [prices, c] = await Promise.all([getSettings(), getFunnelContentMap("oferta")]);
+  const [prices, c, socialProofEnabled] = await Promise.all([
+    getSettings(), getFunnelContentMap("oferta"), getSocialProofEnabled()
+  ]);
   return (
     <OfertaClient
       initialPrices={prices}
+      socialProofEnabled={socialProofEnabled}
       content={{
         headline:      c.headline      ?? "1M em Uma Semana: o guia definitivo",
         subheading:    c.subheading    ?? "descobre o plano exato de 7 dias para estruturar uma oferta irresistível, fechar vendas agressivas e bater a meta de 1.000.000 Kz rápido.",

@@ -64,6 +64,32 @@ export async function sendWhatsAppMessage(
 }
 
 /**
+ * Estado da sessão WhatsApp no OpenWA (para o indicador no admin).
+ * connected=true só quando a sessão está "ready" (a enviar).
+ */
+export async function getWhatsAppSessionStatus(): Promise<{ connected: boolean; status: string; phone?: string }> {
+  const apiUrl = process.env.OPENWA_API_URL;
+  const apiKey = process.env.OPENWA_API_KEY;
+  const sessionId = process.env.OPENWA_SESSION_ID;
+
+  if (!apiUrl || !apiKey || !sessionId) {
+    return { connected: false, status: "not_configured" };
+  }
+
+  try {
+    const res = await fetch(`${apiUrl}/sessions/${sessionId}`, {
+      headers: { "X-API-Key": apiKey, "Accept": "application/json" }
+    });
+    if (!res.ok) return { connected: false, status: `http_${res.status}` };
+    const data = await res.json().catch(() => ({}));
+    const status = String(data?.status ?? "unknown");
+    return { connected: status === "ready", status, phone: data?.phone };
+  } catch {
+    return { connected: false, status: "error" };
+  }
+}
+
+/**
  * Envia mensagem de confirmação de encomenda (Pagamento Concluído)
  */
 export async function sendOrderConfirmationWhatsApp(phone: string, name: string): Promise<{ ok: boolean; reason?: string }> {

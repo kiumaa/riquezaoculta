@@ -89,6 +89,7 @@ export default function PagamentosPage() {
   const [recoverError, setRecoverError] = useState<Record<string, string>>({});
   const [wa, setWa] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [waError, setWaError] = useState<Record<string, string>>({});
+  const [waStatus, setWaStatus] = useState<{ connected: boolean; status: string } | null>(null);
 
   const fetchData = useCallback(async (p: number) => {
     const res = await fetch(`/api/admin/checkouts?page=${p}&limit=20`);
@@ -96,6 +97,9 @@ export default function PagamentosPage() {
   }, []);
 
   useEffect(() => { fetchData(1).finally(() => setLoading(false)); }, [fetchData]);
+  useEffect(() => {
+    fetch("/api/admin/whatsapp-status").then(r => r.ok ? r.json() : null).then(setWaStatus).catch(() => {});
+  }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading) fetchData(page); }, [page]);
 
@@ -179,10 +183,19 @@ export default function PagamentosPage() {
           <h1 className="text-xl font-bold text-ink">Pagamentos</h1>
           <p className="text-xs text-muted mt-0.5">Histórico de checkouts e recuperação de abandonados</p>
         </div>
-        <button type="button" onClick={() => fetchData(page)}
-          className="rounded-lg border border-white/[0.07] bg-black/20 px-3 py-1.5 text-xs font-medium text-muted hover:border-brand/30 hover:text-ink transition">
-          Actualizar
-        </button>
+        <div className="flex items-center gap-3">
+          {waStatus && (
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${waStatus.connected ? "border-brand/30 bg-brand/[0.08] text-brand" : "border-red-500/30 bg-red-500/[0.08] text-red-400"}`}
+              title={`Sessão OpenWA: ${waStatus.status}`}>
+              <span className={`h-2 w-2 rounded-full ${waStatus.connected ? "bg-brand" : "bg-red-400"}`} />
+              WhatsApp {waStatus.connected ? "ligado" : "desligado"}
+            </span>
+          )}
+          <button type="button" onClick={() => fetchData(page)}
+            className="rounded-lg border border-white/[0.07] bg-black/20 px-3 py-1.5 text-xs font-medium text-muted hover:border-brand/30 hover:text-ink transition">
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -226,7 +239,7 @@ export default function PagamentosPage() {
                 <th className="px-4 py-3">Valor</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Recuperar</th>
+                <th className="px-4 py-3">SMS</th>
                 <th className="px-4 py-3">WhatsApp</th>
               </tr>
             </thead>
@@ -260,7 +273,7 @@ export default function PagamentosPage() {
                       ) : (
                         <button type="button" onClick={() => sendRecovery(c.reference)} disabled={recovering[c.reference]}
                           className="rounded-lg border border-yellow-500/30 bg-yellow-500/[0.07] px-3 py-1.5 text-xs font-bold text-yellow-400 transition hover:bg-yellow-500/[0.14] disabled:opacity-50">
-                          {recovering[c.reference] ? "A enviar…" : "Recuperar"}
+                          {recovering[c.reference] ? "A enviar…" : "Recuperar SMS"}
                         </button>
                       )
                     )}
