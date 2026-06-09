@@ -16,7 +16,7 @@ type Settings = {
   priceOrderBump: number;
 };
 
-const SETTINGS_DEFAULTS: Settings = { priceOriginal: 10000, pricePromo: 2999, priceQuiz: 1000, priceOrderBump: 999 };
+const SETTINGS_DEFAULTS: Settings = { priceOriginal: 4500, pricePromo: 2499, priceQuiz: 1000, priceOrderBump: 999 };
 
 // In-memory cache for settings (60 seconds TTL)
 let settingsCache: { data: Settings; expires: number } | null = null;
@@ -585,7 +585,7 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     quick_reply_1: "É seguro pagar aqui?",
     quick_reply_2: "O que recebo exactamente?",
     quick_reply_3: "Como pago no ATM?",
-    quick_reply_4: "2999 Kz é muito caro?",
+    quick_reply_4: "2499 Kz é muito caro?",
     vip_cta: "Aceder ao Grupo VIP →",
     vip_context_payment: "Ainda estás a confirmar o pagamento. O grupo fica disponível após confirmação.",
     vip_context_confirmed: "Pagamento confirmado! Entra na comunidade 🎉",
