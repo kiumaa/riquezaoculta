@@ -112,6 +112,33 @@ const profileMap: Record<string, { title: string; summary: string }> = {
   }
 };
 
+const profileMap3: Record<string, { title: string; summary: string }> = {
+  "clareza-disciplina-acao": { title: "Mapa Certo, Pés a Mexer", summary: "Vês o caminho com clareza e tens disciplina para o seguir. Falta-te uma coisa: dar o passo. Quando agires sem hesitar, o dinheiro deixa de ser plano e vira realidade." },
+  "clareza-disciplina-emocional": { title: "Plano Frio, Chama a Acender", summary: "Sabes onde queres chegar e tens método para lá chegar. O que ainda te trava é o medo por dentro. Domina essa emoção e nada te segura mais." },
+  "clareza-acao-disciplina": { title: "Visão e Garra, Ritmo a Fixar", summary: "Tens clareza no alvo e coragem para disparar — isso é raro. Só te falta constância. Com um sistema diário, essa força para de dispersar e começa a render." },
+  "clareza-acao-emocional": { title: "Estratega Ousado, Cabeça a Firmar", summary: "Vês a oportunidade e ages depressa. O que te atrapalha é a emoção a mandar nas horas erradas. Controla isso e a tua clareza passa a gerar dinheiro de verdade." },
+  "clareza-emocional-disciplina": { title: "Mente Clara, Alma Forte, Rotina a Construir", summary: "Tens visão nítida e força interior — duas armas poderosas. Falta-te o hábito que sustenta tudo. Constrói uma rotina simples e o teu próximo nível vem sozinho." },
+  "clareza-emocional-acao": { title: "Sabes Tudo, Falta Fazer", summary: "Tens o plano na cabeça e a vontade no peito. Mas pensar não enche bolso. Transforma essa clareza em acção hoje e os resultados aparecem rápido." },
+  "disciplina-clareza-acao": { title: "Disciplina de Aço, Coragem a Soltar", summary: "A tua disciplina e a tua visão clara já te põem à frente de quase todos. Falta-te só a coragem de agir sem hesitar. Solta esse passo e o dinheiro vem." },
+  "disciplina-clareza-emocional": { title: "Método e Mapa, Chama a Acender", summary: "Tens disciplina rara e sabes para onde vais — isso é ouro. O que falta afinar é o teu controlo emocional. Acende essa chama e os resultados disparam." },
+  "disciplina-acao-clareza": { title: "Ritmo Forte, Rota a Traçar", summary: "A tua disciplina e a tua coragem de agir são uma combinação poderosa. Só te falta clareza sobre o caminho certo. Traça a rota e essa força leva-te longe." },
+  "disciplina-acao-emocional": { title: "Força Constante, Equilíbrio a Domar", summary: "Tens disciplina e ages quando é preciso — poucos têm isso. O que ainda te trava é o lado emocional. Doma essa parte e nada te segura na corrida ao dinheiro." },
+  "disciplina-emocional-clareza": { title: "Base Sólida, Caminho a Iluminar", summary: "A tua disciplina e a tua força interior são alicerces que duram. Falta-te um plano claro para apontar. Ilumina o caminho e essa consistência transforma-se em riqueza." },
+  "disciplina-emocional-acao": { title: "Constância Firme, Salto a Dar", summary: "Tens disciplina e equilíbrio emocional — a base que a maioria nunca constrói. Só te falta dar o salto e agir. Dá esse passo agora e os resultados aparecem." },
+  "acao-clareza-disciplina": { title: "Tu Fazes Acontecer, Falta Ritmo", summary: "Ages e ainda vês claro onde queres chegar — isso poucos têm. O que te falta é constância: manter o passo todos os dias. Afina a disciplina e o dinheiro vem." },
+  "acao-clareza-emocional": { title: "Mãos à Obra, Cabeça Fria a Treinar", summary: "Tu não esperas, tu fazes — e ainda sabes para onde vais. O que te trava é o lado emocional nos momentos quentes. Domina isso e nada te para." },
+  "acao-disciplina-clareza": { title: "Motor Forte, Mapa a Desenhar", summary: "Ages com força e tens disciplina para não parar — base de ouro. Só te falta clareza no rumo, senão a energia espalha-se. Define o caminho e dispara." },
+  "acao-disciplina-emocional": { title: "Faz e Mantém, Coração a Firmar", summary: "Tu executas e seguras o ritmo — isso é raro em Angola. O que te falta é firmeza emocional quando aperta. Acende esse lado e os resultados explodem." },
+  "acao-emocional-clareza": { title: "Garra de Sobra, Direcção a Achar", summary: "Tu ages com coragem e sentes fundo o que queres — combustível puro. Só te falta um mapa claro para não correres em círculos. Define o rumo e avança." },
+  "acao-emocional-disciplina": { title: "Coragem que Move, Constância a Forjar", summary: "Tu dás o primeiro passo quando todos hesitam, e a força não te falta. O que te trava é manter o ritmo dia após dia. Forja a disciplina e ganha." },
+  "emocional-clareza-disciplina": { title: "Coração e Visão, Rotina a Cravar", summary: "Sentes forte e enxergas longe — isso já te põe na frente. Falta-te a disciplina diária que segura o foco nos dias maus. Constrói o sistema e o dinheiro vem." },
+  "emocional-clareza-acao": { title: "Alma Forte, Mente Clara, Hora de Agir", summary: "Tens garra por dentro e sabes onde queres chegar. O que te trava é dar o passo. Para de planear e age — é aí que o jogo vira." },
+  "emocional-disciplina-clareza": { title: "Fogo Constante, Mapa a Traçar", summary: "Sentes profundo e não desistes fácil — duas armas raras. Só te falta clareza de para onde correr. Com um rumo certo, essa força gera resultado a sério." },
+  "emocional-disciplina-acao": { title: "Chama e Ritmo, Coragem a Disparar", summary: "Tens emoção forte e consistência que poucos têm. O que falta é coragem de agir nas oportunidades à tua frente. Dá o salto e tudo muda." },
+  "emocional-acao-clareza": { title: "Coração de Leão, Direcção a Afinar", summary: "Sentes forte e ages sem medo — combinação poderosa. Só te falta clareza para não dispersar essa energia. Com um plano certo, paras de correr em círculos." },
+  "emocional-acao-disciplina": { title: "Força Bruta, Constância a Construir", summary: "Tens paixão e coragem de fazer acontecer — isso já te separa da maioria. Falta-te a disciplina que mantém o ritmo. Cria o sistema e o resultado fica." },
+};
+
 function resolveOfferAngle(weakest: Pillar) {
   const map: Record<Pillar, string> = {
     clareza: "O teu perfil precisa de um roteiro claro. O 1M em Uma Semana dá-te exactamente isso.",
@@ -172,8 +199,10 @@ export function evaluateQuiz(answers: Record<string, string>): QuizResult {
   const dominant = ranking[0] ?? "emocional";
   const weakest = ranking[ranking.length - 1] ?? "disciplina";
 
-  const key = `${dominant}-${weakest}`;
-  const profile = profileMap[key] ?? {
+  const second = ranking[1] ?? weakest;
+  const key3 = `${dominant}-${second}-${weakest}`;
+  const key2 = `${dominant}-${weakest}`;
+  const profile = profileMap3[key3] ?? profileMap[key2] ?? {
     title: `${pillarLabel(dominant)} Elevada, ${pillarLabel(weakest)} a Desenvolver`,
     summary: `Tens potencial acima da média no pilar ${pillarLabel(dominant)}. Trabalhar o ${pillarLabel(weakest)} vai desbloqueiar o teu próximo nível financeiro.`
   };

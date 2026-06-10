@@ -56,80 +56,32 @@ type ResultadoContent = {
 const REPROGRAMMING_DATA = {
   clareza: {
     title: "Clareza Financeira",
-    power: {
-      title: "Mente Analítica e Visão Estratégica",
-      desc: "Consegues compreender os números, definir metas lógicas e visualizar caminhos lógicos para a riqueza. A tua mente funciona como um GPS financeiro integrado, capaz de mapear rotas onde os outros apenas veem nevoeiro."
-    },
-    saboteur: {
-      title: "A Paralisia por Análise (O Planeador Inerte)",
-      desc: "Ficas tão focado em desenhar o plano perfeito, comparar dezenas de opções e prever cenários que acabas por adiar o primeiro passo prático. A tua imensa clareza corre o risco de se tornar a tua própria jaula."
-    },
-    microHabit: {
-      title: "A Regra do 'Apenas Um'",
-      desc: "Todas as manhãs, define uma única micro-tarefa financeira de ação real que demore menos de 2 minutos (ex: enviar um email, verificar um saldo) e executa-a antes de analisar qualquer outra meta."
-    },
-    challenge: {
-      title: "Jejum de Planeamento",
-      desc: "Durante os próximos 7 dias, proíbe-te de ler, desenhar folhas de cálculo ou planear. O teu único foco é agir: faz uma venda, negoceia um custo real ou poupa um valor imediato de forma direta."
-    }
+    power: { title: "Mente Analítica e Visão Estratégica", desc: "Vês os números, traças metas e mapeias caminhos para a riqueza onde outros só veem nevoeiro." },
+    saboteur: { title: "A Paralisia por Análise (O Planeador Inerte)", desc: "Planeias tanto à procura do plano perfeito que nunca dás o primeiro passo." },
+    microHabit: { title: "A Regra do 'Apenas Um'", desc: "Todas as manhãs, faz uma micro-acção financeira de 2 minutos antes de analisar qualquer coisa." },
+    challenge: { title: "Jejum de Planeamento", desc: "Durante 7 dias, nada de planear: só agir. Faz uma venda, poupa, negoceia." },
   },
   disciplina: {
     title: "Disciplina de Execução",
-    power: {
-      title: "Foco Inabalável e Consistência de Ferro",
-      desc: "Tens uma habilidade incrível de seguir rotinas, manter promessas que fazes a ti próprio e progredir passo a passo de forma mecânica mesmo quando a motivação desaparece por completo."
-    },
-    saboteur: {
-      title: "O Prisioneiro da Rigidez (A Rotina Sem Alma)",
-      desc: "Podes prender-te tanto ao processo que perdes a flexibilidade mental para detetar novas oportunidades rápidas ou ajustar o rumo quando o plano atual claramente não gera lucro. Executas por hábito, não por resultado."
-    },
-    microHabit: {
-      title: "A Pausa de Alinhamento Estratégico",
-      desc: "Exatamente ao meio-dia, pára por 60 segundos, respira e faz a ti mesmo a seguinte pergunta: 'A tarefa que estou a executar agora está a gerar valor real ou estou apenas ocupado de forma mecânica?'"
-    },
-    challenge: {
-      title: "Exploração Ousada",
-      desc: "Esta semana, quebra deliberadamente uma regra menor da tua rotina para experimentar um caminho novo ou testar uma ideia de negócio espontânea que exija reação imediata e adaptação rápida."
-    }
+    power: { title: "Foco Inabalável e Consistência de Ferro", desc: "Cumpres rotinas e promessas que fazes a ti mesmo, mesmo quando a motivação desaparece." },
+    saboteur: { title: "O Prisioneiro da Rigidez (A Rotina Sem Alma)", desc: "Prendes-te tanto ao processo que executas por hábito, não por resultado, e perdes oportunidades." },
+    microHabit: { title: "A Pausa de Alinhamento Estratégico", desc: "Ao meio-dia, pára 60 segundos e pergunta: esta tarefa gera valor real?" },
+    challenge: { title: "Exploração Ousada", desc: "Esta semana, quebra uma regra da tua rotina e testa uma ideia nova de negócio." },
   },
   acao: {
     title: "Capacidade de Agir",
-    power: {
-      title: "Execução Relâmpago e Coragem Empreendedora",
-      desc: "Não tens medo de errar, colocas as ideias em prática de imediato e tens o motor de arranque mais forte de todos. Onde os outros hesitam e analisam, tu simplesmente saltas e constróis o paraquedas na descida."
-    },
-    saboteur: {
-      title: "A Iniciativa sem Acabativa (O Incendiário Inconsistente)",
-      desc: "Começas dez projetos com paixão máxima mas perdes o fôlego a meio, abandonando-os assim que a novidade passa. Tens uma imensa energia de arranque, mas uma baixíssima consistência de manutenção e finalização."
-    },
-    microHabit: {
-      title: "A Regra do Fecho Diário",
-      desc: "Antes de deitares a cabeça no travesseiro, obriga-te a terminar por completo uma pequena tarefa pendente. Garante que fechas um ciclo todos os dias, por menor que seja, antes de abrir outro."
-    },
-    challenge: {
-      title: "Foco de Conclusão Unificado",
-      desc: "Escolhe um único projeto ou tarefa que deixaste a meio. Durante 7 dias, recusa-te a iniciar qualquer nova ideia e dedica toda a tua energia disponível apenas a levar esse projeto até à linha de meta absoluta."
-    }
+    power: { title: "Execução Relâmpago e Coragem Empreendedora", desc: "Enquanto os outros pensam, tu já estás a fazer. O teu arranque é imbatível." },
+    saboteur: { title: "A Iniciativa sem Acabativa (O Incendiário Inconsistente)", desc: "Começas dez projetos cheio de força, mas largas tudo a meio quando a novidade passa." },
+    microHabit: { title: "A Regra do Fecho Diário", desc: "Antes de dormir, termina uma tarefa por completo. Fecha sempre um ciclo todos os dias." },
+    challenge: { title: "Foco de Conclusão Unificado", desc: "Pega num projeto parado. Durante 7 dias não inicies nada novo até o acabares." },
   },
   emocional: {
     title: "Inteligência Emocional",
-    power: {
-      title: "Intuição Magnética e Resiliência Psicológica",
-      desc: "Consegues ler pessoas com facilidade, tens uma intuição financeira apurada e sabes recuperar de perdas ou rejeições rapidamente. A tua força mental permite-te usar as tuas emoções a favor do teu crescimento."
-    },
-    saboteur: {
-      title: "A Montanha-Russa do Dinheiro (O Decisor Impulsivo)",
-      desc: "As tuas decisões financeiras são demasiado influenciadas pelo teu estado de espírito do momento. Compras para compensar frustrações ou evitas olhar para os números por ansiedade, sabotando o crescimento futuro."
-    },
-    microHabit: {
-      title: "A Respiração da Abundância",
-      desc: "Sempre que fores gastar ou receber qualquer quantia, faz uma pausa silenciosa de 5 segundos, respira fundo e observa se a tua decisão vem de uma necessidade de preencher um vazio ou de um lugar estável."
-    },
-    challenge: {
-      title: "Quarentena do Gasto Silencioso",
-      desc: "Implementa um jejum de compras impulsivas por 7 dias. Qualquer compra que não seja de sobrevivência básica tem de esperar obrigatoriamente 24 horas em observação antes de poderes efetuar o pagamento."
-    }
-  }
+    power: { title: "Intuição Magnética e Resiliência Psicológica", desc: "Lês pessoas com facilidade e levantas-te depressa de qualquer perda ou rejeição." },
+    saboteur: { title: "A Montanha-Russa do Dinheiro (O Decisor Impulsivo)", desc: "Decides com o dinheiro pelo humor do momento e gastas para tapar frustrações." },
+    microHabit: { title: "A Respiração da Abundância", desc: "Antes de gastar ou receber, para 5 segundos e respira: é necessidade ou vazio?" },
+    challenge: { title: "Quarentena do Gasto Silencioso", desc: "7 dias sem compras por impulso: tudo que não é básico espera 24 horas." },
+  },
 };
 
 export default function SimuladorResultadoClient({
