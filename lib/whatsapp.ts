@@ -6,11 +6,23 @@ export interface WhatsAppMessageOptions {
 }
 
 /**
+ * Base da API OpenWA, normalizada. Aceita o env com ou sem "/api" e com ou sem
+ * barra final — garante sempre ".../api" (resiliente a má configuração do env).
+ */
+function openwaBase(): string | null {
+  const raw = process.env.OPENWA_API_URL;
+  if (!raw) return null;
+  let url = raw.trim().replace(/\/+$/, "");
+  if (!/\/api$/.test(url)) url += "/api";
+  return url;
+}
+
+/**
  * Verifica se um número está registado no WhatsApp (read-only, não envia nada).
  * Devolve true/false, ou null se não foi possível determinar.
  */
 export async function checkWhatsAppNumber(phone: string): Promise<boolean | null> {
-  const apiUrl = process.env.OPENWA_API_URL;
+  const apiUrl = openwaBase();
   const apiKey = process.env.OPENWA_API_KEY;
   const sessionId = process.env.OPENWA_SESSION_ID;
   if (!apiUrl || !apiKey || !sessionId) return null;
@@ -38,7 +50,7 @@ export async function sendWhatsAppMessage(
   text: string,
   options?: WhatsAppMessageOptions
 ): Promise<{ ok: boolean; reason?: string }> {
-  const apiUrl = process.env.OPENWA_API_URL;
+  const apiUrl = openwaBase();
   const apiKey = process.env.OPENWA_API_KEY;
   const sessionId = process.env.OPENWA_SESSION_ID;
 
@@ -100,7 +112,7 @@ export async function sendWhatsAppMessage(
  * connected=true só quando a sessão está "ready" (a enviar).
  */
 export async function getWhatsAppSessionStatus(): Promise<{ connected: boolean; status: string; phone?: string }> {
-  const apiUrl = process.env.OPENWA_API_URL;
+  const apiUrl = openwaBase();
   const apiKey = process.env.OPENWA_API_KEY;
   const sessionId = process.env.OPENWA_SESSION_ID;
 
