@@ -288,6 +288,19 @@ export default function SimuladorResultadoClient({
                   <p>{content.closing_text}</p>
                 </div>
 
+                {/* CTA principal — âncora para a oferta no fundo da página */}
+                <a
+                  href="#upsell"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById("upsell")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="group relative mt-6 flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full" />
+                  <span className="relative">{content.cta_text}</span>
+                </a>
+
                 {/* Secção Premium: Plano de Reprogramação Financeira (colapsável) */}
                 <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
                   <button

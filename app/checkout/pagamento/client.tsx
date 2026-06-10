@@ -258,7 +258,8 @@ function CheckoutPagamentoInner({
     const t = setInterval(() => setCountdownSeconds(s => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, []);
-  const cdMm = String(Math.floor(countdownSeconds / 60)).padStart(2, "0");
+  const cdHh = String(Math.floor(countdownSeconds / 3600)).padStart(2, "0");
+  const cdMm = String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, "0");
   const cdSs = String(countdownSeconds % 60).padStart(2, "0");
 
   const ORDER_BUMP_PRICE = initialPrices.priceOrderBump ?? 999;
@@ -642,7 +643,7 @@ function CheckoutPagamentoInner({
             <div className="mx-auto w-full max-w-sm animate-in fade-in duration-300">
               <div className="flex flex-col items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-4 py-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/80">{content.countdown_text}</p>
-                <p className="text-3xl font-bold tabular-nums text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.4)]">{cdMm}:{cdSs}</p>
+                <p className="text-3xl font-bold tabular-nums text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.4)]">{cdHh}:{cdMm}:{cdSs}</p>
               </div>
             </div>
           )}
@@ -666,15 +667,18 @@ function CheckoutPagamentoInner({
                   className="mt-1 h-5 w-5 shrink-0 rounded border-white/20 bg-black/30 text-yellow-400 accent-yellow-400 cursor-pointer"
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-yellow-400">
-                    💡 {content.order_bump_title}
+                  <span className="inline-block rounded-full border border-yellow-400/30 bg-yellow-400/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-yellow-300">
+                    🎁 {content.order_bump_label}
+                  </span>
+                  <p className="mt-1.5 text-sm font-bold text-yellow-400 leading-snug">
+                    {content.order_bump_title}
                   </p>
-                  <p className="text-xs text-soft/80 mt-1 leading-relaxed">
-                    {content.order_bump_subtitle}
+                  <p className="mt-1 text-xs text-soft/80 leading-relaxed">
+                    {content.order_bump_subtitle.replace("{preço}", formatPriceKz(ORDER_BUMP_PRICE))}
                   </p>
-                  <p className="text-sm font-bold text-yellow-300 mt-1.5">
-                    {content.order_bump_label} {formatPriceKz(ORDER_BUMP_PRICE)}
-                  </p>
+                  <span className="mt-2 inline-flex items-center rounded-lg border border-yellow-400/40 bg-yellow-400/15 px-3 py-1 text-base font-black text-yellow-300">
+                    + {formatPriceKz(ORDER_BUMP_PRICE)}
+                  </span>
                 </div>
               </label>
               {orderBumpChecked && (
