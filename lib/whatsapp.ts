@@ -6,6 +6,31 @@ export interface WhatsAppMessageOptions {
 }
 
 /**
+ * Verifica se um número está registado no WhatsApp (read-only, não envia nada).
+ * Devolve true/false, ou null se não foi possível determinar.
+ */
+export async function checkWhatsAppNumber(phone: string): Promise<boolean | null> {
+  const apiUrl = process.env.OPENWA_API_URL;
+  const apiKey = process.env.OPENWA_API_KEY;
+  const sessionId = process.env.OPENWA_SESSION_ID;
+  if (!apiUrl || !apiKey || !sessionId) return null;
+
+  let cleanPhone = phone.replace(/\D/g, "");
+  if (cleanPhone.length === 9) cleanPhone = "244" + cleanPhone;
+
+  try {
+    const res = await fetch(`${apiUrl}/sessions/${sessionId}/contacts/check/${cleanPhone}`, {
+      headers: { "X-API-Key": apiKey, "Accept": "application/json" }
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    return data && typeof data.exists === "boolean" ? data.exists : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Envia uma mensagem de texto simples via WhatsApp usando o OpenWA.
  */
 export async function sendWhatsAppMessage(
@@ -31,6 +56,13 @@ export async function sendWhatsAppMessage(
   }
 
   const chatId = `${cleanPhone}@c.us`;
+
+  // Pré-verificação: o número está registado no WhatsApp? Evita o 500 do OpenWA
+  // e regista um motivo claro (ex: cliente sem WhatsApp) em vez de falha genérica.
+  const registered = await checkWhatsAppNumber(cleanPhone);
+  if (registered === false) {
+    return { ok: false, reason: "Número não está registado no WhatsApp" };
+  }
 
   try {
     const response = await fetch(`${apiUrl}/sessions/${sessionId}/messages/send-text`, {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { findCheckout } from "@/lib/storage";
 import { sendOrderConfirmation, sendReferenceReminder, sendAbandonedCart } from "@/lib/communication-service";
+import { checkWhatsAppNumber } from "@/lib/whatsapp";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -34,6 +35,15 @@ export async function POST(req: NextRequest) {
   const checkout = await findCheckout(reference);
   if (!checkout) {
     return NextResponse.json({ error: "Checkout not found" }, { status: 404 });
+  }
+
+  // Pré-verificação: o número tem WhatsApp? (motivo nº1 de falha — cliente sem WhatsApp)
+  const onWhatsApp = await checkWhatsAppNumber(checkout.phone);
+  if (onWhatsApp === false) {
+    return NextResponse.json(
+      { error: "Este número não está registado no WhatsApp. Tenta por SMS ou outro contacto." },
+      { status: 422 }
+    );
   }
 
   const ctx = { reference: checkout.reference, trigger: "manual" as const };
@@ -69,7 +79,7 @@ export async function POST(req: NextRequest) {
 
   if (!ok) {
     return NextResponse.json(
-      { error: "Falha ao enviar (verifica a sessão OpenWA). O log foi registado." },
+      { error: "Não foi possível enviar agora. Vê a cronologia de comunicações na ficha do lead para o motivo." },
       { status: 502 }
     );
   }
