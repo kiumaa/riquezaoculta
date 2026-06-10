@@ -93,7 +93,9 @@ export async function sendWhatsAppMessage(
 
     const data = await response.json().catch(() => ({}));
 
-    if (!response.ok || !data.success) {
+    // O OpenWA devolve 201 com { messageId, timestamp } em caso de sucesso
+    // (NÃO devolve um campo "success"). Sucesso = HTTP ok + messageId presente.
+    if (!response.ok || !(data && data.messageId)) {
       console.error("[WhatsApp] Falha ao enviar mensagem:", data);
       const reason = (data && (data.error || data.message)) || `HTTP ${response.status}`;
       return { ok: false, reason: String(reason).slice(0, 200) };
