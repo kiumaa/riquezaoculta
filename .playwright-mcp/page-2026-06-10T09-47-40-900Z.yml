@@ -1,0 +1,49 @@
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - button "Falar com a Sofia" [ref=e5] [cursor=pointer]:
+        - generic [ref=e6]: Precisa de ajuda?
+        - img "Sofia" [ref=e9]
+      - generic [ref=e12]:
+        - generic [ref=e18]:
+          - strong [ref=e19]: Helder
+          - text: de Lobito comprou
+          - generic [ref=e20]: há 28 min
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Passo 5 de 5
+          - heading "Finalizar pagamento" [level=1] [ref=e23]
+        - generic [ref=e24]:
+          - img "Guia 1M em Uma Semana" [ref=e26]
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: "1M em Uma Semana: Guia Definitivo"
+            - generic [ref=e29]:
+              - generic [ref=e30]: 5.000 Kz
+              - generic [ref=e31]: 2.499 Kz
+        - button "O que acontece depois de pagar?" [ref=e32] [cursor=pointer]:
+          - text: O que acontece depois de pagar?
+          - img [ref=e33]
+        - generic [ref=e36]:
+          - paragraph [ref=e37]: "A tua reserva expira em:"
+          - paragraph [ref=e38]: 00:15:00
+        - generic [ref=e40] [cursor=pointer]:
+          - img "Guia Riqueza Oculta" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]: 🎁 Oferta Única
+              - generic [ref=e46]: +999 Kz
+            - paragraph [ref=e47]: SIM! Quero adicionar o Guia Riqueza Oculta à minha encomenda
+            - paragraph [ref=e48]: Por apenas mais 999 Kz, descobre como encontrar o dinheiro que estás a deixar na mesa.
+          - checkbox "Guia Riqueza Oculta 🎁 Oferta Única +999 Kz SIM! Quero adicionar o Guia Riqueza Oculta à minha encomenda Por apenas mais 999 Kz, descobre como encontrar o dinheiro que estás a deixar na mesa." [ref=e50]
+        - generic [ref=e51]:
+          - paragraph [ref=e53]: Preenche os teus dados para continuar
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: Nome completo
+              - textbox "Como te chamas?" [active] [ref=e57]
+            - generic [ref=e58]:
+              - generic [ref=e59]: WhatsApp / Telefone
+              - textbox "9XX XXX XXX" [ref=e60]
+              - paragraph [ref=e61]: Usamos para enviar a confirmação e acesso ao material.
+            - button "CONTINUAR →" [ref=e62] [cursor=pointer]:
+              - generic [ref=e63]: CONTINUAR →

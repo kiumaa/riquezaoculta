@@ -689,8 +689,8 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     testimonial_3_text: "Processo simples e seguro. O guia chegou no momento a seguir ao pagamento.",
     testimonial_3_stars: "5",
     countdown_text: "A tua reserva expira em:",
-    order_bump_title: "SIM! Quero adicionar o Guia Riqueza Oculta à minha encomenda",
-    order_bump_subtitle: "Por apenas mais {preço}, descobre como encontrar o dinheiro que estás a deixar na mesa.",
+    order_bump_title: "Juntar o Guia Riqueza Oculta",
+    order_bump_subtitle: "Estratégias avançadas para encontrares o dinheiro que estás a deixar na mesa.",
     order_bump_label: "Oferta Única",
   },
   provasSociais: {
