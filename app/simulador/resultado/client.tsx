@@ -134,9 +134,11 @@ const REPROGRAMMING_DATA = {
 
 export default function SimuladorResultadoClient({
   initialPrices,
+  socialProofEnabled,
   content,
 }: {
   initialPrices: { priceOriginal: number; pricePromo: number; priceQuiz: number };
+  socialProofEnabled: boolean;
   content: ResultadoContent;
 }) {
   const router = useRouter();
@@ -457,7 +459,12 @@ export default function SimuladorResultadoClient({
 
         {/* Exibição condicional do painel de Upsell / Painel de Acesso ao Ebook Comprado */}
         {quizPaid && !ebookPaid && (
-          <OfferPanel angle={result.offerAngle} initialPrices={initialPrices} isUpsell={false} badge="Desconto de Aluno Ativado" />
+          <OfferPanel
+            angle={result.offerAngle}
+            initialPrices={initialPrices}
+            badge="Desconto de Aluno Ativado"
+            ctaHref={socialProofEnabled ? "/provas-sociais" : "/checkout/pagamento"}
+          />
         )}
 
         {quizPaid && ebookPaid && (
