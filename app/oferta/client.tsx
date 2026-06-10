@@ -13,6 +13,7 @@ import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { trackEvent } from "@/lib/pixel";
+import { useRouter } from "next/navigation";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
@@ -68,14 +69,16 @@ export default function OfertaClient({
   const whatsapp = useFunnelStore(state => state.whatsapp);
   const journey = useFunnelStore(state => state.journey);
   const result = useFunnelStore(state => state.result);
-  
+  const router = useRouter();
+
   // Exit intent state
   const [showExitIntent, setShowExitIntent] = useState(false);
 
   // Exit intent hook
   useExitIntent({
     threshold: 24 * 60 * 60 * 1000, // 24 hours
-    maxDisplays: 3,
+    // Desativado: o trigger de scroll em mobile dispara num swipe normal e o modal (z-100) bloqueia o CTA
+    maxDisplays: 0,
     onExitIntent: () => {
       trackEvent("ExitIntentTriggered", { page: "oferta" });
       setShowExitIntent(true);
@@ -132,9 +135,9 @@ export default function OfertaClient({
       }).catch(() => {});
     }
 
-    // 3. Redirect: ponte /provas-sociais (se ativa no admin) ou direto ao checkout
-    window.location.href = socialProofEnabled ? "/provas-sociais" : "/checkout/pagamento";
-  }, [name, whatsapp, prices.pricePromo, journey, socialProofEnabled]);
+    // 3. Redirect client-side: o evento do pixel sobrevive e o product segue explícito
+    router.push(socialProofEnabled ? "/provas-sociais?product=ebook" : "/checkout/pagamento?product=ebook");
+  }, [name, whatsapp, prices.pricePromo, journey, socialProofEnabled, router]);
 
   // Handle exit intent acceptance
   const handleExitIntentAccept = () => {

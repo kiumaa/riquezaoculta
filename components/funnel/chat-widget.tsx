@@ -106,7 +106,7 @@ export function ChatWidget({
           style={{ bottom: "max(20px, env(safe-area-inset-bottom, 20px))", right: "16px" }}
         >
           {/* Label */}
-          <span className="whitespace-nowrap rounded-full bg-[#0c130e]/90 border border-white/[0.10] px-2.5 py-1 text-[11px] font-medium text-soft shadow-md backdrop-blur-sm">
+          <span className="max-sm:hidden whitespace-nowrap rounded-full bg-[#0c130e]/90 border border-white/[0.10] px-2.5 py-1 text-[11px] font-medium text-soft shadow-md backdrop-blur-sm">
             Precisa de ajuda?
           </span>
           {/* Avatar + dot */}

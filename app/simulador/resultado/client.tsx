@@ -30,7 +30,7 @@ import { GlassCard } from "@/components/funnel/glass-card";
 import { OfferPanel } from "@/components/funnel/offer-panel";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { useSound } from "@/lib/useSound";
-import { trackCustomEvent } from "@/lib/pixel";
+import { trackCustomEvent, trackEvent } from "@/lib/pixel";
 import animationData from "@/assets/Future tech Ui.json";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
@@ -145,6 +145,14 @@ export default function SimuladorResultadoClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result?.profileTitle]);
 
+  // Mede a visualização da oferta (upsell) — fecha o buraco de medição resultado→oferta
+  useEffect(() => {
+    if (result && quizPaid && !ebookPaid) {
+      trackEvent("ViewContent", { content_name: "Oferta (Upsell Resultado)", value: initialPrices.pricePromo, currency: "AOA" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result?.profileTitle, quizPaid, ebookPaid]);
+
   if (!name) {
     return null;
   }
@@ -240,20 +248,20 @@ export default function SimuladorResultadoClient({
                   <p>{content.closing_text}</p>
                 </div>
 
-                {/* CTA principal — âncora para a oferta no fundo da página */}
-                <a
-                  href="#upsell"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById("upsell")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                {/* CTA principal — navega direto para a oferta (com tracking que sobrevive à navegação SPA) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    trackEvent("InitiateCheckout", { content_name: "Resultado -> Oferta", value: initialPrices.pricePromo, currency: "AOA" });
+                    router.push(socialProofEnabled ? "/provas-sociais?product=ebook" : "/checkout/pagamento?product=ebook");
                   }}
                   className="group relative mt-6 flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full" />
                   <span className="relative">{content.cta_text}</span>
-                </a>
+                </button>
 
-                {/* Secção Premium: Plano de Reprogramação Financeira (colapsável) */}
+                {/* Plano de Reprogramação Financeira (colapsável, fechado por defeito — o CTA acima é o caminho principal) */}
                 <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
                   <button
                     type="button"
@@ -409,6 +417,7 @@ export default function SimuladorResultadoClient({
                 </p>
                 <Link
                   href="/checkout/pagamento?product=quiz"
+                  onClick={() => trackEvent("InitiateCheckout", { content_name: "Resultado -> Relatorio Quiz", value: initialPrices.priceQuiz, currency: "AOA" })}
                   className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
@@ -430,7 +439,7 @@ export default function SimuladorResultadoClient({
             angle={result.offerAngle}
             initialPrices={initialPrices}
             badge="Desconto de Aluno Ativado"
-            ctaHref={socialProofEnabled ? "/provas-sociais" : "/checkout/pagamento"}
+            ctaHref={socialProofEnabled ? "/provas-sociais?product=ebook" : "/checkout/pagamento?product=ebook"}
           />
         )}
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
@@ -59,6 +61,7 @@ export default function ProvasSociaisClient({
     trust_badge: string;
   };
 }) {
+  const router = useRouter();
   const name = useFunnelStore((state) => state.name);
   const trackStep = useFunnelStore((state) => state.trackStep);
   const [slide, setSlide] = useState(0);
@@ -75,8 +78,10 @@ export default function ProvasSociaisClient({
 
   const handleCheckoutClick = useCallback(() => {
     trackEvent("InitiateCheckout", { content_name: "Provas Sociais -> Checkout" });
-    window.location.href = "/checkout/pagamento";
-  }, []);
+    // Navegação client-side: o evento do pixel sobrevive e o product não se perde no caminho
+    const product = new URLSearchParams(window.location.search).get("product") ?? "ebook";
+    router.push(`/checkout/pagamento?product=${product}` as Route);
+  }, [router]);
 
   return (
     <FunnelShell>

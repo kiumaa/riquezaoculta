@@ -11,7 +11,7 @@ import mcLogo from "@/assets/mc.png";
 import mcxLogo from "@/assets/mcx.png";
 import ebookCover from "@/public/capa_1m_v1.jpg";
 import riquezaCover from "@/assets/ebook_cover_3d.webp";
-import { trackEvent, getFbp, getFbc } from "@/lib/pixel";
+import { trackEvent, trackCustomEvent, getFbp, getFbc } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
@@ -246,10 +246,11 @@ function CheckoutPagamentoInner({
   }, []);
 
   useEffect(() => {
-    trackEvent("InitiateCheckout", { 
-      content_name: product === "quiz" ? "1M Em Uma Semana Relatório Quiz" : "Guia 1M Em Uma Semana", 
-      value: prices.pricePromo, 
-      currency: "AOA" 
+    // Visualização do checkout (custom) — o InitiateCheckout passou para o clique real de pagamento
+    trackCustomEvent("ViewCheckout", {
+      content_name: product === "quiz" ? "1M Em Uma Semana Relatório Quiz" : "Guia 1M Em Uma Semana",
+      value: prices.pricePromo,
+      currency: "AOA"
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, prices.pricePromo]);
@@ -320,7 +321,7 @@ function CheckoutPagamentoInner({
     if (!paymentReference || paymentStatus === "paid") return;
 
     let pollCount = 0;
-    const maxPolls = 300; // 10 minutos máximo (300 * 2s)
+    const maxPolls = 900; // 30 minutos (900 * 2s) — a referência pode ser paga bem depois dos 15 min do countdown
 
     const checkStatus = async () => {
       try {
@@ -377,6 +378,14 @@ function CheckoutPagamentoInner({
     setError("");
     setLoading(true);
     setPaymentStatus("pending");
+
+    // Intenção real de pagamento — InitiateCheckout dispara no clique, não no pageview
+    trackEvent("InitiateCheckout", {
+      content_name: product === "quiz" ? "1M Em Uma Semana Relatório Quiz" : "Guia 1M Em Uma Semana",
+      value: totalPrice,
+      currency: "AOA",
+      payment_method: method
+    });
 
     // Mensagens progressivas para Express (demora ~10-12s)
     let messageInterval: NodeJS.Timeout | null = null;
