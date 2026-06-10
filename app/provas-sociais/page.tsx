@@ -18,7 +18,7 @@ export default async function ProvasSociaisPage() {
         badge_text: c.badge_text ?? "Resultados Reais",
         headline: c.headline ?? "Vê o que está a acontecer com quem já tomou a decisão…",
         subtitle: c.subtitle ?? "Conversas reais de pessoas que compraram o Guia e aplicaram em menos de 48 horas.",
-        cta_text: c.cta_text ?? "QUERO ESTES RESULTADOS — ACESSAR O CHECKOUT",
+        cta_text: c.cta_text ?? "QUERO ESTES RESULTADOS →",
         trust_badge: c.trust_badge ?? "⚠️ Estas são conversas reais. Os nomes foram usados com autorização.",
       }}
     />

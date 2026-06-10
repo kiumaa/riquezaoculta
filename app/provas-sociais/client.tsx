@@ -66,14 +66,9 @@ export default function ProvasSociaisClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-advance carousel every 4 seconds
-  useEffect(() => {
-    const t = setInterval(
-      () => setSlide((s) => (s + 1) % PROOF_SLIDES.length),
-      4000
-    );
-    return () => clearInterval(t);
-  }, []);
+  // Navegação manual (sem auto) — o user lê ao seu ritmo
+  const prev = () => setSlide((s) => (s - 1 + PROOF_SLIDES.length) % PROOF_SLIDES.length);
+  const next = () => setSlide((s) => (s + 1) % PROOF_SLIDES.length);
 
   const handleCheckoutClick = useCallback(() => {
     trackEvent("InitiateCheckout", { content_name: "Provas Sociais -> Checkout" });
@@ -99,8 +94,35 @@ export default function ProvasSociaisClient({
             </p>
           </div>
 
+          {/* CTA topo */}
+          <button
+            type="button"
+            onClick={handleCheckoutClick}
+            className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+          >
+            <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+            <span className="relative">{content.cta_text}</span>
+          </button>
+
           {/* Carousel */}
           <div className="relative mx-auto w-full max-w-sm">
+            {/* Setas de navegação */}
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Conversa anterior"
+              className="absolute left-1 top-[42%] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:bg-black/80"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Conversa seguinte"
+              className="absolute right-1 top-[42%] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:bg-black/80"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
             {PROOF_SLIDES.map((p, i) => (
               <div
                 key={p.id}

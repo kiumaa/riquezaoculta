@@ -10,6 +10,7 @@ import { useFunnelStore } from "@/lib/store/funnel-store";
 import mcLogo from "@/assets/mc.png";
 import mcxLogo from "@/assets/mcx.png";
 import ebookCover from "@/public/capa_1m_v1.jpg";
+import riquezaCover from "@/assets/ebook_cover_3d.webp";
 import { trackEvent, getFbp, getFbc } from "@/lib/pixel";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
@@ -653,33 +654,46 @@ function CheckoutPagamentoInner({
             <div className="mx-auto w-full max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
               <label
                 htmlFor="order-bump"
-                className={`flex items-start gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer transition-all duration-300 ${
+                className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-all duration-300 ${
                   orderBumpChecked
-                    ? "border-yellow-400/50 bg-yellow-400/[0.08]"
-                    : "border-white/[0.1] bg-white/[0.02] hover:border-yellow-400/30"
+                    ? "border-yellow-400/60 bg-yellow-400/[0.08]"
+                    : "border-white/[0.1] bg-white/[0.02] hover:border-yellow-400/40"
                 }`}
               >
+                {/* Capa do Guia Riqueza Oculta */}
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-black/30">
+                  <Image src={riquezaCover} alt="Guia Riqueza Oculta" className="h-full w-full object-contain" />
+                </div>
+
+                {/* Conteúdo */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-yellow-400/30 bg-yellow-400/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-yellow-300">
+                      🎁 {content.order_bump_label}
+                    </span>
+                    <span className="text-sm font-black text-yellow-300">+{formatPriceKz(ORDER_BUMP_PRICE)}</span>
+                  </div>
+                  <p className="mt-1 text-[13px] font-bold leading-snug text-yellow-400">
+                    {content.order_bump_title}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-soft/75">
+                    {content.order_bump_subtitle.replace("{preço}", formatPriceKz(ORDER_BUMP_PRICE))}
+                  </p>
+                </div>
+
+                {/* Indicador (checkbox) */}
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition ${
+                  orderBumpChecked ? "border-yellow-400 bg-yellow-400 text-black" : "border-white/25"
+                }`}>
+                  {orderBumpChecked && <CheckSmallIcon className="h-4 w-4" />}
+                </div>
                 <input
                   id="order-bump"
                   type="checkbox"
                   checked={orderBumpChecked}
                   onChange={(e) => setOrderBumpChecked(e.target.checked)}
-                  className="mt-1 h-5 w-5 shrink-0 rounded border-white/20 bg-black/30 text-yellow-400 accent-yellow-400 cursor-pointer"
+                  className="sr-only"
                 />
-                <div className="flex-1">
-                  <span className="inline-block rounded-full border border-yellow-400/30 bg-yellow-400/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-yellow-300">
-                    🎁 {content.order_bump_label}
-                  </span>
-                  <p className="mt-1.5 text-sm font-bold text-yellow-400 leading-snug">
-                    {content.order_bump_title}
-                  </p>
-                  <p className="mt-1 text-xs text-soft/80 leading-relaxed">
-                    {content.order_bump_subtitle.replace("{preço}", formatPriceKz(ORDER_BUMP_PRICE))}
-                  </p>
-                  <span className="mt-2 inline-flex items-center rounded-lg border border-yellow-400/40 bg-yellow-400/15 px-3 py-1 text-base font-black text-yellow-300">
-                    + {formatPriceKz(ORDER_BUMP_PRICE)}
-                  </span>
-                </div>
               </label>
               {orderBumpChecked && (
                 <p className="text-center text-[10px] text-yellow-400/70 mt-1.5">Total: {formatPriceKz(totalPrice)}</p>
