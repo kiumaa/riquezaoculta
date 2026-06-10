@@ -25,16 +25,18 @@ export function OfferPanel({
   angle,
   initialPrices,
   isUpsell = false,
+  badge,
 }: {
   angle: string;
   initialPrices: { priceOriginal: number; pricePromo: number };
   isUpsell?: boolean;
+  badge?: string;
 }) {
   const priceOriginal = initialPrices.priceOriginal;
   const pricePromo = initialPrices.pricePromo;
   const ctaLink = isUpsell ? "/checkout/pagamento?product=ebook" : "/oferta";
   const ctaText = isUpsell ? `ADICIONAR GUIA AO MEU PEDIDO (${formatPriceKz(pricePromo)})` : "ACESSAR AGORA";
-  const badgeText = isUpsell ? "Desconto de Aluno Ativado" : "Oferta recomendada";
+  const badgeText = badge ?? (isUpsell ? "Desconto de Aluno Ativado" : "Oferta recomendada");
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-brand/[0.08] p-5 sm:p-6" id="upsell">

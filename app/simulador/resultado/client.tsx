@@ -457,7 +457,7 @@ export default function SimuladorResultadoClient({
 
         {/* Exibição condicional do painel de Upsell / Painel de Acesso ao Ebook Comprado */}
         {quizPaid && !ebookPaid && (
-          <OfferPanel angle={result.offerAngle} initialPrices={initialPrices} isUpsell={true} />
+          <OfferPanel angle={result.offerAngle} initialPrices={initialPrices} isUpsell={false} badge="Desconto de Aluno Ativado" />
         )}
 
         {quizPaid && ebookPaid && (
