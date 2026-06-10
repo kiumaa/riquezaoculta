@@ -10,31 +10,38 @@ import { ChatWidget } from "@/components/funnel/chat-widget";
 const PROOF_SLIDES = [
   {
     id: 1,
-    name: "Mário Silva",
+    name: "Cliente verificado",
     caption: "Recuperou o investimento em menos de 24 horas",
     placeholder: false,
-    src: "/whatsapp/print1.png",
+    src: "/provas-sociais/prova-1.jpeg",
   },
   {
     id: 2,
-    name: "Ana L.",
+    name: "Cliente verificado",
     caption: "Fechou o primeiro cliente de 50.000 Kz",
     placeholder: false,
-    src: "/whatsapp/print2.png",
+    src: "/provas-sociais/prova-2.jpeg",
   },
   {
     id: 3,
-    name: "Paulo",
+    name: "Cliente verificado",
     caption: "Comprou com ceticismo — agora não larga o guia",
     placeholder: false,
-    src: "/whatsapp/print3.png",
+    src: "/provas-sociais/prova-3.jpeg",
   },
   {
     id: 4,
-    name: "Joana",
+    name: "Cliente verificado",
     caption: "Resultado incrível logo na primeira semana",
     placeholder: false,
-    src: "/whatsapp/print4.png",
+    src: "/provas-sociais/prova-4.jpeg",
+  },
+  {
+    id: 5,
+    name: "Cliente verificado",
+    caption: "Aplicou o método e já está a faturar",
+    placeholder: false,
+    src: "/provas-sociais/prova-5.jpeg",
   },
 ];
 
