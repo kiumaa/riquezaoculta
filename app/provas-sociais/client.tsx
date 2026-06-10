@@ -245,9 +245,7 @@ export default function ProvasSociaisClient({
             className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-            <span className="relative">
-              {content.cta_text}
-            </span>
+            <span className="relative">{CTA_LABEL}</span>
           </button>
 
           <p className="text-center text-[10px] text-muted">
