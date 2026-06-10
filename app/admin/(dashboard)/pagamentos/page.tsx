@@ -80,6 +80,22 @@ function ProductBadge({ amount, providerPayload }: { amount: number; providerPay
   );
 }
 
+// Link "click-to-chat" do WhatsApp com mensagem pré-escrita — o operador envia
+// do PRÓPRIO WhatsApp (entrega garantida, sem depender do OpenWA).
+function waMeUrl(c: CheckoutRecord): string {
+  const phone = c.phone.replace(/\D/g, "");
+  const first = (c.name || "").trim().split(" ")[0] || "olá";
+  let msg: string;
+  if (c.status === "paid") {
+    msg = `Olá ${first}! O teu pagamento do Guia 1M em Uma Semana foi confirmado ✅. Acede e descarrega aqui: https://www.riquezaoculta.click/acesso?ref=${c.reference}`;
+  } else if (c.entity !== "express") {
+    msg = `Olá ${first}! A tua referência do Guia 1M em Uma Semana — Entidade ${c.entity} | Referência ${c.paymentReference} | Valor ${c.amount} Kz. Paga no Multicaixa/ATM ou Express e o acesso liberta automaticamente. Precisas de ajuda?`;
+  } else {
+    msg = `Olá ${first}! Vi que estiveste quase a garantir o teu acesso ao Guia 1M em Uma Semana mas o pagamento Express não concluiu. Queres que te ajude a finalizar agora?`;
+  }
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+
 export default function PagamentosPage() {
   const [result, setResult] = useState<PagedCheckouts>({ data: [], total: 0, page: 1, totalPages: 1 });
   const [page, setPage] = useState(1);
@@ -284,6 +300,11 @@ export default function PagamentosPage() {
                       {c.status === "pending" && c.entity !== "express" && waBtn(c.reference, "reminder", "Lembrete", "border-blue-500/30 bg-blue-500/[0.07] text-blue-400 hover:bg-blue-500/[0.14]")}
                       {c.status === "pending" && c.entity === "express" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
                       {c.status === "failed" && c.entity === "express" && waBtn(c.reference, "abandoned", "Recuperar", "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-400 hover:bg-emerald-500/[0.14]")}
+                      <a href={waMeUrl(c)} target="_blank" rel="noopener noreferrer"
+                        title="Abrir o teu WhatsApp com a mensagem pronta — tu carregas enviar (entrega garantida)"
+                        className="rounded-lg border border-[#25D366]/40 bg-[#25D366]/[0.1] px-2 py-1 text-[10px] font-bold text-[#25D366] whitespace-nowrap transition hover:bg-[#25D366]/[0.2]">
+                        ✍️ Manual
+                      </a>
                     </div>
                   </td>
                 </tr>
