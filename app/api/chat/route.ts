@@ -215,43 +215,40 @@ export async function POST(req: NextRequest) {
     ? `${SYSTEM_PROMPT} O nome do utilizador é ${name.split(" ")[0]}.`
     : SYSTEM_PROMPT;
 
-  // ─── 1) Tentar Google Gemini Flash (principal) ──────────
-  if (env.GEMINI_API_KEY) {
+  // ─── 1) Tentar DeepSeek (principal, OpenAI-compatible) ──────────
+  if (env.DEEPSEEK_API_KEY) {
     try {
-      // Converter mensagens para o formato Gemini (contents)
-      const geminiContents = messages.map(m => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }]
-      }));
+      const dsMessages = [
+        { role: "system", content: systemContent },
+        ...messages.map(m => ({ role: m.role, content: m.content }))
+      ];
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemContent }] },
-            contents: geminiContents,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 250
-            }
-          }),
-          signal: AbortSignal.timeout(12_000)
-        }
-      );
+      const res = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${env.DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: dsMessages,
+          temperature: 0.8,
+          max_tokens: 250
+        }),
+        signal: AbortSignal.timeout(15_000)
+      });
 
       if (res.ok) {
         const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const reply = data.choices?.[0]?.message?.content?.trim();
         if (reply) {
           return NextResponse.json({ reply });
         }
       }
 
-      console.error("[chat] Gemini error", res.status, await res.text().catch(() => ""));
+      console.error("[chat] DeepSeek error", res.status, await res.text().catch(() => ""));
     } catch (err) {
-      console.error("[chat] Gemini fetch error", err instanceof Error ? err.message : err);
+      console.error("[chat] DeepSeek fetch error", err instanceof Error ? err.message : err);
     }
   }
 

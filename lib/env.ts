@@ -15,6 +15,7 @@ const envSchema = z.object({
   FACEBOOK_PIXEL_ID: z.string().optional(),
   FACEBOOK_ACCESS_TOKEN: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
   // Kambafy external checkout
   KAMBAFY_CHECKOUT_URL: z.string().url().optional(),
   KAMBAFY_WEBHOOK_SECRET: z.string().optional(),
