@@ -107,25 +107,17 @@ export default function ProvasSociaisClient({
             <span className="relative">{CTA_LABEL}</span>
           </button>
 
-          {/* Carousel */}
-          <div className="relative mx-auto w-full max-w-sm">
-            {/* Setas de navegação */}
+          {/* Carousel — setas ao lado da imagem (sem sobrepor) */}
+          <div className="mx-auto flex w-full max-w-sm items-center gap-1.5">
             <button
               type="button"
               onClick={prev}
               aria-label="Conversa anterior"
-              className="absolute left-1 top-[42%] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:bg-black/80"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white transition hover:bg-white/[0.1]"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Conversa seguinte"
-              className="absolute right-1 top-[42%] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white backdrop-blur transition hover:bg-black/80"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            </button>
+            <div className="relative min-w-0 flex-1">
             {PROOF_SLIDES.map((p, i) => (
               <div
                 key={p.id}
@@ -214,6 +206,15 @@ export default function ProvasSociaisClient({
                 </div>
               </div>
             ))}
+            </div>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Conversa seguinte"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white transition hover:bg-white/[0.1]"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
           </div>
 
           {/* Dots */}

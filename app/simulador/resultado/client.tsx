@@ -306,17 +306,19 @@ export default function SimuladorResultadoClient({
                   <button
                     type="button"
                     onClick={() => setIsPremiumExpanded(prev => !prev)}
-                    className="group w-full flex items-center justify-center gap-2.5 rounded-xl border border-brand/25 bg-brand/[0.07] px-5 py-3.5 transition-all duration-300 hover:bg-brand/[0.12] hover:border-brand/40"
+                    className="group flex w-full items-center justify-between gap-3 rounded-xl border border-brand/25 bg-brand/[0.07] px-4 py-3 transition-all duration-300 hover:bg-brand/[0.12] hover:border-brand/40"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-brandBright">Acesso Premium Ativo</span>
-                    </div>
-                    <span className="text-sm font-semibold text-white">
-                      {isPremiumExpanded ? "Fechar plano detalhado" : "Ver o meu plano de reprogramação"}
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-brand animate-pulse" />
+                      <span className="min-w-0 text-left">
+                        <span className="block text-[10px] font-bold uppercase tracking-widest text-brandBright">Acesso Premium Ativo</span>
+                        <span className="block text-sm font-semibold text-white">
+                          {isPremiumExpanded ? "Fechar plano" : "Ver o meu plano completo"}
+                        </span>
+                      </span>
                     </span>
                     <svg
-                      className={`h-4 w-4 text-brandBright transition-transform duration-300 ${isPremiumExpanded ? "rotate-180" : ""}`}
+                      className={`h-5 w-5 shrink-0 text-brandBright transition-transform duration-300 ${isPremiumExpanded ? "rotate-180" : ""}`}
                       fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />

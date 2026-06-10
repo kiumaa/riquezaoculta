@@ -666,7 +666,7 @@ function CheckoutPagamentoInner({
                 </div>
 
                 {/* Conteúdo */}
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 text-left">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-yellow-400/30 bg-yellow-400/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-yellow-300">
                       🎁 {content.order_bump_label}

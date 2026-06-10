@@ -661,8 +661,8 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
     trust_badge_2: "✓ 2.847 análises feitas",
   },
   resultado: {
-    explanation_text: "Trabalhaste, esforçaste-te, prometeste mudar. Mas existe um padrão invisível que repete o mesmo ciclo — e não é culpa tua. É neurológico. As tuas respostas revelam exatamente onde esse ciclo se quebra.",
-    closing_text: "A maioria das pessoas vai fechar esta página e amanhã vai estar na mesma situação. Os que agem agora são os que mudam.",
+    explanation_text: "O dinheiro passa pelas tuas mãos mas nunca fica. Não é falta de esforço — é um padrão mental. As tuas respostas mostram onde ele te trava.",
+    closing_text: "Quem fecha esta página continua igual. Quem age agora, muda.",
     cta_text: "Quero a solução →",
   },
   payment: {
