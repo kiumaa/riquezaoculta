@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
-import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
+import { findCheckout, markCheckoutPaid, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
 import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
@@ -39,17 +39,19 @@ export async function GET(
 
       // For Express: only mark as failed after grace period
       if (provider.status === "paid") {
-        await updateCheckoutStatus(reference, "paid", provider.raw);
-        void recordAffiliateSale(reference).catch(() => {});
-        void sendFBConversionPurchase(
-          record.name,
-          record.phone,
-          record.amount,
-          record.reference,
-          "https://www.riquezaoculta.click/checkout/pagamento",
-          extractMetaMatch(record.providerPayload)
-        ).catch(() => {});
-        void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
+        // Transição atómica — side-effects só para quem confirma a transição (anti-duplicação).
+        if (await markCheckoutPaid(reference, provider.raw)) {
+          void recordAffiliateSale(reference).catch(() => {});
+          void sendFBConversionPurchase(
+            record.name,
+            record.phone,
+            record.amount,
+            record.reference,
+            "https://www.riquezaoculta.click/checkout/pagamento",
+            extractMetaMatch(record.providerPayload)
+          ).catch(() => {});
+          void sendOrderConfirmation(record.phone, record.name, { reference: record.reference }).catch(() => {});
+        }
       } else if (provider.status === "failed") {
         // For Express: wait grace period before marking as failed
         if (method === "express" && elapsed < EXPRESS_GRACE_PERIOD_MS) {
@@ -59,8 +61,7 @@ export async function GET(
           await updateCheckoutStatus(reference, "failed", provider.raw);
         }
       } else if (!isProd && !env.KB_AGENCY_API_KEY) {
-        if (elapsed >= 20_000) {
-          await updateCheckoutStatus(reference, "paid", { simulatedAutoPaid: true });
+        if (elapsed >= 20_000 && await markCheckoutPaid(reference, { simulatedAutoPaid: true })) {
           void recordAffiliateSale(reference).catch(() => {});
           void sendFBConversionPurchase(
             record.name,

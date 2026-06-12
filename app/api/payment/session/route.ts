@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCharge, createExpressCharge } from "@/lib/providers/payment/kbagency";
+import { createCharge } from "@/lib/providers/payment/kbagency";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/phone";
 import { getSettings, insertCheckout } from "@/lib/storage";
@@ -74,50 +74,8 @@ export async function POST(req: NextRequest) {
     description += " + Guia Riqueza Oculta";
   }
 
-  if (parsed.data.method === "express") {
-    if (!parsed.data.expressPhone) {
-      return NextResponse.json({ error: "expressPhone is required for Express payments" }, { status: 400 });
-    }
-
-    let charge: Awaited<ReturnType<typeof createExpressCharge>>;
-    try {
-      charge = await createExpressCharge({
-        phone: parsed.data.expressPhone.replace(/\D/g, ""),
-        amount,
-        reference
-      });
-    } catch {
-      return NextResponse.json(
-        { error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)." },
-        { status: 502 }
-      );
-    }
-
-    await insertCheckout({
-      reference,
-      name: parsed.data.name.trim(),
-      phone: normalizePhone(parsed.data.phone),
-      amount: charge.amount,
-      entity: "express",
-      paymentReference: charge.reference,
-      status: "pending",
-      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, _mq: metaMatch },
-      affiliateToken: parsed.data.affiliateToken ?? null,
-      createdAt: now,
-      updatedAt: now
-    });
-
-    return NextResponse.json({
-      reference,
-      method: "express",
-      payment: {
-        reference: charge.reference,
-        amount: charge.amount,
-        mode: charge.mode
-      }
-    });
-  }
-
+  // Esta rota trata apenas pagamentos por Referência (ATM/Internet Banking).
+  // O Multicaixa Express tem rota dedicada: /api/payment/express (fixada à região cpt1).
   // Reference method
   console.log("[Payment Session] Creating reference charge", {
     reference,

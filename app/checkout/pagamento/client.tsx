@@ -348,6 +348,10 @@ function CheckoutPagamentoInner({
         }
         if (data.status === "failed") {
           setPaymentStatus("failed");
+          // Tirar o utilizador do spinner: mostrar mensagem clara e voltar à escolha de método.
+          setError("O pagamento não foi confirmado (recusado ou expirado). Tenta novamente ou escolhe outro método.");
+          setPaymentReference(null);
+          setUiState("select");
           return true; // Stop polling
         }
       } catch (err) {

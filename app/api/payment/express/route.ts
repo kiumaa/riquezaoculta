@@ -15,6 +15,7 @@ const schema = z.object({
   expressPhone: z.string().min(9).max(15),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
   orderBump: z.number().min(0).max(5000).optional(),
+  affiliateToken: z.string().max(32).optional(),
   fbp: z.string().max(255).optional(),
   fbc: z.string().max(255).optional(),
 });
@@ -92,6 +93,19 @@ export async function POST(req: NextRequest) {
     });
     timings.kbApi = Date.now() - chargeStart;
 
+    // Guarda anti-simulado ANTES de gravar — nunca criar checkout órfão se não há cobrança real.
+    if (isProd && charge.mode === "simulated") {
+      console.error("[Express Payment] ALERTA: Modo simulado em produção!", {
+        reference,
+        hasKbExpressKey: !!env.KB_API_EXPRESS_KEY
+      });
+
+      return NextResponse.json(
+        { error: "Serviço Multicaixa Express temporariamente indisponível. Tenta novamente mais tarde ou usa pagamento por Referência." },
+        { status: 503 }
+      );
+    }
+
     // Insert checkout
     const dbStart = Date.now();
     await insertCheckout({
@@ -103,26 +117,14 @@ export async function POST(req: NextRequest) {
       paymentReference: charge.reference,
       status: "pending",
       providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, _mq: metaMatch },
+      affiliateToken: parsed.data.affiliateToken ?? null,
       createdAt: now,
       updatedAt: now
     });
     timings.db = Date.now() - dbStart;
 
     const total = Date.now() - startTime;
-    
-    // Verificar modo simulado em produção
-    if (isProd && charge.mode === "simulated") {
-      console.error("[Express Payment] ALERTA: Modo simulado em produção!", {
-        reference,
-        hasKbExpressKey: !!env.KB_API_EXPRESS_KEY
-      });
-      
-      return NextResponse.json(
-        { error: "Serviço Multicaixa Express temporariamente indisponível. Tenta novamente mais tarde ou usa pagamento por Referência." },
-        { status: 503 }
-      );
-    }
-    
+
     console.log(`[Express Payment] Timing:`, { total, ...timings, reference, mode: charge.mode });
 
     return NextResponse.json({

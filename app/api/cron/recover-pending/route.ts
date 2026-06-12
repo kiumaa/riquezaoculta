@@ -2,10 +2,11 @@
 import { db } from "@/lib/db";
 import { checkouts } from "@/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
-import { updateCheckoutStatus } from "@/lib/storage";
+import { updateCheckoutStatus, markCheckoutPaid, recordAffiliateSale } from "@/lib/storage";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { sendFBConversionPurchase } from "@/lib/capi";
-import { sendReferenceReminder, sendAbandonedCart, sendReferenceReminderSmsLogged } from "@/lib/communication-service";
+import { sendReferenceReminder, sendAbandonedCart, sendReferenceReminderSmsLogged, sendOrderConfirmation } from "@/lib/communication-service";
+import { env, isProd } from "@/lib/env";
 
 // Processa checkouts criados nas últimas 48 horas (para pegar referências antigas)
 const MAX_AGE_HOURS = 48;
@@ -22,16 +23,20 @@ const REMINDER_6H_MAX = 390;
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
   
-  // Verificar autorização via header (Vercel Cron envia um header específico ou pode usar um token)
+  // Auth fail-closed. A Vercel Cron envia automaticamente `Authorization: Bearer ${CRON_SECRET}`
+  // quando a env var CRON_SECRET está definida no projeto. Sem o secret correto, recusamos —
+  // exceto em desenvolvimento local (sem secret) para permitir testes manuais.
   const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    // Se não tem CRON_SECRET configurado, verificar se é chamada interna da Vercel
-    const isVercelCron = req.headers.get("x-vercel-signature") !== null;
-    if (!isVercelCron) {
+  const cronSecret = env.CRON_SECRET;
+
+  if (!cronSecret) {
+    if (isProd) {
+      console.error("[Cron Recover] CRON_SECRET em falta — endpoint trancado em produção. Define CRON_SECRET na Vercel.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    // dev local sem secret: permitir
+  } else if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   if (!db) {
@@ -148,18 +153,22 @@ export async function GET(req: NextRequest) {
         const statusResult = await getChargeStatus(checkout.reference, method);
 
         if (statusResult.status === "paid") {
-          // Atualizar para pago
-          await updateCheckoutStatus(checkout.reference, "paid", statusResult.raw);
-          void sendFBConversionPurchase(
-            checkout.name,
-            checkout.phone,
-            checkout.amount,
-            checkout.reference,
-            "https://www.riquezaoculta.click/checkout/pagamento"
-          ).catch(() => {});
-          console.log(`[Cron Recover] Updated ${checkout.reference} to PAID`);
+          // Transição atómica — se o cron for o primeiro a confirmar, dispara TODOS os
+          // side-effects (afiliado + CAPI + confirmação), tal como o webhook/status fazem.
+          if (await markCheckoutPaid(checkout.reference, statusResult.raw)) {
+            void recordAffiliateSale(checkout.reference).catch(() => {});
+            void sendFBConversionPurchase(
+              checkout.name,
+              checkout.phone,
+              checkout.amount,
+              checkout.reference,
+              "https://www.riquezaoculta.click/checkout/pagamento"
+            ).catch(() => {});
+            void sendOrderConfirmation(checkout.phone, checkout.name, { reference: checkout.reference }).catch(() => {});
+            console.log(`[Cron Recover] Updated ${checkout.reference} to PAID`);
+          }
           results.updated++;
-          
+
         } else if (statusResult.status === "failed") {
           // Verificar se é Express e ainda está dentro do grace period
           if (method === "express") {

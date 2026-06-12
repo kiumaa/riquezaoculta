@@ -5,7 +5,7 @@ import type { AffiliateInsert, FunnelContentInsert, MemberContentInsert, PayoutR
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logger";
 import type { AffiliateRecord, AffiliateStatus, CheckoutRecord, CheckoutStatus, CommunicationLog, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, PayoutRequestRecord, PayoutStatus, QuizSubmissionRecord } from "@/lib/types";
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
 
 const fallbackPath = path.join(process.cwd(), "data", "runtime.json");
 
@@ -124,38 +124,54 @@ export async function findCheckout(reference: string): Promise<CheckoutRecord | 
   return data.checkouts.find(item => item.reference === reference) ?? null;
 }
 
-export async function updateCheckoutStatus(reference: string, status: CheckoutStatus, payload?: unknown) {
-  const current = await findCheckout(reference);
-  const oldPayload = current?.providerPayload;
-  
-  let mergedPayload = payload;
+function mergeProviderPayload(oldPayload: unknown, payload: unknown): unknown {
   if (oldPayload && typeof oldPayload === "object" && oldPayload !== null) {
     if (payload && typeof payload === "object" && payload !== null) {
-      mergedPayload = { ...oldPayload, ...payload };
-    } else if (payload === undefined || payload === null) {
-      mergedPayload = oldPayload;
+      return { ...oldPayload, ...payload };
+    }
+    if (payload === undefined || payload === null) {
+      return oldPayload;
     }
   }
+  return payload;
+}
+
+/**
+ * Atualiza o estado de um checkout.
+ * - Devolve `true` se gravou, `false` se recusado/falhou.
+ * - NUNCA faz downgrade de um checkout já "paid" (protege contra races onde um
+ *   snapshot antigo — ex.: do cron — reescreve um pagamento já confirmado).
+ * Para a transição -> "paid" usa `markCheckoutPaid` (atómica e idempotente).
+ */
+export async function updateCheckoutStatus(reference: string, status: CheckoutStatus, payload?: unknown): Promise<boolean> {
+  const current = await findCheckout(reference);
+  if (!current) return false;
+
+  // Anti-downgrade: um pagamento confirmado é terminal.
+  if (current.status === "paid" && status !== "paid") {
+    console.warn("[Storage] Recusado downgrade de checkout pago", { reference, attempted: status });
+    return false;
+  }
+
+  const mergedPayload = mergeProviderPayload(current.providerPayload, payload);
 
   if (db) {
     try {
       await db
         .update(checkouts)
-        .set({
-          status,
-          providerPayload: mergedPayload,
-          updatedAt: new Date()
-        })
-        .where(eq(checkouts.reference, reference));
+        .set({ status, providerPayload: mergedPayload, updatedAt: new Date() })
+        .where(and(eq(checkouts.reference, reference), ne(checkouts.status, "paid")));
+      return true;
     } catch (error) {
       logError("Storage", "Failed to update checkout status", error);
+      return false;
     }
-    return;
   }
 
   const data = await readFallback();
   data.checkouts = data.checkouts.map(item => {
     if (item.reference !== reference) return item;
+    if (item.status === "paid" && status !== "paid") return item;
     return {
       ...item,
       status,
@@ -164,6 +180,42 @@ export async function updateCheckoutStatus(reference: string, status: CheckoutSt
     };
   });
   await writeFallback(data);
+  return true;
+}
+
+/**
+ * Transição atómica e idempotente para "paid".
+ * Devolve `true` APENAS para o caller que realizou a transição (de não-pago para pago).
+ * Chamadas concorrentes ou repetidas devolvem `false`. Os callers devem disparar os
+ * side-effects (afiliado, CAPI, confirmação) somente quando o retorno for `true`.
+ */
+export async function markCheckoutPaid(reference: string, payload?: unknown): Promise<boolean> {
+  const current = await findCheckout(reference);
+  if (!current) return false;
+  if (current.status === "paid") return false; // já pago — idempotente
+
+  const mergedPayload = mergeProviderPayload(current.providerPayload, payload);
+
+  if (db) {
+    // UPDATE condicional: só transita linhas que ainda NÃO estão "paid". Em concorrência,
+    // o row-lock do Postgres garante que apenas a 1ª chamada encontra status != 'paid'.
+    const rows = await db
+      .update(checkouts)
+      .set({ status: "paid", providerPayload: mergedPayload, updatedAt: new Date() })
+      .where(and(eq(checkouts.reference, reference), ne(checkouts.status, "paid")))
+      .returning({ id: checkouts.id });
+    return rows.length > 0;
+  }
+
+  const data = await readFallback();
+  let transitioned = false;
+  data.checkouts = data.checkouts.map(item => {
+    if (item.reference !== reference || item.status === "paid") return item;
+    transitioned = true;
+    return { ...item, status: "paid", providerPayload: mergedPayload ?? item.providerPayload, updatedAt: new Date().toISOString() };
+  });
+  if (transitioned) await writeFallback(data);
+  return transitioned;
 }
 
 export type PaginatedResult<T> = {

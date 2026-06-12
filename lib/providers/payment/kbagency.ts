@@ -1,4 +1,4 @@
-import { env } from "@/lib/env";
+import { env, isProd } from "@/lib/env";
 import { logError } from "@/lib/logger";
 
 export type ChargeInput = {
@@ -102,6 +102,11 @@ export async function createExpressCharge(input: ExpressChargeInput): Promise<Ex
   const key = env.KB_API_EXPRESS_KEY;
 
   if (!key) {
+    // Em produção, NUNCA fingir sucesso: sem chave não há cobrança real.
+    if (isProd) {
+      throw new Error("KB_API_EXPRESS_KEY em falta em produção — pagamento Express indisponível");
+    }
+    // Dev local: modo simulado para testes.
     return { mode: "simulated", reference: input.reference, amount: input.amount };
   }
 
@@ -165,7 +170,7 @@ export async function getChargeStatus(reference: string, method: "express" | "re
     return {
       mode: "simulated" as const,
       status: "pending" as const,
-      raw: { reason: `${method === "express" ? "KB_AGENCY_API_KEY" : "KB_API_EXPRESS_KEY"} missing` }
+      raw: { reason: `${method === "express" ? "KB_API_EXPRESS_KEY" : "KB_AGENCY_API_KEY"} missing` }
     };
   }
 

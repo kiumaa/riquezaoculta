@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
 import { verifyWebhookSignature } from "@/lib/security/webhook-signature";
-import { findCheckout, recordAffiliateSale, updateCheckoutStatus } from "@/lib/storage";
+import { findCheckout, markCheckoutPaid, recordAffiliateSale } from "@/lib/storage";
 import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
@@ -77,26 +77,32 @@ export async function POST(req: NextRequest) {
     // Processar pagamento confirmado
     if (isWebhookPaid(payload)) {
       try {
-        await updateCheckoutStatus(reference, "paid", payload);
-        void recordAffiliateSale(reference).catch(() => {});
-        
-        // Enviar evento Purchase Server-Side para Meta Conversions API (non-blocking)
-        const referer = req.headers.get("referer") ?? undefined;
-        void sendFBConversionPurchase(
-          checkout.name,
-          checkout.phone,
-          checkout.amount,
-          checkout.reference,
-          referer,
-          extractMetaMatch(checkout.providerPayload)
-        ).catch(() => {});
-        void sendOrderConfirmation(checkout.phone, checkout.name, { reference: checkout.reference }).catch(() => {});
+        // Transição atómica: os side-effects só correm para quem realizou a transição,
+        // evitando duplo Purchase/comissão/confirmação se webhook e polling concorrerem.
+        const didTransition = await markCheckoutPaid(reference, payload);
+        if (didTransition) {
+          void recordAffiliateSale(reference).catch(() => {});
 
-        console.log("[Webhook] Payment marked as paid & Purchase sent to CAPI", {
-          reference,
-          duration: Date.now() - startTime,
-          previousStatus: checkout.status
-        });
+          // Enviar evento Purchase Server-Side para Meta Conversions API (non-blocking)
+          const referer = req.headers.get("referer") ?? undefined;
+          void sendFBConversionPurchase(
+            checkout.name,
+            checkout.phone,
+            checkout.amount,
+            checkout.reference,
+            referer,
+            extractMetaMatch(checkout.providerPayload)
+          ).catch(() => {});
+          void sendOrderConfirmation(checkout.phone, checkout.name, { reference: checkout.reference }).catch(() => {});
+
+          console.log("[Webhook] Payment marked as paid & Purchase sent to CAPI", {
+            reference,
+            duration: Date.now() - startTime,
+            previousStatus: checkout.status
+          });
+        } else {
+          console.log("[Webhook] Transição ignorada (já pago ou inexistente)", { reference });
+        }
       } catch (updateError) {
         console.error("[Webhook] Failed to update checkout status", { 
           reference, 

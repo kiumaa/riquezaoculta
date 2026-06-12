@@ -129,7 +129,7 @@ export default function OfertaClient({
         body: JSON.stringify({
           name: name || "Desconhecido",
           phone: whatsapp || "",
-          source: "oferta-kambafy",
+          source: "oferta-direct",
           journey,
         }),
       }).catch(() => {});
