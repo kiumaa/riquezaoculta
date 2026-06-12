@@ -115,11 +115,15 @@ export async function POST(req: NextRequest) {
     if (!env.KB_AGENCY_API_KEY) {
       console.error("[Payment Session] KB_AGENCY_API_KEY não configurada");
     }
-    
-    return NextResponse.json(
-      { error: "Serviço de pagamento temporariamente indisponível. Tenta novamente mais tarde ou contacta o suporte." },
-      { status: 503 }
-    );
+
+    const body503: Record<string, unknown> = {
+      error: "Serviço de pagamento temporariamente indisponível. Tenta novamente mais tarde ou contacta o suporte."
+    };
+    // DIAGNÓSTICO TEMPORÁRIO — devolve a resposta crua da KB apenas com header secreto.
+    if (req.headers.get("x-diag") === "ro-diag-2026") {
+      body503.diag = charge.raw;
+    }
+    return NextResponse.json(body503, { status: 503 });
   }
   
   // Log de confirmação em modo live
