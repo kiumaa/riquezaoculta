@@ -5,6 +5,11 @@ import { findCheckout, markCheckoutPaid, recordAffiliateSale, updateCheckoutStat
 import { sendFBConversionPurchase, extractMetaMatch } from "@/lib/capi";
 import { sendOrderConfirmation } from "@/lib/communication-service";
 
+// A KB Agency (API Ultra) faz whitelist por IP sul-africano. Esta rota consulta o
+// status na KB, por isso é fixada à região cpt1 (Cape Town).
+export const preferredRegion = "cpt1";
+export const dynamic = "force-dynamic";
+
 // Express payments get grace period (10 minutes backend) for user to confirm on app
 // UX shows 5 minutes to create urgency, but backend allows 10 minutes
 const EXPRESS_GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes backend

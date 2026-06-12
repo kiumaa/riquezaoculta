@@ -8,6 +8,11 @@ import { sendFBConversionPurchase } from "@/lib/capi";
 import { sendReferenceReminder, sendAbandonedCart, sendReferenceReminderSmsLogged, sendOrderConfirmation } from "@/lib/communication-service";
 import { env, isProd } from "@/lib/env";
 
+// A KB Agency (API Ultra) faz whitelist por IP sul-africano. Este cron consulta o
+// status na KB, por isso é fixado à região cpt1 (Cape Town).
+export const preferredRegion = "cpt1";
+export const dynamic = "force-dynamic";
+
 // Processa checkouts criados nas últimas 48 horas (para pegar referências antigas)
 const MAX_AGE_HOURS = 48;
 

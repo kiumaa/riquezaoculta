@@ -7,6 +7,11 @@ import { sendPaymentReferenceSms } from "@/lib/providers/sms/bulkgate";
 import { env, isProd } from "@/lib/env";
 import { z } from "zod";
 
+// A KB Agency (API Ultra) faz whitelist por IP sul-africano. Esta rota chama a KB,
+// por isso é fixada à região cpt1 (Cape Town) — tal como /api/payment/express.
+export const preferredRegion = "cpt1";
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   name: z.string().min(2).max(80),
   phone: z.string().min(7).max(24),
