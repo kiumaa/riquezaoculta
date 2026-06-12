@@ -85,8 +85,12 @@ export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
       throw new Error(`KB Ultra reference non-JSON: ${text.slice(0, 150)}`);
     }
 
-    const entity = data.entity;
-    const paymentRef = data.payment_reference ?? data.reference;
+    // A KB aninha os dados de pagamento em `payment_data` (entity + reference da ATM).
+    const pd = (data.payment_data && typeof data.payment_data === "object")
+      ? (data.payment_data as Record<string, unknown>)
+      : data;
+    const entity = pd.entity ?? data.entity;
+    const paymentRef = pd.payment_reference ?? pd.reference;
     if (!entity || !paymentRef) {
       throw new Error(`KB Ultra reference unexpected response: ${text.slice(0, 300)}`);
     }
@@ -94,9 +98,9 @@ export async function createCharge(input: ChargeInput): Promise<ChargeOutput> {
     return {
       mode: "live",
       entity: String(entity),
-      // A referência ATM vem com espaços ("123 456 789"); guardamos só os dígitos.
+      // A referência ATM pode vir com espaços ("123 456 789"); guardamos só os dígitos.
       paymentReference: String(paymentRef).replace(/\s+/g, ""),
-      amount: Number(data.amount ?? input.amount),
+      amount: Number(pd.amount ?? data.amount ?? input.amount),
       raw: data
     };
   } catch (error) {
