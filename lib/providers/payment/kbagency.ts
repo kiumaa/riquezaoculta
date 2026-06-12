@@ -239,8 +239,6 @@ export async function getChargeStatus(reference: string) {
     const pd = (data.payment_data && typeof data.payment_data === "object") ? (data.payment_data as Record<string, unknown>) : undefined;
     const nested = data.data as Record<string, unknown> | undefined;
     const rawStatus = String(pd?.status ?? data.status ?? nested?.status ?? "pending").toLowerCase();
-    // DIAGNÓSTICO TEMPORÁRIO — corpo COMPLETO do ultra/status para ver o motivo do "failed".
-    console.log(`USTAT|${reference.slice(-6)}|http=${res.status}|raw=${rawStatus}|body=${text.slice(0, 700)}`);
     const normalized =
       rawStatus === "paid" || rawStatus === "success" || rawStatus === "completed"
         ? "paid"
