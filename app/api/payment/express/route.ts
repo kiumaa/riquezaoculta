@@ -148,12 +148,9 @@ export async function POST(req: NextRequest) {
     const total = Date.now() - startTime;
     console.error(`[Express Payment] Error after ${total}ms:`, error);
 
-    const responseBody: Record<string, unknown> = {
-      error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)."
-    };
-    if (req.headers.get("x-diag") === "ro-diag-2026") {
-      responseBody.diag = error instanceof Error ? error.message : String(error);
-    }
-    return NextResponse.json(responseBody, { status: 502 });
+    return NextResponse.json(
+      { error: "Não foi possível iniciar o pagamento Multicaixa Express agora. Aguarda um momento e tenta de novo, ou usa pagamento por Referência (ATM/Internet Banking)." },
+      { status: 502 }
+    );
   }
 }
