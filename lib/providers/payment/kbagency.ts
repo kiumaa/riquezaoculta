@@ -235,10 +235,12 @@ export async function getChargeStatus(reference: string) {
       throw new Error(`KB Ultra status non-JSON: ${text.slice(0, 120)}`);
     }
 
+    // Desempacota payment_data se a KB aninhar o estado lá (consistente com createCharge).
+    const pd = (data.payment_data && typeof data.payment_data === "object") ? (data.payment_data as Record<string, unknown>) : undefined;
     const nested = data.data as Record<string, unknown> | undefined;
-    const rawStatus = String(data.status ?? nested?.status ?? "pending").toLowerCase();
-    // DIAGNÓSTICO TEMPORÁRIO — resposta crua do ultra/status (front-loaded, contorna corte dos logs)
-    console.log(`USTAT|${reference.slice(-6)}|http=${res.status}|raw=${rawStatus}|body=${text.slice(0, 140)}`);
+    const rawStatus = String(pd?.status ?? data.status ?? nested?.status ?? "pending").toLowerCase();
+    // DIAGNÓSTICO TEMPORÁRIO — corpo COMPLETO do ultra/status para ver o motivo do "failed".
+    console.log(`USTAT|${reference.slice(-6)}|http=${res.status}|raw=${rawStatus}|body=${text.slice(0, 700)}`);
     const normalized =
       rawStatus === "paid" || rawStatus === "success" || rawStatus === "completed"
         ? "paid"
