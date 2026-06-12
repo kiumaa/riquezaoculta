@@ -144,6 +144,7 @@ function CheckoutPagamentoInner({
   const [urgencyData, setUrgencyData] = useState<{ spots: number; people: number } | null>(null);
   const [orderBumpChecked, setOrderBumpChecked] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(15 * 60); // 15 min
+  const [expressWaitSec, setExpressWaitSec] = useState(0); // segundos à espera do push Express
 
   const productParam = searchParams.get("product") as "ebook" | "quiz" | "ebook_upsell" | null;
   const product = productParam || "ebook";
@@ -260,6 +261,16 @@ function CheckoutPagamentoInner({
     const t = setInterval(() => setCountdownSeconds(s => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Conta o tempo à espera do push Express, para oferecer um escape se a notificação não chegar.
+  useEffect(() => {
+    if (uiState !== "reference_active" || paymentData?.method !== "express") {
+      setExpressWaitSec(0);
+      return;
+    }
+    const t = setInterval(() => setExpressWaitSec(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [uiState, paymentData?.method]);
   const cdHh = String(Math.floor(countdownSeconds / 3600)).padStart(2, "0");
   const cdMm = String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, "0");
   const cdSs = String(countdownSeconds % 60).padStart(2, "0");
@@ -321,7 +332,7 @@ function CheckoutPagamentoInner({
     if (!paymentReference || paymentStatus === "paid") return;
 
     let pollCount = 0;
-    const maxPolls = 900; // 30 minutos (900 * 2s) — a referência pode ser paga bem depois dos 15 min do countdown
+    const maxPolls = 450; // ~30 minutos (450 * 4s) — a referência pode ser paga bem depois do countdown
 
     const checkStatus = async () => {
       try {
@@ -372,7 +383,7 @@ function CheckoutPagamentoInner({
       }
       const shouldStop = await checkStatus();
       if (shouldStop) clearInterval(interval);
-    }, 2000); // 2 segundos para resposta mais rápida
+    }, 4000); // 4s — alinhado com a recomendação da KB (3-5s)
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -981,6 +992,22 @@ function CheckoutPagamentoInner({
                       Tens até 5 minutos para confirmar
                     </p>
                   </div>
+
+                  {/* Escape se a notificação não chegar (push Express pode estar indisponível) */}
+                  {expressWaitSec >= 45 && (
+                    <div className="space-y-2 border-t border-white/[0.08] pt-3 mt-1 animate-in fade-in duration-300">
+                      <p className="text-[11px] text-soft/80 leading-relaxed">
+                        Não recebeste a notificação no telemóvel? O Multicaixa Express pode estar indisponível neste momento.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={resetMethod}
+                        className="inline-flex w-full items-center justify-center rounded-xl border border-brand/30 bg-brand/[0.08] px-4 py-2.5 text-xs font-semibold text-brandBright transition hover:bg-brand/[0.14]"
+                      >
+                        Pagar por Referência (ATM / Internet Banking) →
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Referência: mostrar entidade + referência */

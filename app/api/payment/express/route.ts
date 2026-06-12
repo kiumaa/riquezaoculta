@@ -91,6 +91,14 @@ export async function POST(req: NextRequest) {
     mcxPhone = mcxPhone.replace(/^0+/, "");
     if (mcxPhone.length > 9) mcxPhone = mcxPhone.slice(-9);
 
+    // Validar o formato MCX antes de enviar à KB (evita charge que falha o push).
+    if (mcxPhone.length !== 9 || !mcxPhone.startsWith("9")) {
+      return NextResponse.json(
+        { error: "Número Multicaixa Express inválido. Usa 9 dígitos a começar por 9 (ex.: 9XX XXX XXX)." },
+        { status: 400 }
+      );
+    }
+
     // Create charge - THIS IS THE BOTTLENECK (KB API)
     const chargeStart = Date.now();
     const charge = await createExpressCharge({
