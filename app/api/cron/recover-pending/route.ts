@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Consultar status no gateway
-        const statusResult = await getChargeStatus(checkout.reference, method);
+        const statusResult = await getChargeStatus(checkout.reference);
 
         if (statusResult.status === "paid") {
           // Transição atómica — se o cron for o primeiro a confirmar, dispara TODOS os

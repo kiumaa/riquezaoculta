@@ -33,9 +33,8 @@ export async function GET(
       console.log(`[Status] Reference ${reference} expired after ${Math.round(elapsed/1000)}s`);
       await updateCheckoutStatus(reference, "failed", { reason: "Reference expired", expiredAfter: elapsed });
     } else {
-      // Use KB's own payment reference for status lookup (not our internal ROV2 reference)
-      const kbReference = record.paymentReference ?? reference;
-      const provider = await getChargeStatus(kbReference, method);
+      // API Ultra indexa o status pela NOSSA reference (a enviada no charge), para ambos os métodos.
+      const provider = await getChargeStatus(reference);
 
       // For Express: only mark as failed after grace period
       if (provider.status === "paid") {

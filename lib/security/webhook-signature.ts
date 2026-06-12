@@ -1,5 +1,8 @@
 import crypto from "crypto";
 
+// KB Agency assina o webhook com hash_hmac('sha256', payload, secret) em HEX PURO
+// (sem prefixo "sha256="), no header X-KB-Signature.
+// Ref: https://pay.kbagency.me/docs → Webhooks → Validação de Assinatura.
 export function verifyWebhookSignature(
   rawBody: string,
   secret: string,
@@ -7,15 +10,13 @@ export function verifyWebhookSignature(
 ) {
   if (!receivedSignature || !secret) return false;
 
-  const digest = crypto
+  const expected = crypto
     .createHmac("sha256", secret)
     .update(rawBody)
     .digest("hex");
 
-  const expected = `sha256=${digest}`;
-
   const a = Buffer.from(expected);
-  const b = Buffer.from(receivedSignature);
+  const b = Buffer.from(receivedSignature.trim());
 
   if (a.length !== b.length) return false;
 

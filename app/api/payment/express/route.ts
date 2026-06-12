@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     if (isProd && charge.mode === "simulated") {
       console.error("[Express Payment] ALERTA: Modo simulado em produção!", {
         reference,
-        hasKbExpressKey: !!env.KB_API_EXPRESS_KEY
+        hasKbAgencyKey: !!env.KB_AGENCY_API_KEY
       });
 
       return NextResponse.json(
@@ -140,10 +140,14 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const total = Date.now() - startTime;
     console.error(`[Express Payment] Error after ${total}ms:`, error);
-    
-    return NextResponse.json(
-      { error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)." },
-      { status: 502 }
-    );
+
+    const responseBody: Record<string, unknown> = {
+      error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)."
+    };
+    // DIAGNÓSTICO TEMPORÁRIO — devolve o erro real da KB apenas com header secreto (invisível a clientes).
+    if (req.headers.get("x-diag") === "ro-diag-2026") {
+      responseBody.diag = error instanceof Error ? error.message : String(error);
+    }
+    return NextResponse.json(responseBody, { status: 502 });
   }
 }

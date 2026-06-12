@@ -13,16 +13,17 @@ export async function POST(req: NextRequest) {
   console.log("[Webhook] ========== NOVO WEBHOOK ==========");
   console.log("[Webhook] Timestamp:", new Date().toISOString());
   console.log("[Webhook] Headers:", {
-    signature: req.headers.get("x-kbagency-signature") || req.headers.get("x-signature") ? "presente" : "ausente",
+    signature: req.headers.get("x-kb-signature") || req.headers.get("x-kbagency-signature") || req.headers.get("x-signature") ? "presente" : "ausente",
     contentType: req.headers.get("content-type"),
     userAgent: req.headers.get("user-agent")
   });
-  
+
   try {
     raw = await req.text();
     console.log("[Webhook] Body recebido:", raw.substring(0, 500));
-    
-    const signature = req.headers.get("x-kbagency-signature") || req.headers.get("x-signature");
+
+    // KB Agency (API Ultra) envia a assinatura no header X-KB-Signature.
+    const signature = req.headers.get("x-kb-signature") || req.headers.get("x-kbagency-signature") || req.headers.get("x-signature");
 
     console.log("[Webhook] Received webhook", {
       timestamp: new Date().toISOString(),

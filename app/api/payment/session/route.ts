@@ -102,7 +102,6 @@ export async function POST(req: NextRequest) {
     console.error("[Payment Session] ALERTA: Modo simulado em produção!", {
       reference,
       hasKbAgencyKey: !!env.KB_AGENCY_API_KEY,
-      hasKbExpressKey: !!env.KB_API_EXPRESS_KEY,
       simulatedEntity: charge.entity,
       simulatedRef: charge.paymentReference
     });
