@@ -83,8 +83,13 @@ export async function GET(
 
   const refreshed = await findCheckout(reference);
 
+  // A KB devolve "message" com o motivo da falha — surfaçamos ao cliente.
+  const payload = refreshed?.providerPayload as Record<string, unknown> | undefined;
+  const message = typeof payload?.message === "string" ? payload.message : undefined;
+
   return NextResponse.json({
     reference,
-    status: refreshed?.status ?? "pending"
+    status: refreshed?.status ?? "pending",
+    ...(message && refreshed?.status === "failed" ? { message } : {})
   });
 }
