@@ -237,6 +237,8 @@ export async function getChargeStatus(reference: string) {
 
     const nested = data.data as Record<string, unknown> | undefined;
     const rawStatus = String(data.status ?? nested?.status ?? "pending").toLowerCase();
+    // DIAGNÓSTICO TEMPORÁRIO — resposta crua do ultra/status (front-loaded, contorna corte dos logs)
+    console.log(`USTAT|${reference.slice(-6)}|http=${res.status}|raw=${rawStatus}|body=${text.slice(0, 140)}`);
     const normalized =
       rawStatus === "paid" || rawStatus === "success" || rawStatus === "completed"
         ? "paid"
