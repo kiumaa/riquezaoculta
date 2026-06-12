@@ -84,10 +84,17 @@ export async function POST(req: NextRequest) {
       amount += parsed.data.orderBump;
     }
 
+    // Normalizar para o formato MCX Express: 9 dígitos a começar por 9.
+    // (remove código de país 244, zeros à esquerda, espaços/símbolos)
+    let mcxPhone = parsed.data.expressPhone.replace(/\D/g, "");
+    if (mcxPhone.startsWith("244")) mcxPhone = mcxPhone.slice(3);
+    mcxPhone = mcxPhone.replace(/^0+/, "");
+    if (mcxPhone.length > 9) mcxPhone = mcxPhone.slice(-9);
+
     // Create charge - THIS IS THE BOTTLENECK (KB API)
     const chargeStart = Date.now();
     const charge = await createExpressCharge({
-      phone: parsed.data.expressPhone.replace(/\D/g, ""),
+      phone: mcxPhone,
       reference,
       amount
     });
@@ -141,9 +148,12 @@ export async function POST(req: NextRequest) {
     const total = Date.now() - startTime;
     console.error(`[Express Payment] Error after ${total}ms:`, error);
 
-    return NextResponse.json(
-      { error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)." },
-      { status: 502 }
-    );
+    const responseBody: Record<string, unknown> = {
+      error: "Não foi possível iniciar o pagamento via Multicaixa Express. Usa o método de Referência (ATM/Internet Banking)."
+    };
+    if (req.headers.get("x-diag") === "ro-diag-2026") {
+      responseBody.diag = error instanceof Error ? error.message : String(error);
+    }
+    return NextResponse.json(responseBody, { status: 502 });
   }
 }

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
@@ -24,6 +25,16 @@ export async function POST(req: NextRequest) {
 
     // KB Agency (API Ultra) envia a assinatura no header X-KB-Signature.
     const signature = req.headers.get("x-kb-signature") || req.headers.get("x-kbagency-signature") || req.headers.get("x-signature");
+
+    // DIAGNÓSTICO TEMPORÁRIO — log curto front-loaded (contorna o corte dos logs do painel)
+    // para capturar QUE header de assinatura a KB usa e SE a nossa HMAC bate.
+    try {
+      const sigHdrs = [...req.headers.keys()].filter((k) => /sig|kb|hmac|hash/i.test(k)).join(",");
+      const exp = env.KB_AGENCY_WEBHOOK_SECRET
+        ? crypto.createHmac("sha256", env.KB_AGENCY_WEBHOOK_SECRET).update(raw).digest("hex")
+        : "nosecret";
+      console.log(`WHSIG|hdrs=${sigHdrs}|recv=${(signature || "").slice(0, 10)}|exp=${exp.slice(0, 10)}|match=${exp === (signature || "").trim()}`);
+    } catch { /* diag não deve quebrar o webhook */ }
 
     console.log("[Webhook] Received webhook", {
       timestamp: new Date().toISOString(),
