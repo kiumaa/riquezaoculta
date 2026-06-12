@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { env, isProd } from "@/lib/env";
 import { extractWebhookReference, isWebhookPaid } from "@/lib/providers/payment/kbagency";
@@ -31,20 +30,6 @@ export async function POST(req: NextRequest) {
       hasSignature: !!signature,
       bodyLength: raw.length
     });
-
-    // DIAGNÓSTICO TEMPORÁRIO — compara a assinatura que o servidor calcula com a recebida.
-    if (req.headers.get("x-diag") === "ro-diag-2026" && env.KB_AGENCY_WEBHOOK_SECRET) {
-      const expected = crypto.createHmac("sha256", env.KB_AGENCY_WEBHOOK_SECRET).update(raw).digest("hex");
-      return NextResponse.json({
-        diag: true,
-        rawLen: raw.length,
-        secretLen: env.KB_AGENCY_WEBHOOK_SECRET.length,
-        secretPrefix: env.KB_AGENCY_WEBHOOK_SECRET.slice(0, 6),
-        expectedPrefix: expected.slice(0, 20),
-        receivedPrefix: (signature || "").slice(0, 20),
-        match: expected === (signature || "").trim()
-      });
-    }
 
     // Verificar assinatura se secret configurado
     if (env.KB_AGENCY_WEBHOOK_SECRET) {
