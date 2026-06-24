@@ -64,6 +64,9 @@ export default function SimuladorInicioClient({ content }: { content: SimuladorC
     setWhatsapp(normalized);
     setLoading(true);
 
+    // eventId partilhado entre o CAPI (server) e o pixel (client) para o Meta deduplicar o Lead
+    const eventId = `lead_${crypto.randomUUID()}`;
+
     try {
       await fetch("/api/leads", {
         method: "POST",
@@ -72,10 +75,11 @@ export default function SimuladorInicioClient({ content }: { content: SimuladorC
           name: cleanName,
           phone: normalized,
           source: "simulador-inicio",
-          journey
+          journey,
+          eventId
         })
       });
-      trackEvent("Lead", { content_name: "1M Em Uma Semana - Simulador" });
+      trackEvent("Lead", { content_name: "1M Em Uma Semana - Simulador" }, { eventID: eventId });
     } catch {
       // Lead save failure is non-blocking — continue the funnel
     } finally {

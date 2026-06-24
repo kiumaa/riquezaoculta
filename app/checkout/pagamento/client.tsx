@@ -12,6 +12,7 @@ import mcxLogo from "@/assets/mcx.png";
 import ebookCover from "@/public/capa_1m_v1.jpg";
 import riquezaCover from "@/assets/ebook_cover_3d.webp";
 import { trackEvent, trackCustomEvent, getFbp, getFbc } from "@/lib/pixel";
+import { getActiveVariants } from "@/lib/use-ab";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
@@ -224,24 +225,21 @@ function CheckoutPagamentoInner({
     if (!storedSpots) sessionStorage.setItem("rq_spots", initialSpots.toString());
     if (!storedPeople) sessionStorage.setItem("rq_people", initialPeople.toString());
 
+    // Drift DETERMINÍSTICO e suave (sem Math.random a cada tick = sem saltos
+    // erráticos que denunciam números falsos): vaga desce 1 a cada ~48s (piso 2),
+    // pessoas sobem 1 a cada ~24s.
+    let tick = 0;
     const interval = setInterval(() => {
+      tick += 1;
       setUrgencyData(prev => {
         if (!prev) return null;
-
-        // Cerca de 30% de chance de reduzir uma vaga (nunca baixar de 3)
-        const dropSpot = Math.random() > 0.7 && prev.spots > 3;
-        // Cerca de 50% de chance de adicionar 1 a 2 pessoas
-        const addPerson = Math.random() > 0.5;
-
-        const nextSpots = dropSpot ? prev.spots - 1 : prev.spots;
-        const nextPeople = addPerson ? prev.people + Math.floor(Math.random() * 2) + 1 : prev.people;
-
-        if (dropSpot) sessionStorage.setItem("rq_spots", nextSpots.toString());
-        if (addPerson) sessionStorage.setItem("rq_people", nextPeople.toString());
-
+        const nextSpots = tick % 4 === 0 && prev.spots > 2 ? prev.spots - 1 : prev.spots;
+        const nextPeople = tick % 2 === 0 ? prev.people + 1 : prev.people;
+        if (nextSpots !== prev.spots) sessionStorage.setItem("rq_spots", nextSpots.toString());
+        if (nextPeople !== prev.people) sessionStorage.setItem("rq_people", nextPeople.toString());
         return { spots: nextSpots, people: nextPeople };
       });
-    }, 12000); // Verifica actualizações a cada 12 segundos
+    }, 12000); // tick de 12s
 
     return () => clearInterval(interval);
   }, []);
@@ -432,6 +430,8 @@ function CheckoutPagamentoInner({
       if (method === "reference") body.method = "reference";
       if (affiliateToken) body.affiliateToken = affiliateToken;
       if (orderBumpChecked) body.orderBump = ORDER_BUMP_PRICE;
+      const ab = getActiveVariants();
+      if (Object.keys(ab).length > 0) body.ab = ab;
       const fbp = getFbp();
       const fbc = getFbc();
       if (fbp) body.fbp = fbp;
@@ -564,20 +564,37 @@ function CheckoutPagamentoInner({
                   </span>
                 </Link>
               ) : (
-                <a
-                  href={`/api/download/${paymentReference}`}
-                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-                >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                  <span className="relative flex items-center gap-2">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7 10 12 15 17 10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    DOWNLOAD
-                  </span>
-                </a>
+                <>
+                  <a
+                    href={`/api/download/${paymentReference}?item=guia1m`}
+                    className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+                  >
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                    <span className="relative flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      DESCARREGAR GUIA 1M
+                    </span>
+                  </a>
+                  {orderBumpChecked && (
+                    <a
+                      href={`/api/download/${paymentReference}?item=bonus`}
+                      className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl border border-yellow-400/40 bg-yellow-400/[0.10] px-6 py-4 text-sm font-bold uppercase tracking-wider text-yellow-300 transition-all duration-300 hover:scale-[1.02]"
+                    >
+                      <span className="relative flex items-center gap-2">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7 10 12 15 17 10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        DESCARREGAR BÓNUS: RIQUEZA OCULTA
+                      </span>
+                    </a>
+                  )}
+                </>
               )}
 
               <div className="space-y-1">

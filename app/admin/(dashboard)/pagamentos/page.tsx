@@ -49,6 +49,7 @@ type PagedCheckouts = {
     revenueEbook: number;
     salesQuiz: number;
     salesEbook: number;
+    paidWithoutConfirmation?: number;
   };
 };
 
@@ -106,6 +107,7 @@ export default function PagamentosPage() {
   const [wa, setWa] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [waError, setWaError] = useState<Record<string, string>>({});
   const [waStatus, setWaStatus] = useState<{ connected: boolean; status: string } | null>(null);
+  const [abResults, setAbResults] = useState<Record<string, Record<string, number>> | null>(null);
 
   const fetchData = useCallback(async (p: number) => {
     const res = await fetch(`/api/admin/checkouts?page=${p}&limit=20`);
@@ -115,6 +117,7 @@ export default function PagamentosPage() {
   useEffect(() => { fetchData(1).finally(() => setLoading(false)); }, [fetchData]);
   useEffect(() => {
     fetch("/api/admin/whatsapp-status").then(r => r.ok ? r.json() : null).then(setWaStatus).catch(() => {});
+    fetch("/api/admin/ab-results").then(r => r.ok ? r.json() : null).then(d => setAbResults(d?.tests ?? null)).catch(() => {});
   }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading) fetchData(page); }, [page]);
@@ -190,6 +193,7 @@ export default function PagamentosPage() {
     revenueEbook: result.data.filter(c => c.status === "paid" && c.amount !== 1000).reduce((s, c) => s + c.amount, 0),
     salesQuiz: result.data.filter(c => c.status === "paid" && c.amount === 1000).length,
     salesEbook: result.data.filter(c => c.status === "paid" && c.amount !== 1000).length,
+    paidWithoutConfirmation: 0,
   };
 
   return (
@@ -241,6 +245,34 @@ export default function PagamentosPage() {
           <p className="text-[9px] text-muted mt-1">{stats.totalPending} checkouts pendentes</p>
         </div>
       </div>
+
+      {(stats.paidWithoutConfirmation ?? 0) > 0 && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.08] p-4 text-sm text-amber-300">
+          ⚠️ <strong>{stats.paidWithoutConfirmation}</strong> pagamento(s) de ebook confirmado(s) sem confirmação entregue ao cliente.
+          O cron reenvia automaticamente (WhatsApp → SMS); ou usa o botão <strong>WhatsApp</strong> de cada linha para forçar o envio manual.
+        </div>
+      )}
+
+      {abResults && Object.keys(abResults).length > 0 && (
+        <div className="bg-black/20 border border-white/5 rounded-2xl p-4 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Experimentos A/B — conversões por variante</p>
+          {Object.entries(abResults).map(([test, variants]) => {
+            const total = Object.values(variants).reduce((s, n) => s + n, 0);
+            return (
+              <div key={test} className="space-y-1.5">
+                <p className="text-xs font-semibold text-ink">{test}</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(variants).map(([v, n]) => (
+                    <span key={v} className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-black/20 px-2.5 py-1 text-[11px] text-soft">
+                      <strong className="text-brand">{v}</strong> {n} conv.{total > 0 ? ` (${Math.round((n / total) * 100)}%)` : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden">

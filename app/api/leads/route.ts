@@ -14,7 +14,8 @@ const schema = z.object({
     url: z.string(),
     timestamp: z.string(),
     duration: z.number().optional()
-  })).optional()
+  })).optional(),
+  eventId: z.string().max(64).optional()
 });
 
 export async function POST(req: NextRequest) {
@@ -41,9 +42,10 @@ export async function POST(req: NextRequest) {
     journey: parsed.data.journey
   });
 
-  // Fire server-side Lead event to Facebook Conversions API (non-blocking)
+  // Fire server-side Lead event to Facebook Conversions API (non-blocking).
+  // O eventId vem do client e é partilhado com o pixel para o Meta deduplicar.
   const referer = req.headers.get("referer") ?? undefined;
-  sendFBConversionLead(parsed.data.name.trim(), normalized, referer);
+  sendFBConversionLead(parsed.data.name.trim(), normalized, referer, parsed.data.eventId);
 
   return NextResponse.json({ success: true });
 }

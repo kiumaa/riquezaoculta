@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getFunnelContentMap } from "@/lib/storage";
 import ProvasSociaisClient from "./client";
 
-export const dynamic = "force-dynamic";
+// ISR: conteúdo das provas sociais muda raramente. Revalida a cada 5 min.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Resultados Reais | 1M Em Uma Semana",

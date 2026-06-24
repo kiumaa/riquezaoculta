@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import { consumeRateLimit } from "@/lib/rate-limit";
 import { findAffiliateByPhone, generateAffiliateToken, insertAffiliate } from "@/lib/storage";
 
 async function notifyPushcut(title: string, text: string) {
@@ -14,6 +15,11 @@ async function notifyPushcut(title: string, text: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "local";
+  if (!consumeRateLimit(`afiliado-register:${ip}`, 5, 60_000).allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();

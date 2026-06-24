@@ -24,6 +24,7 @@ export default function AcessoPage() {
   const [verifiedRef, setVerifiedRef] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyFailed, setVerifyFailed] = useState(false);
+  const [items, setItems] = useState<{ id: string; title: string }[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -60,12 +61,27 @@ export default function AcessoPage() {
     fetch(`/api/payment/verify/${encodeURIComponent(urlRef)}`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
-        if (d?.paid && d?.isEbook) setVerifiedRef(urlRef);
-        else setVerifyFailed(true);
+        if (d?.paid && Array.isArray(d.items) && d.items.length > 0) {
+          setVerifiedRef(urlRef);
+          setItems(d.items);
+        } else setVerifyFailed(true);
       })
       .catch(() => setVerifyFailed(true))
       .finally(() => setVerifying(false));
   }, [mounted, urlRef, ebookPaid, paymentReference, verifiedRef, verifyFailed]);
+
+  // Carrega os entregáveis (guia 1M e/ou bónus) também no fluxo normal (sem ?ref),
+  // onde o acesso vem do store. Garante que os botões de download corretos aparecem.
+  useEffect(() => {
+    if (!mounted) return;
+    const ref = paymentReference || verifiedRef;
+    const okPaid = (ebookPaid && !!paymentReference) || !!verifiedRef;
+    if (!ref || !okPaid || items.length > 0) return;
+    fetch(`/api/payment/verify/${encodeURIComponent(ref)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (Array.isArray(d?.items) && d.items.length > 0) setItems(d.items); })
+      .catch(() => {});
+  }, [mounted, paymentReference, verifiedRef, ebookPaid, items.length]);
 
   // Sem acesso válido (nem store nem ?ref pago) → volta ao funil.
   useEffect(() => {
@@ -107,7 +123,27 @@ export default function AcessoPage() {
     );
   }
 
-  const downloadUrl = `/api/download/${effectiveRef}`;
+  // Um botão por entregável. Fallback para o guia 1M enquanto a lista carrega.
+  const deliverables = items.length > 0 ? items : [{ id: "guia1m", title: "Guia 1M em Uma Semana" }];
+  const downloadButtons = deliverables.map(it => (
+    <a
+      key={it.id}
+      href={`/api/download/${effectiveRef}?item=${it.id}`}
+      className={
+        it.id === "bonus"
+          ? "group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl border border-yellow-400/40 bg-yellow-400/[0.10] px-6 py-4 text-sm font-bold uppercase tracking-wider text-yellow-300 transition-all duration-300 hover:scale-[1.02]"
+          : "group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
+      }
+    >
+      <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+      <span className="relative flex items-center gap-2">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        {`Descarregar ${it.title}`}
+      </span>
+    </a>
+  ));
 
   // If upsell was accepted, show special confirmation
   if (upsellAccepted) {
@@ -142,13 +178,7 @@ export default function AcessoPage() {
             </div>
 
             <div className="space-y-3">
-              <a
-                href={downloadUrl}
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative">⬇ DOWNLOAD DO GUIA</span>
-              </a>
+              {downloadButtons}
 
               <Link
                 href={WHATSAPP_GROUP_LINK}
@@ -202,18 +232,7 @@ export default function AcessoPage() {
             </div>
 
             <div className="space-y-3">
-              <a
-                href={downloadUrl}
-                className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-              >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                <span className="relative flex items-center gap-2">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  DOWNLOAD DO GUIA
-                </span>
-              </a>
+              {downloadButtons}
 
               <Link
                 href={WHATSAPP_GROUP_LINK}

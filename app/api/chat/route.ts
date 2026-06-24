@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { z } from "zod";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { getSettings } from "@/lib/storage";
 
 const schema = z.object({
   messages: z.array(z.object({
@@ -11,11 +12,27 @@ const schema = z.object({
   name: z.string().max(80).optional()
 });
 
-const SYSTEM_PROMPT = `És a Sofia, consultora de vendas do guia 1M em Uma Semana — um guia prático e direto sobre como montar uma oferta, fazer copy agressiva, checkout e vender muito em 7 dias em Angola. O produto custa 2.499 Kz (preço promocional, valor normal 4.500 Kz) e inclui: guia prático completo em PDF + acesso ao grupo VIP no WhatsApp + garantia de 7 dias com devolução total sem perguntas.
+type ChatPrices = { pricePromo: number; priceOriginal: number; priceOrderBump: number };
+
+/** Formata um número em Kz com separador de milhares por ponto (ex.: 2499 -> "2.499"). */
+function kz(n: number): string {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/** Substitui os valores legados hardcoded nas respostas de fallback pelos preços atuais das settings. */
+function syncPriceTokens(text: string, p: ChatPrices): string {
+  return text
+    .replaceAll("2.499 Kz", `${kz(p.pricePromo)} Kz`)
+    .replaceAll("4.500 Kz", `${kz(p.priceOriginal)} Kz`)
+    .replaceAll("999 Kz", `${kz(p.priceOrderBump)} Kz`);
+}
+
+function buildSystemPrompt(p: ChatPrices) {
+  return `És a Sofia, consultora de vendas do guia 1M em Uma Semana — um guia prático e direto sobre como montar uma oferta, fazer copy agressiva, checkout e vender muito em 7 dias em Angola. O produto custa ${kz(p.pricePromo)} Kz (preço promocional, valor normal ${kz(p.priceOriginal)} Kz) e inclui: guia prático completo em PDF + acesso ao grupo VIP no WhatsApp + garantia de 7 dias com devolução total sem perguntas.
 
 PRODUTO ADICIONAL (ORDER BUMP):
-- Guia Riqueza Oculta: + 999 Kz — estratégias avançadas de geração de riqueza que complementam o guia principal.
-- Se o utilizador perguntar, explica que é uma oferta exclusiva disponível apenas no checkout, e que juntando os dois fica tudo por menos de 4.000 Kz.
+- Guia Riqueza Oculta: + ${kz(p.priceOrderBump)} Kz — estratégias avançadas de geração de riqueza que complementam o guia principal.
+- Se o utilizador perguntar, explica que é uma oferta exclusiva disponível apenas no checkout, e que juntando os dois fica tudo por ${kz(p.pricePromo + p.priceOrderBump)} Kz.
 
 MÉTODOS DE PAGAMENTO DISPONÍVEIS:
 1. Multicaixa Express — pagamento directo no telemóvel (mais rápido)
@@ -49,6 +66,7 @@ O QUE NÃO FAZER:
 - Nunca sejas passiva — sê sempre directa e orientada para o fecho da venda
 
 CONTEXTO: O utilizador está a navegar no funil de vendas (quiz → resultado → oferta → checkout). Há um temporizador de urgência activo no checkout. Podes perguntar em que etapa está se necessário.`;
+}
 
 // ─── Fallback inteligente para quando a API não está disponível ──────────────
 const FALLBACK_RESPONSES: Record<string, string> = {
@@ -211,9 +229,11 @@ export async function POST(req: NextRequest) {
   const { messages, name } = parsed.data;
   const lastUserMessage = messages.filter(m => m.role === "user").pop()?.content ?? "";
 
+  const settings = await getSettings();
+  const basePrompt = buildSystemPrompt(settings);
   const systemContent = name
-    ? `${SYSTEM_PROMPT} O nome do utilizador é ${name.split(" ")[0]}.`
-    : SYSTEM_PROMPT;
+    ? `${basePrompt} O nome do utilizador é ${name.split(" ")[0]}.`
+    : basePrompt;
 
   // ─── 1) Tentar DeepSeek (principal, OpenAI-compatible) ──────────
   if (env.DEEPSEEK_API_KEY) {
@@ -254,6 +274,6 @@ export async function POST(req: NextRequest) {
 
 
   // ─── Fallback inteligente ─────────────────
-  const reply = findFallbackResponse(lastUserMessage, name);
+  const reply = syncPriceTokens(findFallbackResponse(lastUserMessage, name), settings);
   return NextResponse.json({ reply });
 }

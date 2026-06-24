@@ -22,7 +22,6 @@ function scoreColor(score: number) {
     bg: "border-red-400/[0.10] bg-red-400/[0.04]"
   };
 }
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FunnelShell } from "@/components/funnel/funnel-shell";
@@ -98,7 +97,6 @@ export default function SimuladorResultadoClient({
   const answers = useFunnelStore(state => state.answers);
   const result = useFunnelStore(state => state.result);
   const finalizeResult = useFunnelStore(state => state.finalizeResult);
-  const quizPaid = useFunnelStore(state => state.quizPaid);
   const ebookPaid = useFunnelStore(state => state.ebookPaid);
   const paymentReference = useFunnelStore(state => state.paymentReference);
   const { playReveal } = useSound();
@@ -147,11 +145,11 @@ export default function SimuladorResultadoClient({
 
   // Mede a visualização da oferta (upsell) — fecha o buraco de medição resultado→oferta
   useEffect(() => {
-    if (result && quizPaid && !ebookPaid) {
+    if (result && !ebookPaid) {
       trackEvent("ViewContent", { content_name: "Oferta (Upsell Resultado)", value: initialPrices.pricePromo, currency: "AOA" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result?.profileTitle, quizPaid, ebookPaid]);
+  }, [result?.profileTitle, ebookPaid]);
 
   if (!name) {
     return null;
@@ -203,23 +201,12 @@ export default function SimuladorResultadoClient({
               {Object.entries(result.scores).map(([pillar, score]) => {
                 const pct = Math.min(Math.max(Number(score), 0), 100);
                 const color = scoreColor(pct);
-                const isDominant = pillar === result.dominant;
-                const isLocked = !quizPaid && !isDominant;
 
                 return (
                   <div
                     key={pillar}
-                    className={`rounded-xl border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] relative overflow-hidden transition-all duration-500 ${
-                      isLocked ? "filter blur-[6px] select-none opacity-40 pointer-events-none" : ""
-                    } ${color.bg}`}
+                    className={`rounded-xl border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] relative overflow-hidden transition-all duration-500 ${color.bg}`}
                   >
-                    {isLocked && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px] z-10">
-                        <svg className="h-5 w-5 text-brandBright animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </div>
-                    )}
                     <div className="mb-3 flex items-end justify-between">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
                         {pillar}
@@ -239,8 +226,8 @@ export default function SimuladorResultadoClient({
               })}
             </div>
 
-            {/* Explanation Text */}
-            {quizPaid ? (
+            {/* Explanation Text — análise sempre visível (quiz é grátis) */}
+            {(
               <div className="space-y-6 pt-4 text-left">
                 <div className="space-y-4 text-sm leading-relaxed text-soft/90">
                   <p>{content.explanation_text}</p>
@@ -371,70 +358,12 @@ export default function SimuladorResultadoClient({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="relative rounded-xl border border-white/[0.04] bg-black/40 p-6 mt-4 text-center">
-                {/* Texto desfocado de fundo no topo */}
-                <div className="space-y-3 text-xs leading-relaxed text-soft/10 select-none blur-[5px] pointer-events-none max-h-24 overflow-hidden mb-4 border-b border-white/[0.02] pb-4">
-                  <p>As tuas respostas indicam um padrão comportamental profundo no pilar do planeamento...</p>
-                  <p>O sabotador secundário atua diretamente no momento da poupança imediata, gerando impulsos...</p>
-                </div>
-                
-                {/* Secção de bloqueio no fluxo normal */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand/[0.12] text-brand">
-                    <svg className="h-5 w-5 text-brandBright animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-base font-bold text-white mb-2">Acesso ao Relatório Reservado</h3>
-                  <p className="text-xs text-soft max-w-sm mb-4 leading-relaxed">
-                    Acabaste de completar o teu diagnóstico financeiro. Os resultados mostram padrões importantes — mas a análise profunda e o plano prático de reprogramação estão reservados:
-                  </p>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-left text-[11px] text-soft/80 w-full max-w-md mb-2 bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Análise profunda dos 4 pilares</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Nome do teu Sabotador Oculto</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>Plano de Reprogramação 7 Dias</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-brandBright font-bold">✦</span> <span>O teu Micro-hábito de 2 minutos</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* CTA para a oferta do Quiz ou nenhuma se já estiver pago */}
-            {!quizPaid && (
-              <div className="space-y-3 mt-4">
-                <p className="text-center text-[10px] uppercase tracking-widest text-brandBright font-semibold">
-                  Desbloqueia agora por apenas {initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz
-                </p>
-                <Link
-                  href="/checkout/pagamento?product=quiz"
-                  onClick={() => trackEvent("InitiateCheckout", { content_name: "Resultado -> Relatorio Quiz", value: initialPrices.priceQuiz, currency: "AOA" })}
-                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
-                >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                  <span className="relative flex items-center gap-2">
-                    <span>Quero ver a minha análise completa ({initialPrices.priceQuiz.toLocaleString("pt-AO")} Kz)</span>
-                  </span>
-                </Link>
-                <p className="text-center text-[11px] text-soft/60">
-                  ✓ Acesso imediato · ✓ Pagamento seguro · ✓ 7 dias de garantia
-                </p>
-              </div>
             )}
           </div>
         </GlassCard>
 
         {/* Exibição condicional do painel de Upsell / Painel de Acesso ao Ebook Comprado */}
-        {quizPaid && !ebookPaid && (
+        {!ebookPaid && (
           <OfferPanel
             angle={result.offerAngle}
             initialPrices={initialPrices}
@@ -443,7 +372,7 @@ export default function SimuladorResultadoClient({
           />
         )}
 
-        {quizPaid && ebookPaid && (
+        {ebookPaid && (
           <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-brand/[0.08] p-6 text-center space-y-5">
             {/* Linha de luz no topo */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent" />

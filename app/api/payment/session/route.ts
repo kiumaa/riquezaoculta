@@ -20,6 +20,7 @@ const schema = z.object({
   affiliateToken: z.string().max(32).optional(),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
   orderBump: z.number().min(0).max(5000).optional(),
+  ab: z.record(z.string()).optional(),
   fbp: z.string().max(255).optional(),
   fbc: z.string().max(255).optional(),
 });
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
   // Reference method
   console.log("[Payment Session] Creating reference charge", {
     reference,
-    amount: pricePromo,
+    amount,
     hasApiKey: !!env.KB_AGENCY_API_KEY,
     isProd
   });
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
     entity: charge.entity,
     paymentReference: charge.paymentReference,
     status: "pending",
-    providerPayload: { ...(charge.raw as Record<string, unknown>), product: parsed.data.product, _mq: metaMatch },
+    providerPayload: { ...(charge.raw as Record<string, unknown>), product: parsed.data.product, orderBump: parsed.data.orderBump ?? 0, ab: parsed.data.ab, _mq: metaMatch },
     affiliateToken: parsed.data.affiliateToken ?? null,
     createdAt: now,
     updatedAt: now

@@ -1,7 +1,8 @@
 import { getFunnelContentMap, getSettings, getSocialProofEnabled } from "@/lib/storage";
 import OfertaClient from "./client";
 
-export const dynamic = "force-dynamic";
+// ISR: preços/conteúdo da oferta mudam raramente (via admin). Revalida a cada 5 min.
+export const revalidate = 300;
 
 export default async function OfertaPage() {
   const [prices, c, socialProofEnabled] = await Promise.all([

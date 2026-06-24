@@ -2,7 +2,7 @@
 import { db } from "@/lib/db";
 import { checkouts } from "@/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
-import { updateCheckoutStatus, markCheckoutPaid, recordAffiliateSale } from "@/lib/storage";
+import { updateCheckoutStatus, markCheckoutPaid, recordAffiliateSale, getPaidCheckoutsNeedingConfirmation } from "@/lib/storage";
 import { getChargeStatus } from "@/lib/providers/payment/kbagency";
 import { sendFBConversionPurchase } from "@/lib/capi";
 import { sendReferenceReminder, sendAbandonedCart, sendReferenceReminderSmsLogged, sendOrderConfirmation } from "@/lib/communication-service";
@@ -225,12 +225,33 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // ── Pass 2: entrega resiliente da confirmação ──────────────────────────────
+    // Reenvia a confirmação (WhatsApp → fallback SMS) a clientes que PAGARAM mas
+    // ainda não têm `confirmationSent` (ex.: OpenWA estava em baixo no momento da
+    // transição). sendOrderConfirmation marca o flag em caso de sucesso, por isso
+    // estes não voltam a ser apanhados.
+    let confirmationsResent = 0;
+    try {
+      const needConfirm = await getPaidCheckoutsNeedingConfirmation(48 * 60 * 60 * 1000, 50);
+      for (const c of needConfirm) {
+        const ok = await sendOrderConfirmation(c.phone, c.name, { reference: c.reference, trigger: "auto" });
+        if (ok) confirmationsResent++;
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      if (needConfirm.length > 0) {
+        console.log(`[Cron Recover] Confirmações reenviadas: ${confirmationsResent}/${needConfirm.length}`);
+      }
+    } catch (error) {
+      console.error("[Cron Recover] Erro no reenvio de confirmações:", error);
+    }
+
     const duration = Date.now() - startTime;
-    console.log(`[Cron Recover] Completed in ${duration}ms`, results);
+    console.log(`[Cron Recover] Completed in ${duration}ms`, { ...results, confirmationsResent });
 
     return NextResponse.json({
       success: true,
       duration,
+      confirmationsResent,
       ...results
     });
 

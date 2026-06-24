@@ -20,29 +20,23 @@ const BUYERS = [
   { name: "Maritza", city: "Huambo" },
 ];
 
-function randomMinutes() {
-  return Math.floor(Math.random() * 44) + 1;
-}
-
-function randomIndex(exclude: number) {
-  let idx: number;
-  do {
-    idx = Math.floor(Math.random() * BUYERS.length);
-  } while (idx === exclude);
-  return idx;
+// "Há X min" DETERMINÍSTICO por comprador (sem reshuffle aleatório a cada rotação,
+// que torna a prova social detetável como falsa). Cada comprador mostra sempre o
+// mesmo valor recente (1–14 min), e a rotação é sequencial.
+function minutesFor(i: number) {
+  return ((i * 7 + 2) % 14) + 1;
 }
 
 export function SocialProofBar() {
+  // Seed inicial único (variação realista entre visitantes); a partir daí é determinístico.
   const [index, setIndex] = useState(() => Math.floor(Math.random() * BUYERS.length));
-  const [minutes, setMinutes] = useState(randomMinutes);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setIndex((prev) => randomIndex(prev));
-        setMinutes(randomMinutes());
+        setIndex(prev => (prev + 1) % BUYERS.length);
         setVisible(true);
       }, 400);
     }, 5000);
@@ -50,6 +44,7 @@ export function SocialProofBar() {
   }, []);
 
   const buyer = BUYERS[index];
+  const minutes = minutesFor(index);
 
   return (
     <div className="w-full rounded-lg bg-brand/[0.08] border border-brand/15 px-3 py-2 mb-4">

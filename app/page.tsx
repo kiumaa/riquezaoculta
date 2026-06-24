@@ -1,7 +1,9 @@
 import { getFunnelContentMap } from "@/lib/storage";
 import LandingClient from "./landing-client";
 
-export const dynamic = "force-dynamic";
+// ISR: o conteúdo da landing muda raramente (via admin). Servir do CDN da Vercel
+// em vez de render on-demand corta segundos no LCP em 3G. Revalida a cada 5 min.
+export const revalidate = 300;
 
 export default async function LandingPage() {
   const c = await getFunnelContentMap("landing");

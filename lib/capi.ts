@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { resolveProductType } from "@/lib/product";
 import crypto from "crypto";
 
 function sha256(value: string): string {
@@ -49,7 +50,8 @@ function buildUserData(cleanPhone: string, cleanName: string, match?: MetaMatch)
 export async function sendFBConversionLead(
   name: string,
   phone: string,
-  eventSourceUrl?: string
+  eventSourceUrl?: string,
+  eventId?: string
 ) {
   const pixelId = env.FACEBOOK_PIXEL_ID;
   const accessToken = env.FACEBOOK_ACCESS_TOKEN;
@@ -65,7 +67,8 @@ export async function sendFBConversionLead(
     data: [{
       event_name: "Lead",
       event_time: Math.floor(Date.now() / 1000),
-      event_id: `lead_${cleanPhone}_${Math.floor(Date.now() / 1000)}`,
+      // event_id partilhado com o pixel client-side para o Meta deduplicar o Lead.
+      event_id: eventId ?? `lead_${cleanPhone}_${Math.floor(Date.now() / 1000)}`,
       event_source_url: eventSourceUrl ?? "https://www.riquezaoculta.click/simulador/quiz",
       action_source: "website",
       user_data: {
@@ -113,6 +116,8 @@ export async function sendFBConversionPurchase(
   const cleanPhone = getCleanPhone(phone);
   const cleanName = getCleanFirstName(name);
 
+  const productType = await resolveProductType(undefined, amount);
+
   const payload = {
     data: [{
       event_name: "Purchase",
@@ -127,7 +132,7 @@ export async function sendFBConversionPurchase(
         content_type: "product",
         contents: [
           {
-            id: amount === 1000 ? "quiz_report" : "ebook_riqueza_oculta",
+            id: productType === "quiz" ? "quiz_report" : "ebook_riqueza_oculta",
             quantity: 1,
             item_price: amount
           }

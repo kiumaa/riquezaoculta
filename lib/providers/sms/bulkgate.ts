@@ -35,6 +35,12 @@ export async function sendAccessSms(phone: string, accessCode: string) {
   return sendSms(phone, `Teu codigo de acesso: ${accessCode}. Usa em ${env.NEXT_PUBLIC_APP_URL}/acesso`);
 }
 
+/** SMS de confirmação com o link de acesso completo (?ref=) — fallback quando o WhatsApp falha. */
+export async function sendOrderConfirmationSms(phone: string, name: string, accessUrl: string) {
+  const firstName = name.split(" ")[0];
+  return sendSms(phone, `${firstName}! Pagamento confirmado. Descarrega o teu Guia 1M em Uma Semana aqui: ${accessUrl}`);
+}
+
 export async function sendRecoveryMessage(phone: string, name: string, offerUrl: string) {
   const firstName = name.split(" ")[0];
   const text = `${firstName} o teu acesso ao Guia 1M em Uma Semana continua reservado. Completa a compra agora e garante o teu lugar em: ${offerUrl}\nEsperamos por ti!`;

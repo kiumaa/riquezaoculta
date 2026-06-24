@@ -5,7 +5,7 @@ import type { AffiliateInsert, FunnelContentInsert, MemberContentInsert, PayoutR
 import { db } from "@/lib/db";
 import { logError } from "@/lib/logger";
 import type { AffiliateRecord, AffiliateStatus, CheckoutRecord, CheckoutStatus, CommunicationLog, FunnelContentRecord, LeadPayload, LeadStatus, MemberContentRecord, PayoutRequestRecord, PayoutStatus, QuizSubmissionRecord } from "@/lib/types";
-import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ne, sql } from "drizzle-orm";
 
 const fallbackPath = path.join(process.cwd(), "data", "runtime.json");
 
@@ -218,6 +218,77 @@ export async function markCheckoutPaid(reference: string, payload?: unknown): Pr
   return transitioned;
 }
 
+/**
+ * Marca um checkout pago como tendo recebido a confirmação ao cliente
+ * (`confirmationSent: true` no payload, sem tocar no status). Idempotência da
+ * confirmação + visibilidade no admin. Não usa updateCheckoutStatus porque essa
+ * recusa escrever em linhas já "paid".
+ */
+export async function markConfirmationSent(reference: string): Promise<void> {
+  const current = await findCheckout(reference);
+  if (!current) return;
+  const merged = mergeProviderPayload(current.providerPayload, { confirmationSent: true });
+
+  if (db) {
+    try {
+      await db
+        .update(checkouts)
+        .set({ providerPayload: merged, updatedAt: new Date() })
+        .where(eq(checkouts.reference, reference));
+    } catch (error) {
+      logError("Storage", "Failed to mark confirmationSent", error);
+    }
+    return;
+  }
+
+  const data = await readFallback();
+  data.checkouts = data.checkouts.map(item =>
+    item.reference === reference
+      ? { ...item, providerPayload: merged, updatedAt: new Date().toISOString() }
+      : item
+  );
+  await writeFallback(data);
+}
+
+/**
+ * Checkouts PAGOS nas últimas `sinceMs` que ainda não têm `confirmationSent` —
+ * clientes que pagaram mas podem não ter recebido a confirmação. Usado pelo cron
+ * para reenviar (entrega resiliente) e pelo admin para visibilidade.
+ */
+export async function getPaidCheckoutsNeedingConfirmation(sinceMs: number, limit = 50): Promise<CheckoutRecord[]> {
+  if (!db) return [];
+  const cutoff = new Date(Date.now() - sinceMs);
+  try {
+    const rows = await db
+      .select()
+      .from(checkouts)
+      .where(and(
+        eq(checkouts.status, "paid"),
+        gt(checkouts.createdAt, cutoff),
+        sql`(${checkouts.providerPayload} ->> 'confirmationSent') IS DISTINCT FROM 'true'`
+      ))
+      .orderBy(desc(checkouts.createdAt))
+      .limit(limit);
+
+    return rows.map(row => ({
+      reference: row.reference,
+      name: row.name,
+      phone: row.phone,
+      entity: row.entity,
+      paymentReference: row.paymentReference,
+      amount: row.amount,
+      status: row.status,
+      providerPayload: row.providerPayload,
+      affiliateToken: row.affiliateToken ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString()
+    }));
+  } catch (error) {
+    logError("Storage", "Failed to query checkouts needing confirmation", error);
+    return [];
+  }
+}
+
 export type PaginatedResult<T> = {
   data: T[];
   total: number;
@@ -400,14 +471,20 @@ export async function getSettings(): Promise<Settings> {
   let result: Settings;
 
   if (db) {
-    const rows = await db.select().from(settings);
-    const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
-    result = {
-      priceOriginal: map.priceOriginal ? Number(map.priceOriginal) : SETTINGS_DEFAULTS.priceOriginal,
-      pricePromo: map.pricePromo ? Number(map.pricePromo) : SETTINGS_DEFAULTS.pricePromo,
-      priceQuiz: map.priceQuiz ? Number(map.priceQuiz) : SETTINGS_DEFAULTS.priceQuiz,
-      priceOrderBump: map.priceOrderBump ? Number(map.priceOrderBump) : SETTINGS_DEFAULTS.priceOrderBump
-    };
+    try {
+      const rows = await db.select().from(settings);
+      const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+      result = {
+        priceOriginal: map.priceOriginal ? Number(map.priceOriginal) : SETTINGS_DEFAULTS.priceOriginal,
+        pricePromo: map.pricePromo ? Number(map.pricePromo) : SETTINGS_DEFAULTS.pricePromo,
+        priceQuiz: map.priceQuiz ? Number(map.priceQuiz) : SETTINGS_DEFAULTS.priceQuiz,
+        priceOrderBump: map.priceOrderBump ? Number(map.priceOrderBump) : SETTINGS_DEFAULTS.priceOrderBump
+      };
+    } catch (err) {
+      // Resiliência (ISR/runtime): falha transitória da BD não rebenta a página.
+      console.error("[getSettings] fallback para defaults:", err instanceof Error ? err.message : err);
+      result = { ...SETTINGS_DEFAULTS };
+    }
   } else {
     const data = await readFallback();
     result = { ...SETTINGS_DEFAULTS, ...(data.settings ?? {}) };
@@ -796,12 +873,19 @@ export const FUNNEL_CONTENT_DEFAULTS: Record<string, Record<string, string>> = {
 export async function getFunnelContentMap(pageType: string): Promise<Record<string, string>> {
   const defaults = FUNNEL_CONTENT_DEFAULTS[pageType] ?? {};
   if (!db) return defaults;
-  const rows = await getFunnelContent(pageType);
-  const dbMap: Record<string, string> = {};
-  for (const row of rows) {
-    if (row.content != null) dbMap[row.sectionKey] = row.content;
+  try {
+    const rows = await getFunnelContent(pageType);
+    const dbMap: Record<string, string> = {};
+    for (const row of rows) {
+      if (row.content != null) dbMap[row.sectionKey] = row.content;
+    }
+    return { ...defaults, ...dbMap };
+  } catch (err) {
+    // Resiliência para ISR: uma falha transitória da BD no build/revalidate não
+    // deve rebentar a página — servimos os defaults.
+    console.error(`[getFunnelContentMap] fallback para defaults (${pageType}):`, err instanceof Error ? err.message : err);
+    return defaults;
   }
-  return { ...defaults, ...dbMap };
 }
 
 export async function seedDefaultFunnelContent(): Promise<void> {
@@ -825,8 +909,12 @@ export async function getWhatsAppGroupLink(): Promise<string> {
 export async function getSocialProofEnabled(): Promise<boolean> {
   // Ponte /provas-sociais ligada por defeito; só desligada se explicitamente "false".
   if (!db) return true;
-  const rows = await db.select().from(settings).where(eq(settings.key, "social_proof_enabled"));
-  return rows[0]?.value !== "false";
+  try {
+    const rows = await db.select().from(settings).where(eq(settings.key, "social_proof_enabled"));
+    return rows[0]?.value !== "false";
+  } catch {
+    return true;
+  }
 }
 
 export async function upsertSetting(key: string, value: string): Promise<void> {

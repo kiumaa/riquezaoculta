@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { findCheckout } from "@/lib/storage";
+import { getDeliverables, getDeliverableById } from "@/lib/fulfillment";
 
+// GET /api/download/{reference}?item=guia1m|bonus
+// Serve o ficheiro entregável correto para um checkout pago. Sem `item`, devolve
+// o guia principal. Itens não comprados (ou produto Quiz, que não tem PDF) → 403.
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ reference: string }> }
 ) {
   const { reference } = await context.params;
@@ -14,32 +18,31 @@ export async function GET(
     return new NextResponse("Acesso negado. Pagamento não confirmado.", { status: 403 });
   }
 
-  // Validação estrita do produto para separar o Quiz do Ebook
-  const payload = typeof record.providerPayload === "object" && record.providerPayload !== null
-    ? (record.providerPayload as Record<string, unknown>)
-    : null;
-  
-  const product = payload && typeof payload.product === "string" ? payload.product : undefined;
-  const amount = record.amount;
+  const itemId = new URL(req.url).searchParams.get("item") ?? "guia1m";
+  const deliverable = getDeliverableById(itemId);
+  if (!deliverable) {
+    return new NextResponse("Produto inválido.", { status: 400 });
+  }
 
-  if (product === "quiz" || amount <= 1000) {
+  const allowed = await getDeliverables(record.providerPayload, record.amount);
+  if (!allowed.some(d => d.id === deliverable.id)) {
     return new NextResponse(
-      "Esta referência apenas dá acesso à análise completa do simulador, não ao Ebook. Adquira o Ebook para efetuar o download.",
+      "Esta referência não dá acesso a este produto.",
       { status: 403 }
     );
   }
 
   try {
-    const filePath = path.join(process.cwd(), "data", "Riqueza_Oculta.pdf");
+    const filePath = path.join(process.cwd(), "data", deliverable.file);
     const fileBuffer = await fs.readFile(filePath);
 
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=Riqueza_Oculta.pdf",
-        "Cache-Control": "private, no-store",
-      },
+        "Content-Disposition": `attachment; filename="${deliverable.downloadName}"`,
+        "Cache-Control": "private, no-store"
+      }
     });
   } catch {
     return new NextResponse("Ficheiro não encontrado.", { status: 404 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
-import { getCheckouts } from "@/lib/storage";
+import { getCheckouts, getSettings } from "@/lib/storage";
+import { productTypeFrom } from "@/lib/product";
 import { db } from "@/lib/db";
 import { checkouts } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
       revenueEbook: 0,
       salesQuiz: 0,
       salesEbook: 0,
+      paidWithoutConfirmation: 0,
     };
 
     if (db) {
@@ -55,18 +57,24 @@ export async function GET(req: NextRequest) {
 
       stats.totalPaid = paidRows.length;
       stats.totalPending = pendingRow?.count ?? 0;
-      
+
+      const { priceQuiz } = await getSettings();
+
       for (const row of paidRows) {
         const amt = row.amount;
         stats.totalRevenue += amt;
-        const payload = row.providerPayload as Record<string, unknown> | null;
-        const isQuiz = payload?.product === "quiz" || amt === 1000;
+        const isQuiz = productTypeFrom(row.providerPayload, amt, priceQuiz) === "quiz";
         if (isQuiz) {
           stats.revenueQuiz += amt;
           stats.salesQuiz += 1;
         } else {
           stats.revenueEbook += amt;
           stats.salesEbook += 1;
+        }
+        // Quiz é entregue on-page (sem PDF/mensagem); só o ebook precisa de confirmação.
+        const payload = row.providerPayload as Record<string, unknown> | null;
+        if (!isQuiz && payload?.confirmationSent !== true) {
+          stats.paidWithoutConfirmation += 1;
         }
       }
     }

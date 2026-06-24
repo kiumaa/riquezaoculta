@@ -14,7 +14,6 @@ const envSchema = z.object({
   PUSHCUT_URL: z.string().url().optional(),
   FACEBOOK_PIXEL_ID: z.string().optional(),
   FACEBOOK_ACCESS_TOKEN: z.string().optional(),
-  GEMINI_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),
 });

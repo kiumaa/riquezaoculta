@@ -13,6 +13,7 @@ import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { trackEvent } from "@/lib/pixel";
+import { useABVariant } from "@/lib/use-ab";
 import { useRouter } from "next/navigation";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
@@ -68,6 +69,13 @@ export default function OfertaClient({
   const name = useFunnelStore(state => state.name);
   const whatsapp = useFunnelStore(state => state.whatsapp);
   const journey = useFunnelStore(state => state.journey);
+
+  // A/B teste do título (resolvido client-side para não quebrar o ISR da página).
+  // Variante "A" = título atual (default estático); "B" = alternativa.
+  const headlineVariant = useABVariant("oferta_headline");
+  const headline = headlineVariant === "B"
+    ? "O sistema de 7 dias para faturar 1M no mercado angolano"
+    : content.headline;
   const result = useFunnelStore(state => state.result);
   const router = useRouter();
 
@@ -167,7 +175,7 @@ export default function OfertaClient({
                 <span className="mr-2 inline-block animate-glow-pulse">◆</span>
                 Passo 3 de 5
               </p>
-              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{content.headline}</h1>
+              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{headline}</h1>
               <p className="text-sm leading-relaxed text-soft">
                 {name ? `${name}, ` : ""}{content.subheading}
                 {result ? ` ${result.offerAngle}` : ""}

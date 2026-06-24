@@ -3,8 +3,8 @@ import {
   sendReferenceReminderWhatsApp,
   sendAbandonedCartWhatsApp
 } from "@/lib/whatsapp";
-import { sendRecoveryMessage, sendReferenceReminderSms } from "@/lib/providers/sms/bulkgate";
-import { insertCommunicationLog, getWhatsAppGroupLink } from "@/lib/storage";
+import { sendRecoveryMessage, sendReferenceReminderSms, sendOrderConfirmationSms } from "@/lib/providers/sms/bulkgate";
+import { insertCommunicationLog, getWhatsAppGroupLink, markConfirmationSent } from "@/lib/storage";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import type { CommunicationChannel, CommunicationTrigger, CommunicationType } from "@/lib/types";
 
@@ -79,6 +79,16 @@ function smsReason(res: { success: boolean; reason?: string }): string | undefin
   return res.success ? undefined : (res.reason ?? "SMS falhou");
 }
 
+/**
+ * Confirmação de pagamento — entrega resiliente:
+ * 1) tenta WhatsApp (com o link de acesso);
+ * 2) se o WhatsApp falha, faz fallback para SMS com o MESMO link de acesso (?ref=),
+ *    para que o cliente que pagou consiga sempre chegar ao download;
+ * 3) se entregou (qualquer canal) e temos reference, marca `confirmationSent` no
+ *    checkout — idempotência (não reenviar) + visibilidade no admin.
+ *
+ * Se ambos falham, o checkout fica SEM `confirmationSent` e o cron reenvia mais tarde.
+ */
 export async function sendOrderConfirmation(
   phone: string,
   name: string,
@@ -89,9 +99,21 @@ export async function sendOrderConfirmation(
     ? `${base}/acesso?ref=${encodeURIComponent(ctx.reference)}`
     : `${base}/acesso`;
   const vipLink = await getWhatsAppGroupLink().catch(() => undefined);
-  const r = await sendOrderConfirmationWhatsApp(phone, name, { accessUrl, vipLink: vipLink || undefined });
-  await record(phone, "confirmation", r.ok, ctx, "whatsapp", r.reason);
-  return r.ok;
+
+  const wa = await sendOrderConfirmationWhatsApp(phone, name, { accessUrl, vipLink: vipLink || undefined });
+  await record(phone, "confirmation", wa.ok, ctx, "whatsapp", wa.reason);
+
+  let delivered = wa.ok;
+  if (!wa.ok) {
+    const sms = await sendOrderConfirmationSms(phone, name, accessUrl);
+    await record(phone, "confirmation", sms.success, ctx, "sms", smsReason(sms));
+    delivered = sms.success;
+  }
+
+  if (delivered && ctx.reference) {
+    await markConfirmationSent(ctx.reference).catch(() => {});
+  }
+  return delivered;
 }
 
 export async function sendReferenceReminder(

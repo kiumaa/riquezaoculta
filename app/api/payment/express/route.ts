@@ -15,6 +15,7 @@ const schema = z.object({
   expressPhone: z.string().min(9).max(15),
   product: z.enum(["ebook", "quiz", "ebook_upsell"]).default("ebook"),
   orderBump: z.number().min(0).max(5000).optional(),
+  ab: z.record(z.string()).optional(),
   affiliateToken: z.string().max(32).optional(),
   fbp: z.string().max(255).optional(),
   fbc: z.string().max(255).optional(),
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
       entity: "express",
       paymentReference: charge.reference,
       status: "pending",
-      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, _mq: metaMatch },
+      providerPayload: { method: "express", mode: charge.mode, product: parsed.data.product, orderBump: parsed.data.orderBump ?? 0, ab: parsed.data.ab, _mq: metaMatch },
       affiliateToken: parsed.data.affiliateToken ?? null,
       createdAt: now,
       updatedAt: now
