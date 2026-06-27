@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { trackCustomEvent } from "@/lib/pixel";
+import { useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 
 type LandingContent = {
   badge_text: string;
@@ -15,6 +17,9 @@ type LandingContent = {
 };
 
 export default function LandingClient({ content }: { content: LandingContent }) {
+  const variant = useABVariant("entrada_copy");
+  const c = variant === "B" ? { ...content, ...AB_COPY.landing } : content;
+
   useEffect(() => {
     trackCustomEvent("ViewLandingPage", { content_category: "Simulador" });
   }, []);
@@ -34,13 +39,13 @@ export default function LandingClient({ content }: { content: LandingContent }) 
         {/* Headline */}
         <div className="animate-fade-up [animation-delay:0.1s] space-y-3">
           <h1 className="text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl md:text-6xl">
-            {content.headline}
+            {c.headline}
           </h1>
         </div>
 
         {/* Body */}
         <p className="animate-fade-up [animation-delay:0.2s] mx-auto max-w-xl text-base leading-relaxed text-soft sm:text-lg">
-          {content.subtitle}
+          {c.subtitle}
         </p>
 
         {/* CTA */}
@@ -50,7 +55,7 @@ export default function LandingClient({ content }: { content: LandingContent }) 
             className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-base font-semibold text-[#04140c] shadow-hero transition-all duration-300 hover:scale-[1.02] hover:shadow-glow sm:text-lg"
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-            <span className="relative">{content.cta_text}</span>
+            <span className="relative">{c.cta_text}</span>
           </Link>
         </div>
 

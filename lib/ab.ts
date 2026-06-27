@@ -6,8 +6,10 @@
 // variantes ativas ao checkout (providerPayload.ab); o admin agrega daí.
 
 export const AB_TESTS = {
-  // Teste do título da página de oferta.
-  oferta_headline: { variants: ["A", "B"] }
+  // Copy agressiva (variante B) vs atual (A) por superfície do funil.
+  entrada_copy: { variants: ["A", "B"] }, // landing + simulador (mesma variante p/ visitante)
+  oferta_copy: { variants: ["A", "B"] },
+  checkout_copy: { variants: ["A", "B"] }
 } as const;
 
 export type ABTestKey = keyof typeof AB_TESTS;

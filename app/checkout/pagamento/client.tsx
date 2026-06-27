@@ -12,7 +12,8 @@ import mcxLogo from "@/assets/mcx.png";
 import ebookCover from "@/public/capa_1m_v1.jpg";
 import riquezaCover from "@/assets/ebook_cover_3d.webp";
 import { trackEvent, trackCustomEvent, getFbp, getFbc } from "@/lib/pixel";
-import { getActiveVariants } from "@/lib/use-ab";
+import { getActiveVariants, useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
 import { ChatWidget } from "@/components/funnel/chat-widget";
@@ -150,6 +151,10 @@ function CheckoutPagamentoInner({
   const productParam = searchParams.get("product") as "ebook" | "quiz" | "ebook_upsell" | null;
   const product = productParam || "ebook";
 
+  // A/B teste da copy do checkout (benefícios, countdown, order bump).
+  const copyVariant = useABVariant("checkout_copy");
+  const c = copyVariant === "B" ? { ...content, ...AB_COPY.checkout } : content;
+
   const isProductPaid = product === "quiz" ? quizPaid : ebookPaid;
 
   useEffect(() => {
@@ -175,9 +180,9 @@ function CheckoutPagamentoInner({
         "7 dias de garantia total ou devolução do valor"
       ]
     : [
-        content.benefit_1,
-        content.benefit_2,
-        content.benefit_3,
+        c.benefit_1,
+        c.benefit_2,
+        c.benefit_3,
         "Audiobook para ouvir em qualquer lugar",
         "Garantia de 7 dias ou dinheiro de volta"
       ];
@@ -686,7 +691,7 @@ function CheckoutPagamentoInner({
           {uiState !== "reference_active" && countdownSeconds > 0 && (
             <div className="mx-auto w-full max-w-sm animate-in fade-in duration-300">
               <div className="flex flex-col items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-4 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/80">{content.countdown_text}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/80">{c.countdown_text}</p>
                 <p className="text-3xl font-bold tabular-nums text-red-400 drop-shadow-[0_0_12px_rgba(248,113,113,0.4)]">{cdHh}:{cdMm}:{cdSs}</p>
               </div>
             </div>
@@ -712,15 +717,15 @@ function CheckoutPagamentoInner({
                 <div className="min-w-0 flex-1 text-left">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-yellow-400/30 bg-yellow-400/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-yellow-300">
-                      🎁 {content.order_bump_label}
+                      🎁 {c.order_bump_label}
                     </span>
                     <span className="text-sm font-black text-yellow-300">+{formatPriceKz(ORDER_BUMP_PRICE)}</span>
                   </div>
                   <p className="mt-1 text-[13px] font-bold leading-snug text-yellow-400">
-                    {content.order_bump_title}
+                    {c.order_bump_title}
                   </p>
                   <p className="mt-0.5 text-[11px] leading-snug text-soft/75">
-                    {content.order_bump_subtitle.replace("{preço}", formatPriceKz(ORDER_BUMP_PRICE))}
+                    {c.order_bump_subtitle.replace("{preço}", formatPriceKz(ORDER_BUMP_PRICE))}
                   </p>
                 </div>
 

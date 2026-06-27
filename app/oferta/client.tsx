@@ -14,6 +14,7 @@ import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { trackEvent } from "@/lib/pixel";
 import { useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 import { useRouter } from "next/navigation";
 import { formatPriceKz } from "@/lib/format";
 import { SocialProofBar } from "@/components/funnel/social-proof-bar";
@@ -70,12 +71,10 @@ export default function OfertaClient({
   const whatsapp = useFunnelStore(state => state.whatsapp);
   const journey = useFunnelStore(state => state.journey);
 
-  // A/B teste do título (resolvido client-side para não quebrar o ISR da página).
-  // Variante "A" = título atual (default estático); "B" = alternativa.
-  const headlineVariant = useABVariant("oferta_headline");
-  const headline = headlineVariant === "B"
-    ? "O sistema de 7 dias para faturar 1M no mercado angolano"
-    : content.headline;
+  // A/B teste da copy da oferta (resolvido client-side para não quebrar o ISR).
+  // Variante "A" = copy atual (admin/defaults); "B" = copy agressiva (lib/ab-copy).
+  const copyVariant = useABVariant("oferta_copy");
+  const c = copyVariant === "B" ? { ...content, ...AB_COPY.oferta } : content;
   const result = useFunnelStore(state => state.result);
   const router = useRouter();
 
@@ -175,9 +174,9 @@ export default function OfertaClient({
                 <span className="mr-2 inline-block animate-glow-pulse">◆</span>
                 Passo 3 de 5
               </p>
-              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{headline}</h1>
+              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{c.headline}</h1>
               <p className="text-sm leading-relaxed text-soft">
-                {name ? `${name}, ` : ""}{content.subheading}
+                {name ? `${name}, ` : ""}{c.subheading}
                 {result ? ` ${result.offerAngle}` : ""}
               </p>
             </div>
@@ -204,7 +203,7 @@ export default function OfertaClient({
             {/* Bullets + preço — mesma largura que o botão */}
             <div className="space-y-3">
               <ul className="space-y-2">
-                {content.bullets.map(item => (
+                {c.bullets.map(item => (
                   <li key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-black/20 px-4 py-2.5 text-sm text-soft/90">
                     <CheckIcon className="h-3.5 w-3.5 shrink-0 text-brand" />
                     <span>{item}</span>
@@ -230,11 +229,11 @@ export default function OfertaClient({
                 </div>
                 {/* Escassez */}
                 <div className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.08] px-3 py-2">
-                  <span className="text-sm text-yellow-400">⚠️ {content.scarcity_text}</span>
+                  <span className="text-sm text-yellow-400">⚠️ {c.scarcity_text}</span>
                 </div>
                 {/* Contador */}
                 <p className="text-xs text-muted">
-                  <span className="font-bold text-brand">{content.social_proof}</span>
+                  <span className="font-bold text-brand">{c.social_proof}</span>
                 </p>
                 <p className="text-xs text-muted">Sem mensalidade. Acesso imediato após pagamento.</p>
                 {/* Garantia */}
@@ -242,7 +241,7 @@ export default function OfertaClient({
                   <svg className="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                   <div>
                     <p className="text-[11px] font-semibold text-soft/90">Garantia de 7 Dias sem Risco</p>
-                    <p className="text-[10px] text-soft/50 leading-relaxed">{content.guarantee_text}</p>
+                    <p className="text-[10px] text-soft/50 leading-relaxed">{c.guarantee_text}</p>
                   </div>
                 </div>
                 <button
@@ -251,7 +250,7 @@ export default function OfertaClient({
                   className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                  <span className="relative">ACESSAR AGORA {formatPriceKz(prices.pricePromo)}</span>
+                  <span className="relative">{copyVariant === "B" ? c.cta_text : "ACESSAR AGORA"} {formatPriceKz(prices.pricePromo)}</span>
                 </button>
                 <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted">
                   <LockIcon className="h-3 w-3" />

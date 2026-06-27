@@ -8,6 +8,8 @@ import { PrimaryButton } from "@/components/funnel/primary-button";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { isValidPhone, normalizePhone } from "@/lib/phone";
 import { trackCustomEvent, trackEvent } from "@/lib/pixel";
+import { useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 
 const COUNTRIES = [
   { flag: "🇦🇴", name: "Angola", code: "+244" },
@@ -28,6 +30,8 @@ type SimuladorContent = {
 
 export default function SimuladorInicioClient({ content }: { content: SimuladorContent }) {
   const router = useRouter();
+  const variant = useABVariant("entrada_copy");
+  const c = variant === "B" ? { ...content, ...AB_COPY.simulador } : content;
   const [name, setName] = useState("");
   const [countryCode, setCountryCode] = useState("+244");
   const [localPhone, setLocalPhone] = useState("");
@@ -94,9 +98,9 @@ export default function SimuladorInicioClient({ content }: { content: SimuladorC
       <GlassCard>
         <div className="space-y-6">
           <div className="space-y-2 text-center">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brandBright">{content.step_label}</p>
-            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{content.headline}</h1>
-            <p className="text-sm leading-relaxed text-soft">{content.subtitle}</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brandBright">{c.step_label}</p>
+            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{c.headline}</h1>
+            <p className="text-sm leading-relaxed text-soft">{c.subtitle}</p>
           </div>
 
           <form onSubmit={onSubmit} className="mx-auto w-full max-w-md space-y-4">
@@ -137,9 +141,9 @@ export default function SimuladorInicioClient({ content }: { content: SimuladorC
 
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
-            <PrimaryButton type="submit" loading={loading}>{content.cta_text}</PrimaryButton>
+            <PrimaryButton type="submit" loading={loading}>{c.cta_text}</PrimaryButton>
 
-            <p className="text-center text-[10px] text-muted">{content.privacy_text}</p>
+            <p className="text-center text-[10px] text-muted">{c.privacy_text}</p>
           </form>
         </div>
       </GlassCard>
