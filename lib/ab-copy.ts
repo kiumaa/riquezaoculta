@@ -38,6 +38,18 @@ export const AB_COPY = {
       "Garantia de 7 dias — o risco é todo nosso"
     ] as string[]
   },
+  resultado: {
+    explanation_text:
+      "O dinheiro passa pelas tuas mãos mas nunca fica — e agora sabes porquê. As tuas respostas expõem o padrão exato que te trava todos os meses.",
+    closing_text:
+      "Tens duas escolhas: fechar esta página e estar igual no próximo mês. Ou dar o primeiro passo agora.",
+    cta_text: "Quero a solução agora →"
+  },
+  provas: {
+    headline: "Vê quem já parou de adiar — e o que mudou em 48 horas",
+    subtitle:
+      "Conversas reais de quem comprou o Guia e aplicou. O próximo print aqui podes ser tu."
+  },
   checkout: {
     benefit_1: "Acesso imediato ao Guia 1M em Uma Semana (logo após pagar)",
     benefit_2: "Entrada no Grupo VIP no WhatsApp com os outros alunos",

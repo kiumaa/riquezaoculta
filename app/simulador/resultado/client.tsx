@@ -30,6 +30,8 @@ import { OfferPanel } from "@/components/funnel/offer-panel";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { useSound } from "@/lib/useSound";
 import { trackCustomEvent, trackEvent } from "@/lib/pixel";
+import { useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 import animationData from "@/assets/Future tech Ui.json";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
@@ -93,6 +95,8 @@ export default function SimuladorResultadoClient({
   content: ResultadoContent;
 }) {
   const router = useRouter();
+  const variant = useABVariant("resultado_copy");
+  const c = variant === "B" ? { ...content, ...AB_COPY.resultado } : content;
   const name = useFunnelStore(state => state.name);
   const answers = useFunnelStore(state => state.answers);
   const result = useFunnelStore(state => state.result);
@@ -230,9 +234,9 @@ export default function SimuladorResultadoClient({
             {(
               <div className="space-y-6 pt-4 text-left">
                 <div className="space-y-4 text-sm leading-relaxed text-soft/90">
-                  <p>{content.explanation_text}</p>
+                  <p>{c.explanation_text}</p>
                   <p className="font-medium text-white/90">{result.profileSummary}</p>
-                  <p>{content.closing_text}</p>
+                  <p>{c.closing_text}</p>
                 </div>
 
                 {/* CTA principal — navega direto para a oferta (com tracking que sobrevive à navegação SPA) */}
@@ -245,7 +249,7 @@ export default function SimuladorResultadoClient({
                   className="group relative mt-6 flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brandDark via-brand to-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-[#04140c] transition-all duration-300 hover:scale-[1.02] hover:shadow-glow"
                 >
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-[650ms] ease-in-out group-hover:translate-x-full" />
-                  <span className="relative">{content.cta_text}</span>
+                  <span className="relative">{c.cta_text}</span>
                 </button>
 
                 {/* Plano de Reprogramação Financeira (colapsável, fechado por defeito — o CTA acima é o caminho principal) */}

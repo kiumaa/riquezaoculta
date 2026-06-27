@@ -197,7 +197,7 @@ export default function OfertaClient({
 
             {/* Imagem centrada */}
             <div className="mx-auto w-48 drop-shadow-[0_24px_48px_rgba(32,230,126,0.18)] sm:w-56">
-              <Image src={ebookCover} alt="Guia 1M em Uma Semana" className="w-full rounded-lg object-contain" />
+              <Image src={ebookCover} alt="Guia 1M em Uma Semana" priority sizes="(max-width: 768px) 90vw, 420px" className="w-full rounded-lg object-contain" />
             </div>
 
             {/* Bullets + preço — mesma largura que o botão */}

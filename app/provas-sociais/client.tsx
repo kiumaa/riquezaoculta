@@ -7,6 +7,8 @@ import { FunnelShell } from "@/components/funnel/funnel-shell";
 import { GlassCard } from "@/components/funnel/glass-card";
 import { useFunnelStore } from "@/lib/store/funnel-store";
 import { trackEvent } from "@/lib/pixel";
+import { useABVariant } from "@/lib/use-ab";
+import { AB_COPY } from "@/lib/ab-copy";
 import { ChatWidget } from "@/components/funnel/chat-widget";
 
 const PROOF_SLIDES = [
@@ -65,6 +67,8 @@ export default function ProvasSociaisClient({
   const name = useFunnelStore((state) => state.name);
   const trackStep = useFunnelStore((state) => state.trackStep);
   const [slide, setSlide] = useState(0);
+  const variant = useABVariant("provas_copy");
+  const c = variant === "B" ? { ...content, ...AB_COPY.provas } : content;
 
   useEffect(() => {
     trackStep("provas-sociais", "/provas-sociais");
@@ -95,10 +99,10 @@ export default function ProvasSociaisClient({
               {content.badge_text}
             </p>
             <h1 className="text-xl font-semibold leading-tight sm:text-2xl">
-              {name ? `${name}, ${content.headline.toLowerCase()}` : content.headline}
+              {name ? `${name}, ${c.headline.toLowerCase()}` : c.headline}
             </h1>
             <p className="text-sm leading-relaxed text-soft">
-              {content.subtitle}
+              {c.subtitle}
             </p>
           </div>
 

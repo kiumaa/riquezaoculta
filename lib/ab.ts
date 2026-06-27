@@ -9,7 +9,9 @@ export const AB_TESTS = {
   // Copy agressiva (variante B) vs atual (A) por superfície do funil.
   entrada_copy: { variants: ["A", "B"] }, // landing + simulador (mesma variante p/ visitante)
   oferta_copy: { variants: ["A", "B"] },
-  checkout_copy: { variants: ["A", "B"] }
+  checkout_copy: { variants: ["A", "B"] },
+  resultado_copy: { variants: ["A", "B"] },
+  provas_copy: { variants: ["A", "B"] }
 } as const;
 
 export type ABTestKey = keyof typeof AB_TESTS;

@@ -21,6 +21,7 @@ export function ChatWidget({
 } = {}) {
   const name = useFunnelStore(state => state.name);
   const [isOpen, setIsOpen] = useState(false);
+  const [showNudge, setShowNudge] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,25 @@ export function ChatWidget({
     ? `Olá ${firstName}! Sou a Sofia, assistente da 1M em Uma Semana. Posso ajudar-te com alguma dúvida?`
     : "Olá! Sou a Sofia, assistente da 1M em Uma Semana. Posso ajudar-te com alguma dúvida?";
 
-  // Auto-open desactivado — o utilizador abre manualmente
+  // Nudge proativo NÃO-bloqueante: após 16s, se ainda não abriu, mostra um balão
+  // a convidar a perguntar — SEM auto-abrir o painel (que bloqueia o scroll do body).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("ro_sofia_nudge")) return;
+    const t = setTimeout(() => { if (!isOpen) setShowNudge(true); }, 16000);
+    return () => clearTimeout(t);
+  }, [isOpen]);
+
+  function openChat() {
+    setIsOpen(true);
+    setShowNudge(false);
+    try { sessionStorage.setItem("ro_sofia_nudge", "1"); } catch { /* ignore */ }
+  }
+
+  function dismissNudge() {
+    setShowNudge(false);
+    try { sessionStorage.setItem("ro_sofia_nudge", "1"); } catch { /* ignore */ }
+  }
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -96,12 +115,34 @@ export function ChatWidget({
 
   return (
     <>
+      {/* Nudge proativo (não-bloqueante) */}
+      {!isOpen && showNudge && (
+        <div
+          className="fixed z-50 max-w-[230px] rounded-2xl rounded-br-sm border border-brand/25 bg-[#0c130e] px-3.5 py-2.5 shadow-xl animate-in fade-in slide-in-from-bottom-2"
+          style={{ bottom: "max(74px, calc(env(safe-area-inset-bottom, 20px) + 54px))", right: "16px" }}
+        >
+          <button
+            type="button"
+            aria-label="Dispensar"
+            onClick={dismissNudge}
+            className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[11px] text-muted hover:text-white"
+          >
+            ×
+          </button>
+          <button type="button" onClick={openChat} className="block text-left">
+            <p className="text-[12px] leading-snug text-soft">
+              {firstName ? `${firstName}, ` : ""}tens alguma dúvida antes de avançar? Pergunta-me 👋
+            </p>
+          </button>
+        </div>
+      )}
+
       {/* Floating bubble */}
       {!isOpen && (
         <button
           type="button"
           aria-label="Falar com a Sofia"
-          onClick={() => setIsOpen(true)}
+          onClick={openChat}
           className="fixed z-50 flex items-center gap-2 group"
           style={{ bottom: "max(20px, env(safe-area-inset-bottom, 20px))", right: "16px" }}
         >

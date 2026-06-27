@@ -96,9 +96,15 @@ export default function AcessoPage() {
     setUpsellAccepted(true);
     setShowUpsell(false);
     trackEvent("UpsellAccepted", { product: "consultoria" });
-    
-    // Here you would redirect to a payment page for the upsell
-    // For now, we'll just show a success state
+
+    // Notifica a equipa para fechar a consultoria por WhatsApp (alto-ticket fecha
+    // melhor 1-a-1). Substitui o antigo "sucesso" falso que não cobrava nada.
+    const store = useFunnelStore.getState();
+    void fetch("/api/upsell-interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: store.name, phone: store.whatsapp, reference: paymentReference || verifiedRef })
+    }).catch(() => {});
   };
 
   const handleUpsellDecline = () => {
@@ -159,22 +165,22 @@ export default function AcessoPage() {
 
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brandBright">
-                Upsell confirmado!
+                Pedido recebido!
               </p>
               <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
-                Consultoria adicionada
+                Consultoria reservada
               </h1>
               <p className="text-sm leading-relaxed text-soft">
-                Parabéns por investires ainda mais no teu crescimento! 
-                Vamos contactar-te em breve para agendar a tua sessão.
+                Excelente decisão! A nossa equipa vai contactar-te no WhatsApp
+                para combinar o horário e tratar do pagamento da tua sessão 1-a-1.
               </p>
             </div>
 
             <div className="rounded-xl border border-white/[0.08] bg-black/20 p-4 text-sm text-soft/80 space-y-2 text-left">
               <p className="font-semibold text-white">Próximos passos:</p>
-              <p>1. Receberás um email/SMS com a confirmação.</p>
-              <p>2. A nossa equipa vai contactar-te em 24-48h.</p>
-              <p>3. Agenda a tua sessão no horário que te convier.</p>
+              <p>1. Vais receber uma mensagem nossa no WhatsApp.</p>
+              <p>2. Combinamos o melhor horário para ti.</p>
+              <p>3. Fazes a tua sessão de consultoria 1-a-1.</p>
             </div>
 
             <div className="space-y-3">
